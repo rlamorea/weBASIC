@@ -115,20 +115,6 @@ function layCells(div, handlerInstance, dimensions) {
   div.dispatchEvent(initializedEvent)
 }
 
-export default class FixedScreen {
-  constructor(div, options) {
-    this.div = div
-    this.options = options || {}
-
-    this.eventListeners = []
-    if (options.listener) { this.eventListeners.push(options.listener) }
-
-    initScreen(div, options.requiredLines, this)
-  }
-
-
-}
-
 function htmlChar(char) {
   return specialKeyMap[char] || char
 }
@@ -154,9 +140,9 @@ function getCell(div, x, y) {
 function scrollScreen(div, xoffset, yoffset) {
   // copy existing contents that need to be moved
   let existingContent = []
-  const offsetRowStart = Math.max(0, -yoffset + 1)
+  let offsetRowStart = Math.max(0, -yoffset + 1)
   let offsetRowEnd = Math.min(div.dataset.rows, div.dataset.rows - yoffset + 1)
-  const offsetColStart = Math.max(0, -xoffset + 1)
+  let offsetColStart = Math.max(0, -xoffset + 1)
   let offsetColEnd = Math.min(div.dataset.columns, div.dataset.columns - xoffset + 1)
 
   for (let row = offsetRowStart; row <= offsetRowEnd; row++) {
@@ -174,11 +160,13 @@ function scrollScreen(div, xoffset, yoffset) {
     }
   }
 
-  // insert existing contents back starting at 1, 1
+  // insert existing contents back starting at new origin]
+  offsetRowStart += yoffset
   offsetRowEnd += yoffset
+  offsetColStart += yoffset
   offsetColEnd += xoffset
-  for (let row = 1; row <= offsetRowEnd; row++) {
-    for (let column = 1; column <= offsetColEnd; column++) {
+  for (let row = offsetRowStart; row <= offsetRowEnd; row++) {
+    for (let column = offsetColStart; column <= offsetColEnd; column++) {
       const cell = getCell(div, column, row)
       cell.innerHTML = existingContent.shift()
     }

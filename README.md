@@ -9,15 +9,16 @@ A BASIC interpreter/live OS that is both retro and modern
   - [x] Key entry
   - [x] Line limited to 160 chars
   - [x] Backspace
-  - [ ] Arrows left/right
-  - [ ] Insert at cursor
-  - [ ] Ctrl left/right - SOL/EOL
-  - [ ] Ctrl-I toggle insert/overwrite mode
-  - [ ] Overwrite mode
-  - [ ] Alt left/right - start of/end of current/prev/next word
+  - [x] Arrows left/right
+  - [x] Insert at cursor
+  - [x] Ctrl left/right - SOL/EOL
+  - [x] Ctrl-I toggle insert/overwrite mode
+  - [x] Overwrite mode
   - [ ] Enter for new prompt
   - [ ] Scroll to fit new command input
   - [ ] Up/Down to insert buffered lines
+  - [ ] Alt left/right - start of/end of current/prev/next word
+  - [ ] Key repeat
   - [ ] Highlight error (wavy underscore)
   - [ ] Allow typeover error
 - [ ] Interpreter
@@ -28,3 +29,6 @@ A BASIC interpreter/live OS that is both retro and modern
   - [ ] Get parsing error
   - [ ] Update command line on error to show error
 - [ ] Live interpret PRINT "Hello World"
+
+NOTES:
+* Sometime in the future need to implement UNDO/REDO on inputs (CTRL-z - UNDO, CTRL-SHIFT-Z - redo)

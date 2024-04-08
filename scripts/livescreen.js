@@ -1,7 +1,7 @@
 import { initScreen, displayString, getCell } from './fixedscreen.js'
 import FixedInput from './fixedinput.js'
 
-const startupMessage = 'WBASIC v0.1'
+const startupMessage = 'weBASIC v0.1'
 const prompt = 'READY'
 
 export default class LiveScreen {

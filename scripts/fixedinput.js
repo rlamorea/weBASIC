@@ -4,8 +4,10 @@ const insertCursorHeightPct = 0.1
 const cursorHeightIncrement = 0.2
 const overwriteCursorHeightPct = 0.5
 
-const defaultMaxLength = 160
+const defaultMaxLength = 20 //160
 const defaultWarnZone = 10 // from end
+
+const separatorCharacters = " ()[]{};:,./?"
 
 // key handling
 window.addEventListener('load', (event) => {
@@ -32,6 +34,8 @@ export default class FixedInput {
     options = options || {}
     this.screen = screenDiv
     this.cursorLocation = [...startLocation]
+    this.cursorStart = [...startLocation]
+    this.cursorEnd = [...startLocation]
     this.options = options
 
     this.mode = options.insertMode || 'insert'
@@ -39,9 +43,9 @@ export default class FixedInput {
     this.maxLength = options.maxLength || defaultMaxLength
     this.warnLength = options.warnLength || Math.max(0, this.maxLength - defaultWarnZone)
 
-    this.cursorMovingFrom = null
     this.inputText = ''
     this.cursorInputIndex = 0
+    this.typeMode = 'insert'
 
     if (options.singleLine) { // prep for horizontal scrolling
       // TODO
@@ -63,7 +67,8 @@ export default class FixedInput {
       'F9': this.doFuncKey, 'F10': this.doFuncKey, 'F11': this.doFuncKey, 'F12': this.doFuncKey,
       'Backspace': this.doBackspace, 'Tab': this.doTab, 'Enter': this.doEnter,
       'ArrowLeft': this.doArrow, 'ArrowRight': this.doArrow,
-      'ArrowUp': this.doArrow, 'ArrowDown': this.doArrow
+      'ArrowUp': this.doArrow, 'ArrowDown': this.doArrow,
+      'i': this.doToggleMode, 'I': this.doToggleMode
     }
 
     registeredInput = this
@@ -78,7 +83,7 @@ export default class FixedInput {
     const cell = getCell(this.screen, this.cursorLocation[0], this.cursorLocation[1])
     if (show) {
       let cursorClasses = [ 'cursor' ]
-      if (show && this.inputText.length >= this.maxLength) {
+      if (show && (this.typeMode === 'overwrite' || this.inputText.length >= this.maxLength)) {
         cursorClasses.push('overwrite')
       } else if (show && this.inputText.length >= this.warnLength) {
         cursorClasses.push('warn')
@@ -94,37 +99,67 @@ export default class FixedInput {
     this.cursor(false)
 
     // handle special characters
-    if (evt.key.length > 1) {
-      let handler = this.keyHandlers[evt.key]
-      if (handler) {
-        handler = handler.bind(this)
-        handler(evt.key, evt)
-      }
-    } else {
+    let keyHandled = false
+    let handler = this.keyHandlers[evt.key]
+    if (handler) {
+      handler = handler.bind(this)
+      keyHandled = handler(evt.key, evt)
+    }
+
+    if (!keyHandled && evt.key.length === 1) {
+      // insert mode works as insert until line is full, then turns into overwrite mode automatically
       // update cell contents
       const cell = getCell(this.screen, this.cursorLocation[0], this.cursorLocation[1])
       if (cell.dataset.tempChar) { cell.dataset.tempChar = false }
       cell.innerHTML = evt.key
 
-      if (this.cursorInputIndex === this.maxLength - 1) {
-        if (this.inputText.length < this.maxLength) {
-          this.inputText += evt.key
-        } else {
-          this.inputText = this.inputText.slice(0, -1) + evt.key
-        }
-      } else {
-        this.cursorInputIndex += 1
-        this.inputText += evt.key
+      let replaceCurrentChar = false
+      let advanceCursor = false
 
-        // advance cursor location
+      if (this.cursorInputIndex === this.maxLength - 1 && this.inputText.length < this.maxLength) {
+        this.inputText += evt.key
+      } else if (this.cursorInputIndex === this.maxLength - 1) {
+        replaceCurrentChar = true
+      } else if (this.cursorInputIndex === this.inputText.length) {
+        this.inputText += evt.key
+        advanceCursor = true
+      } else if (this.typeMode === 'overwrite' || this.inputText.length === this.maxLength) {
+        replaceCurrentChar = true
+        advanceCursor = true
+      } else {
+        advanceCursor = true
+        this.inputText = this.inputText.substring(0, this.cursorInputIndex) + evt.key + this.inputText.substring(this.cursorInputIndex)
+        let cellLoc = [...this.cursorLocation]
+        for (let idx = this.cursorInputIndex + 1; idx < this.inputText.length; idx++) {
+          cellLoc[0] += 1
+          if (cellLoc[0] > this.screen.dataset.columns) {
+            cellLoc[0] = 1
+            cellLoc[1] += 1
+          }
+          const moveCell = getCell(this.screen, cellLoc[0], cellLoc[1])
+          moveCell.innerHTML = this.inputText[idx]
+        }
+      }
+
+      if (replaceCurrentChar) {
+        const pre = (this.cursorInputIndex === 0) ? '' : this.inputText.substring(0, this.cursorInputIndex)
+        const post = (this.cursorInputIndex === this.inputText.length - 1) ? '' : this.inputText.substring(this.cursorInputIndex + 1)
+        this.inputText = pre + evt.key + post
+      }
+
+      if (advanceCursor) {
+        this.cursorInputIndex += 1
         this.cursorLocation[0] += 1
         if (this.cursorLocation[0] > this.screen.dataset.columns) {
           this.cursorLocation[0] = 1
           this.cursorLocation[1] += 1
-          // TODO: deal with overflow later
+        }
+        if (this.cursorInputIndex === this.inputText.length) {
+          this.cursorEnd = [...this.cursorLocation]
         }
       }
     }
+    console.log('idx', this.cursorInputIndex, '['+this.inputText+']')
     // restart cursor
     this.cursor(true)
   }
@@ -137,33 +172,52 @@ export default class FixedInput {
     // do nothing if at start of command line
     if (this.cursorInputIndex === 0) return
 
-    const cursorAtEndOfLine = (this.cursorInputIndex === this.inputText.length - 1)
-    const atFullLength = (cursorAtEndOfLine && this.inputText.length === this.maxLength)
+    let moveCursorBackOne = false
+    let shiftCells = false
 
-    if (cursorAtEndOfLine) {
+    if (this.cursorInputIndex === this.maxLength - 1 && this.inputText.length === this.maxLength) {
       this.inputText = this.inputText.slice(0, -1)
+    } else if (this.cursorInputIndex === this.inputText.length) {
+      this.inputText = this.inputText.slice(0, -1)
+      moveCursorBackOne = true
     } else {
-      this.inputText = this.inputText.substring(0, this.cursorInputIndex - 1) + this.inputText.substring(this.cursorInputIndex + 1)
+      moveCursorBackOne = true
+      const pre = (this.cursorInputIndex > 1) ? this.inputText.substring(0, this.cursorInputIndex - 1) : ''
+      const post = this.inputText.substring(this.cursorInputIndex)
+      this.inputText = pre + post
+      shiftCells = true
     }
 
-    if (!atFullLength) {
-      this.cursorInputIndex -= 1
+    if (moveCursorBackOne) {
       this.cursorLocation[0] -= 1
       if (this.cursorLocation[0] < 1) {
-        this.cursorLocation[0] = this.screen.dataset.columns
+        this.cursorLocation[0] = 1
         this.cursorLocation[1] -= 1
-        // NOTE: in LIVE mode this should never go past top of screen -- but need to think it through
+      }
+      this.cursorInputIndex -= 1
+      if (this.cursorInputIndex === this.inputText.length) {
+        this.cursorEnd = [...this.cursorLocation]
       }
     }
 
-    // clear cell deleted
     const cell = getCell(this.screen, this.cursorLocation[0], this.cursorLocation[1])
-    if (cell.dataset.tempChar) { cell.dataset.tempChar = false }
     cell.innerHTML = ''
 
-    if (!cursorAtEndOfLine) {
-      displayString(this.screen, this.cursorLocation[0], this.cursorLocation[1], this.inputText.substring(this.cursorInputIndex))
+    if (shiftCells) {
+      let cellLoc = [...this.cursorLocation]
+      for (let idx = this.cursorInputIndex; idx <= this.inputText.length; idx++) {
+        const cell = getCell(this.screen, cellLoc[0], cellLoc[1])
+        cell.innerHTML = (idx === this.inputText.length) ? '' : this.inputText[idx]
+        if (cell.innerHTML === '') { this.cursorEnd = [...cellLoc] }
+        cellLoc[0] += 1
+        if (cellLoc[0] > this.screen.dataset.columns) {
+          cellLoc[0] = 1
+          cellLoc[1] += 1
+        }
+      }
     }
+
+    return true
   }
 
   doTab(key, evt) {
@@ -175,6 +229,68 @@ export default class FixedInput {
   }
 
   doArrow(key, evt) {
+    if (evt.ctrlKey && key === "ArrowLeft") { // sol
+      this.cursorInputIndex = 0
+      this.cursorLocation = [...this.cursorStart]
+    } else if (evt.ctrlKey && key === "ArrowRight") { // eol
+      this.cursorInputIndex = (this.inputText.length === this.maxLength) ? this.maxLength - 1 : this.inputText.length
+      this.cursorLocation = [...this.cursorEnd]
+    } else if (evt.altKey && key === "ArrowLeft") { // start of word
+      if (this.cursorInputIndex > 0) {
+        let csrIdx = this.cursorInputIndex
+        while (csrIdx > 0) {
+          console.log('testing at',csrIdx,'ch',this.inputText[csrIdx])
+          if (separatorCharacters.indexOf(this.inputText[csrIdx]) >= 0 && csrIdx < this.cursorInputIndex -1) {
+            console.log('found separator')
+            csrIdx += 1 // move to start of word
+            break
+          }
+          csrIdx -= 1
+        }
+        this.cursor(false)
+        if (csrIdx === 0) {
+          console.log('sol')
+          this.cursorInputIndex = 0
+          this.cursorLocation = [...this.cursorStart]
+        } else {
+          for (let idx = this.cursorInputIndex; idx > csrIdx; idx--) {
+            console.log('backing up to',idx,'at',this.cursorLocation)
+            this.cursorLocation[0] -= 1
+            if (this.cursorLocation[0] < 1) {
+              this.cursorLocation[0] = 1
+              this.cursorLocation[1] -= 1
+            }
+          }
+          this.cursorInputIndex = csrIdx
+        }
+        this.cursor(true)
+      }
+    } else if (evt.altKey && key === "ArrowRight") {
+    } else if (key === "ArrowLeft") {
+      if (this.cursorInputIndex > 0) {
+        this.cursorInputIndex -= 1
+        this.cursorLocation[0] -= 1
+        if (this.cursorLocation[0] < 1) {
+          this.cursorLocation[0] = this.screen.dataset.columns
+          this.cursorLocation[1] -= 1
+        }
+      }
+    } else if (key === "ArrowRight") {
+      if (this.cursorInputIndex < this.inputText.length && this.cursorInputIndex < this.maxLength - 1) {
+        this.cursorInputIndex += 1
+        this.cursorLocation[0] += 1
+        if (this.cursorLocation[0] > this.screen.dataset.columns) {
+          this.cursorLocation[0] = 1
+          this.cursorLocation[1] += 1
+        }
+      }
+    }
+    return true
+  }
 
+  doToggleMode(key, evt) {
+    if (!evt.ctrlKey) { return false }
+    this.typeMode = (this.typeMode === 'insert') ? 'overwrite' : 'insert'
+    return true
   }
 }

@@ -47,7 +47,7 @@ funtion nextToken(restOfLine, tokenStart) {
         strDone = true
       }
     }
-    return { token: str, coding: 'string', restOfLine: restOfLine, tokenEnd: tokenEnd }
+    return { token: str, coding: 'string-literal', restOfLine: restOfLine, tokenEnd: tokenEnd }
   }
 
   // fall through to error case

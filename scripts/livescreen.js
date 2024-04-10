@@ -1,4 +1,4 @@
-import { initScreen, displayString, getCell } from './fixedscreen.js'
+import { initScreen, linesRequired, displayString, getCell, scrollScreen } from './fixedscreen.js'
 import FixedInput from './fixedinput.js'
 
 const startupMessage = 'weBASIC v0.1'
@@ -10,6 +10,7 @@ export default class LiveScreen {
     initScreen(this.div)
 
     this.div.addEventListener('initialized', () => { this.start() })
+    this.div.addEventListener('scrolled', (e) => { this.scrollOffset(e.detail.xoffset, e.detail.yoffset) })
   }
 
   start() {
@@ -19,6 +20,21 @@ export default class LiveScreen {
     displayString(this.div, 1, 3, prompt)
 
     this.inputLine = 4
-    this.commandInput = new FixedInput(this.div, [ 1, this.inputLine ])
+    this.commandInput = new FixedInput(this.div, [ 1, this.inputLine ], { inputHandler: (input) => { this.handleCommand(input) } })
+  }
+
+  scrollOffset(xoffset, yoffset) {
+    this.inputLine += yoffset
+  }
+
+  handleCommand(input) {
+    // TODO: process in some way, but for now...
+    console.log('got [' + input + ']')
+
+    this.inputLine += linesRequired(this.div, 1, this.inputLine, input.length)
+    displayString(this.div, 1, this.inputLine, prompt)
+    this.inputLine += 1
+    delete this.commandInput
+    this.commandInput = new FixedInput(this.div, [ 1, this.inputLine ], { inputHandler: (input) => { this.handleCommand(input) } })
   }
 }

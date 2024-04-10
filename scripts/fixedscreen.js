@@ -115,6 +115,10 @@ function layCells(div, handlerInstance, dimensions) {
   div.dispatchEvent(initializedEvent)
 }
 
+function linesRequired(div, x, y, length) {
+  return x + Math.ceil((length + (x - 1)) / div.dataset.columns)
+}
+
 function htmlChar(char) {
   return specialKeyMap[char] || char
 }
@@ -122,6 +126,13 @@ function htmlChar(char) {
 function displayString(div, x, y, string) {
   if (x < 1) { x = 1 }
   if (y < 1) { y = 1 }
+  const yoffset = div.dataset.rows - (y + linesRequired(div, x, y, string.length))
+  if (yoffset < 0) {
+    const offset = scrollScreen(div, 0, yoffset)
+    x += offset[0]
+    y += offset[1]
+  }
+
   let column = x
   let row = y
   for (const char of string) {
@@ -134,7 +145,11 @@ function displayString(div, x, y, string) {
 }
 
 function getCell(div, x, y) {
-  return div.querySelector(`.cell[data-column="${x}"][data-row="${y}"]`)
+  const cell = div.querySelector(`.cell[data-column="${x}"][data-row="${y}"]`)
+  if (!cell) {
+    debugger
+  }
+  return cell
 }
 
 function scrollScreen(div, xoffset, yoffset) {
@@ -154,27 +169,32 @@ function scrollScreen(div, xoffset, yoffset) {
 
   // clear screen contents
   for (let row = 1; row <= div.dataset.rows; row++) {
-    for (let column = 1; column <= div.dataaset.columns; column++) {
+    for (let column = 1; column <= div.dataset.columns; column++) {
       const cell = getCell(div, column, row)
       cell.innerHTML = ''
     }
   }
 
   // insert existing contents back starting at new origin]
-  offsetRowStart += yoffset
-  offsetRowEnd += yoffset
-  offsetColStart += yoffset
-  offsetColEnd += xoffset
+  offsetRowStart = Math.max(1, offsetRowStart + yoffset)
+  offsetRowEnd = Math.min(div.dataset.rows, offsetRowEnd + yoffset)
+  offsetColStart = Math.max(1, offsetColStart + yoffset)
+  offsetColEnd = Math.min(div.dataset.columns, offsetColEnd + xoffset)
   for (let row = offsetRowStart; row <= offsetRowEnd; row++) {
     for (let column = offsetColStart; column <= offsetColEnd; column++) {
+      //console.log(column, row)
       const cell = getCell(div, column, row)
       cell.innerHTML = existingContent.shift()
     }
   }
+
+  div.dispatchEvent(new CustomEvent('scrolled', { detail: { xoffset, yoffset } }))
+  return [ xoffset, yoffset ]
 }
 
 export {
   initScreen,
+  linesRequired,
   displayString,
   getCell,
   htmlChar,

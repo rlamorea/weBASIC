@@ -179,6 +179,21 @@ export default class FixedScreen {
     }
   }
 
+  advanceCursor(count = 1) {
+    return this.advanceFrom(this.displayCursor, count)
+  }
+
+  advanceFrom(position, count = 1) {
+    for (let idx = 0; idx < count; idx++) {
+      position[0] += 1
+      if (position[0] > this.columns) {
+        position[0] = 1
+        position[1] += 1
+      }
+    }
+    return position
+  }
+
   htmlChar(char) {
     return specialKeyMap[char] || char
   }

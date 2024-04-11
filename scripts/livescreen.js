@@ -29,10 +29,7 @@ export default class LiveScreen {
     if (result.error) {
       this.screen.displayStringAtCursor(`ERROR: ${result.error} at ${result.location}`)
     }
-    setTimeout(() => { this.interpreterDone() }, 50); // wait a bit to make sure cursor is updated
-  }
 
-  interpreterDone() {
     this.screen.newline()
     this.screen.displayStringAtCursor(prompt)
     delete this.commandInput

@@ -1,3 +1,5 @@
+import nextToken from "./tokenizer.js"
+
 const insertCursorHeightPct = 0.1
 const cursorHeightIncrement = 0.2
 const overwriteCursorHeightPct = 0.5
@@ -6,6 +8,8 @@ const defaultMaxLength = 160
 const defaultWarnZone = 10 // from end
 
 const separatorCharacters = " ()[]{};:,./?"
+
+const keywordCodings = [ 'keyword', 'function', 'statement', 'command', 'binary-operator', 'unary-operator' ]
 
 // key handling
 window.addEventListener('load', (event) => {
@@ -32,8 +36,6 @@ export default class FixedInput {
     options = options || {}
     this.screen = screen
     this.cursorLocation = [...(options.startLocation || screen.displayCursor)]
-    this.cursorStart = [...this.cursorLocation]
-    this.cursorEnd = [...this.cursorLocation]
 
     this.mode = options.insertMode || 'insert'
 
@@ -50,6 +52,8 @@ export default class FixedInput {
       this.screen.ensureLines(this.screen.linesRequired(this.cursorLocation[0], this.cursorLocation[1], this.maxLength))
       this.cursorLocation = [...this.screen.displayCursor]
     }
+    this.cursorStart = [...this.cursorLocation]
+    this.cursorEnd = [...this.cursorLocation]
 
     this.cursor(true)
 
@@ -123,11 +127,7 @@ export default class FixedInput {
         this.inputText = this.inputText.substring(0, this.cursorInputIndex) + evt.key + this.inputText.substring(this.cursorInputIndex)
         let cellLoc = [...this.cursorLocation]
         for (let idx = this.cursorInputIndex + 1; idx < this.inputText.length; idx++) {
-          cellLoc[0] += 1
-          if (cellLoc[0] > this.screen.columns) {
-            cellLoc[0] = 1
-            cellLoc[1] += 1
-          }
+          this.screen.advanceFrom(cellLoc)
           const moveCell = this.screen.getCell(cellLoc[0], cellLoc[1])
           moveCell.innerHTML = this.inputText[idx]
         }
@@ -141,11 +141,7 @@ export default class FixedInput {
 
       if (advanceCursor) {
         this.cursorInputIndex += 1
-        this.cursorLocation[0] += 1
-        if (this.cursorLocation[0] > this.screen.columns) {
-          this.cursorLocation[0] = 1
-          this.cursorLocation[1] += 1
-        }
+        this.screen.advanceFrom(this.cursorLocation)
         if (this.cursorInputIndex === this.inputText.length) {
           this.cursorEnd = [...this.cursorLocation]
         }
@@ -200,11 +196,7 @@ export default class FixedInput {
         const cell = this.screen.getCell(cellLoc[0], cellLoc[1])
         cell.innerHTML = (idx === this.inputText.length) ? '' : this.inputText[idx]
         if (cell.innerHTML === '') { this.cursorEnd = [...cellLoc] }
-        cellLoc[0] += 1
-        if (cellLoc[0] > this.screen.columns) {
-          cellLoc[0] = 1
-          cellLoc[1] += 1
-        }
+        this.screen.advanceFrom(cellLoc)
       }
     }
 
@@ -216,6 +208,33 @@ export default class FixedInput {
   }
 
   doEnter(key, evt) {
+    // upcase all keyword tokens
+    let tokenStart = 0
+    let upcaseIdx = 0
+    let upcaseLoc = [ ...this.cursorStart ]
+    let parseLine = this.inputText
+    while (1 === 1) {
+      const tokenDef = nextToken(parseLine, tokenStart)
+      if (tokenDef.restOfLine === null) {
+        break
+      }
+      if (keywordCodings.includes(tokenDef.coding)) {
+        this.screen.advanceFrom(upcaseLoc, tokenDef.tokenStart - upcaseIdx)
+        for (let idx = 0; idx < tokenDef.token.length; idx++) {
+          const tokenChar = tokenDef.token[idx]
+          const tokenCell = this.screen.getCell(upcaseLoc[0], upcaseLoc[1])
+          tokenCell.innerHTML = tokenChar
+          this.screen.advanceFrom(upcaseLoc)
+        }
+        const pre = (tokenDef.tokenStart === 0) ? '' : this.inputText.substring(0, tokenDef.tokenStart)
+        const post = (tokenDef.tokenEnd < this.inputText.length - 1) ? this.inputText.substring(tokenDef.tokenEnd) : ''
+        this.inputText = pre + tokenDef.token + post
+        upcaseIdx = tokenDef.tokenEnd
+      }
+      tokenStart = tokenDef.tokenEnd
+      parseLine = tokenDef.restOfLine
+    }
+
     // move the screen cursor past the entered line
     this.screen.moveCursorDelta(0, this.screen.linesRequiredFromCursor(this.inputText.length) - 1)
     if (this.inputHandler) {

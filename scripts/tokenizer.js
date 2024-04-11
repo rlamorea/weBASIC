@@ -4,7 +4,9 @@ const keywords = [
 ]
 
 export default function nextToken(restOfLine, tokenStart) {
-  restOfLine = restOfLine.trimStart()
+  const trimmedLine = restOfLine.trimStart()
+  tokenStart += restOfLine.length - trimmedLine.length
+  restOfLine = trimmedLine
   let tokenEnd = tokenStart
 
   if (restOfLine.trim().length === 0) {
@@ -44,7 +46,7 @@ export default function nextToken(restOfLine, tokenStart) {
         restOfLine = restOfLine.substring(substr.length + 2) // skip ahead of double double-quote
       } else {
         str += restOfLine.substring(0, endStrLen)
-        tokenEnd += restOfLine.length + 1
+        tokenEnd += str.length + 1
         restOfLine = restOfLine.substring(endStrLen + 1)
         strDone = true
       }

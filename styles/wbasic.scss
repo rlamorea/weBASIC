@@ -30,6 +30,7 @@ body { background: $body-bgnd; color: $body-fgnd; }
     text-align: center;
     text-decoration-skip-ink: none;
     position: relative;
+    vertical-align: top;
 
     &.cursor::after {
       content: "";

@@ -1,5 +1,3 @@
-import { linesRequired, displayString, getCell, scrollScreen } from './fixedscreen.js'
-
 const insertCursorHeightPct = 0.1
 const cursorHeightIncrement = 0.2
 const overwriteCursorHeightPct = 0.5
@@ -30,13 +28,12 @@ function keyUp(evt) {
 }
 
 export default class FixedInput {
-  constructor(screenDiv, startLocation, options) {
+  constructor(screen, options) {
     options = options || {}
-    this.screen = screenDiv
-    this.cursorLocation = [...startLocation]
-    this.cursorStart = [...startLocation]
-    this.cursorEnd = [...startLocation]
-    this.options = options
+    this.screen = screen
+    this.cursorLocation = [...(options.startLocation || screen.displayCursor)]
+    this.cursorStart = [...this.cursorLocation]
+    this.cursorEnd = [...this.cursorLocation]
 
     this.mode = options.insertMode || 'insert'
 
@@ -50,12 +47,8 @@ export default class FixedInput {
     if (options.singleLine) { // prep for horizontal scrolling
       // TODO
     } else { // ensure screen can display full input text
-      const yoffset = this.screen.dataset.rows - (this.cursorLocation[1] + linesRequired(this.screen, this.cursorLocation[0], this.cursorLocation[1], this.maxLength))
-      if (yoffset < 0) {
-        const offset = scrollScreen(this.screen, 0, yoffset)
-        this.cursorLocation[0] += offset[0]
-        this.cursorLocation[1] += offset[1]
-      }
+      this.screen.ensureLines(this.screen.linesRequired(this.cursorLocation[0], this.cursorLocation[1], this.maxLength))
+      this.cursorLocation = [...this.screen.displayCursor]
     }
 
     this.cursor(true)
@@ -77,7 +70,7 @@ export default class FixedInput {
   }
 
   cursor(show) {
-    const cell = getCell(this.screen, this.cursorLocation[0], this.cursorLocation[1])
+    const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
     if (show) {
       let cursorClasses = [ 'cursor' ]
       if (show && (this.typeMode === 'overwrite' || this.inputText.length >= this.maxLength)) {
@@ -108,7 +101,7 @@ export default class FixedInput {
     if (!keyHandled && evt.key.length === 1) {
       // insert mode works as insert until line is full, then turns into overwrite mode automatically
       // update cell contents
-      const cell = getCell(this.screen, this.cursorLocation[0], this.cursorLocation[1])
+      const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
       if (cell.dataset.tempChar) { cell.dataset.tempChar = false }
       cell.innerHTML = evt.key
 
@@ -131,11 +124,11 @@ export default class FixedInput {
         let cellLoc = [...this.cursorLocation]
         for (let idx = this.cursorInputIndex + 1; idx < this.inputText.length; idx++) {
           cellLoc[0] += 1
-          if (cellLoc[0] > this.screen.dataset.columns) {
+          if (cellLoc[0] > this.screen.columns) {
             cellLoc[0] = 1
             cellLoc[1] += 1
           }
-          const moveCell = getCell(this.screen, cellLoc[0], cellLoc[1])
+          const moveCell = this.screen.getCell(cellLoc[0], cellLoc[1])
           moveCell.innerHTML = this.inputText[idx]
         }
       }
@@ -149,7 +142,7 @@ export default class FixedInput {
       if (advanceCursor) {
         this.cursorInputIndex += 1
         this.cursorLocation[0] += 1
-        if (this.cursorLocation[0] > this.screen.dataset.columns) {
+        if (this.cursorLocation[0] > this.screen.columns) {
           this.cursorLocation[0] = 1
           this.cursorLocation[1] += 1
         }
@@ -189,7 +182,7 @@ export default class FixedInput {
     if (moveCursorBackOne) {
       this.cursorLocation[0] -= 1
       if (this.cursorLocation[0] < 1) {
-        this.cursorLocation[0] = 1
+        this.cursorLocation[0] = this.screen.columns
         this.cursorLocation[1] -= 1
       }
       this.cursorInputIndex -= 1
@@ -198,17 +191,17 @@ export default class FixedInput {
       }
     }
 
-    const cell = getCell(this.screen, this.cursorLocation[0], this.cursorLocation[1])
+    const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
     cell.innerHTML = ''
 
     if (shiftCells) {
       let cellLoc = [...this.cursorLocation]
       for (let idx = this.cursorInputIndex; idx <= this.inputText.length; idx++) {
-        const cell = getCell(this.screen, cellLoc[0], cellLoc[1])
+        const cell = this.screen.getCell(cellLoc[0], cellLoc[1])
         cell.innerHTML = (idx === this.inputText.length) ? '' : this.inputText[idx]
         if (cell.innerHTML === '') { this.cursorEnd = [...cellLoc] }
         cellLoc[0] += 1
-        if (cellLoc[0] > this.screen.dataset.columns) {
+        if (cellLoc[0] > this.screen.columns) {
           cellLoc[0] = 1
           cellLoc[1] += 1
         }
@@ -223,6 +216,8 @@ export default class FixedInput {
   }
 
   doEnter(key, evt) {
+    // move the screen cursor past the entered line
+    this.screen.moveCursorDelta(0, this.screen.linesRequiredFromCursor(this.inputText.length) - 1)
     if (this.inputHandler) {
       this.inputHandler(this.inputText)
       this.active = false
@@ -252,7 +247,7 @@ export default class FixedInput {
           for (let idx = this.cursorInputIndex; idx > csrIdx; idx--) {
             this.cursorLocation[0] -= 1
             if (this.cursorLocation[0] < 1) {
-              this.cursorLocation[0] = this.screen.dataset.columns
+              this.cursorLocation[0] = this.screen.columns
               this.cursorLocation[1] -= 1
             }
           }
@@ -274,7 +269,7 @@ export default class FixedInput {
         } else {
           for (let idx = this.cursorInputIndex; idx < csrIdx; idx++) {
             this.cursorLocation[0] += 1
-            if (this.cursorLocation[0] > this.screen.dataset.columns) {
+            if (this.cursorLocation[0] > this.screen.columns) {
               this.cursorLocation[0] = 1
               this.cursorLocation[1] += 1
             }
@@ -287,7 +282,7 @@ export default class FixedInput {
         this.cursorInputIndex -= 1
         this.cursorLocation[0] -= 1
         if (this.cursorLocation[0] < 1) {
-          this.cursorLocation[0] = this.screen.dataset.columns
+          this.cursorLocation[0] = this.screen.columns
           this.cursorLocation[1] -= 1
         }
       }
@@ -295,7 +290,7 @@ export default class FixedInput {
       if (this.cursorInputIndex < this.inputText.length && this.cursorInputIndex < this.maxLength - 1) {
         this.cursorInputIndex += 1
         this.cursorLocation[0] += 1
-        if (this.cursorLocation[0] > this.screen.dataset.columns) {
+        if (this.cursorLocation[0] > this.screen.columns) {
           this.cursorLocation[0] = 1
           this.cursorLocation[1] += 1
         }

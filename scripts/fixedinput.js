@@ -55,8 +55,6 @@ export default class FixedInput {
     this.cursorStart = [...this.cursorLocation]
     this.cursorEnd = [...this.cursorLocation]
 
-    this.cursor(true)
-
     this.keyHandlers = {
       'F1': this.doFuncKey,  'F2': this.doFuncKey,  'F3': this.doFuncKey,  'F4': this.doFuncKey,
       'F5': this.doFuncKey,  'F6': this.doFuncKey,  'F7': this.doFuncKey,  'F8': this.doFuncKey,
@@ -70,7 +68,38 @@ export default class FixedInput {
     this.inputHandler = options.inputHandler
     this.active = true
 
+    if (options.prefill) {
+      this.screen.displayStringAtCursor(options.prefill)
+      this.inputText = options.prefill
+      this.screen.displayCursor = [ ...this.cursorLocation ]
+    }
+    this.hasError = false
+    if ('errorLocation' in options) {
+      const endLocation = options.errorEndLocation || options.errorLocation + 1
+      let errorLoc = [ ...this.cursorLocation ]
+      this.screen.advanceFrom(errorLoc, options.errorLocation)
+      for (let loc = options.errorLocation; loc < endLocation; loc++) {
+        const cell = this.screen.getCell(errorLoc[0], errorLoc[1])
+        cell.classList.add('error')
+        this.screen.advanceFrom(errorLoc)
+      }
+      this.hasError = true
+    }
+
+    this.cursor(true)
+
     registeredInput = this
+  }
+
+  clearError() {
+    if (!this.hasError) return
+    let loc = [ ...this.cursorStart ]
+    for (let idx = 0; idx < this.inputText.length; idx++) {
+      const cell = this.screen.getCell(loc[0], loc[1])
+      cell.classList.remove('error')
+      this.screen.advanceFrom(loc)
+    }
+    this.hasError = false
   }
 
   cursor(show) {
@@ -103,6 +132,7 @@ export default class FixedInput {
     if (!this.active) { return }
 
     if (!keyHandled && evt.key.length === 1) {
+      if (this.hasError) { this.clearError() }
       // insert mode works as insert until line is full, then turns into overwrite mode automatically
       // update cell contents
       const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
@@ -158,6 +188,8 @@ export default class FixedInput {
   doBackspace(key, evt) {
     // do nothing if at start of command line
     if (this.cursorInputIndex === 0) return
+
+    if (this.hasError) { this.clearError() }
 
     let moveCursorBackOne = false
     let shiftCells = false

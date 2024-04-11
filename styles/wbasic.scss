@@ -32,6 +32,10 @@ body { background: $body-bgnd; color: $body-fgnd; }
     position: relative;
     vertical-align: top;
 
+    &.error {
+      text-decoration: red underline wavy;
+    }
+
     &.cursor::after {
       content: "";
       position: absolute;

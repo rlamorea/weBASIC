@@ -27,13 +27,11 @@ export default class Interpreter {
     let tokenDef = nextToken(codeLine, 0)
     while (1 === 1) {
       if (tokenDef.error) {
-        return { error: tokenDef.error, location: tokenDef.tokenStart }
+        return { error: tokenDef.error, location: tokenDef.tokenStart, endLocation: tokenDef.tokenEnd }
       }
       if (tokenDef.coding === 'end-of-statement') {
         const result = this.interpretStatement(statementTokens)
-        if (result.error) {
-          return result.error
-        }
+        if (result.error) { return result }
         statementTokens = []
       } else {
         statementTokens.push(tokenDef)
@@ -62,7 +60,7 @@ export default class Interpreter {
       if (tokenDef.coding === 'string-literal') {
         stringToDisplay += tokenDef.token
       } else {
-        return { error: 'Bad Syntax', location: tokenDef.tokenStart }
+        return { error: 'Bad Syntax', location: tokenDef.tokenStart, endLocation: tokenDef.tokenEnd }
       }
     }
     screen.displayStringAtCursor(stringToDisplay)

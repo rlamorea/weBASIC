@@ -26,13 +26,17 @@ export default class LiveScreen {
   handleCommand(input) {
     const interpreter = new Interpreter({ screen: this.screen })
     const result = interpreter.interpretCode(input)
+    let options = { inputHandler: (input) => { this.handleCommand(input) } }
     if (result.error) {
-      this.screen.displayStringAtCursor(`ERROR: ${result.error} at ${result.location}`)
+      this.screen.displayStringAtCursor(`ERROR: ${result.error} at position ${result.location}`)
+      options.prefill = input
+      options.errorLocation = result.location
+      options.errorEndLocation = result.endLocation
     }
 
     this.screen.newline()
     this.screen.displayStringAtCursor(prompt)
     delete this.commandInput
-    this.commandInput = new FixedInput(this.screen, { inputHandler: (input) => { this.handleCommand(input) } })
+    this.commandInput = new FixedInput(this.screen, options)
   }
 }

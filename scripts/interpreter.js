@@ -26,6 +26,7 @@ export default class Interpreter {
     let statementTokens = []
     let tokenDef = nextToken(codeLine, 0)
     while (1 === 1) {
+      console.log(tokenDef)
       if (tokenDef.error) {
         return { error: tokenDef.error, location: tokenDef.tokenStart, endLocation: tokenDef.tokenEnd }
       }

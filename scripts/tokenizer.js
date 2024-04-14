@@ -1,3 +1,28 @@
+/* Token Types:
+    plus
+    minus
+    equal
+    open-paren
+    close-paren
+    comma
+    end-of-statement
+    semicolon
+    unary-operator
+    remark
+    print-function
+    command
+    keyword
+    function
+    statement
+    binary-operator
+    string-literal
+    number-literal
+    variable-number
+    variable-string
+    variable-integer
+    line-number
+    end-of-statement
+*/
 
 const symbols = [
   { symbol: '^',             coding: 'binary-operator' },
@@ -15,15 +40,16 @@ const symbols = [
   { symbol: ')',             coding: 'close-paren' },
   { symbol: ',',             coding: 'comma' },
   { symbol: ':',             coding: 'end-of-statement' },
-  { symbol: ';',             coding: 'semicolon' }
+  { symbol: ';',             coding: 'semicolon' },
+  { symbol: '`',             coding: 'remark' }
 ]
 
 const keywords = [
-  { keyword: 'ABS',          coding: 'function' },
-  { keyword: 'ASC',          coding: 'function' },
-  { keyword: 'ANCHOR$',      coding: 'function' },
+  { keyword: 'ABS',          coding: 'function',           returns: 'number' },
+  { keyword: 'ASC',          coding: 'function',           returns: 'number' },
+  { keyword: 'ANCHOR$',      coding: 'function',           returns: 'string' },
   { keyword: 'AND',          coding: 'binary-operator' },
-  { keyword: 'ATN',          coding: 'function' },
+  { keyword: 'ATN',          coding: 'function',           returns: 'number' },
   { keyword: 'AUTO',         coding: 'command' },
   { keyword: 'BEGIN',        coding: 'statement' },
   { keyword: 'BGND',         coding: 'print-function' },
@@ -32,20 +58,20 @@ const keywords = [
   { keyword: 'BNOT',         coding: 'unary-operator' },
   { keyword: 'BORDER',       coding: 'statement' },
   { keyword: 'BREAK',        coding: 'statement' },
-  { keyword: 'BUTTON$',      coding: 'function' },
-  { keyword: 'CALL',         coding: 'function' },
+  { keyword: 'BUTTON$',      coding: 'function',           returns: 'string' },
+  { keyword: 'CALL',         coding: 'function',           returns: 'any' },
   { keyword: 'CATALOG',      coding: 'command' },
-  { keyword: 'CHORD$',       coding: 'function' },
-  { keyword: 'CHR$',         coding: 'function' },
+  { keyword: 'CHORD$',       coding: 'function',           returns: 'string' },
+  { keyword: 'CHR$',         coding: 'function',           returns: 'string' },
   { keyword: 'CLOSE',        coding: 'statement' },
   { keyword: 'CLRSCN',       coding: 'statement' },
   { keyword: 'COLOR',        coding: 'statement' },
   { keyword: 'CONT',         coding: 'command' },
-  { keyword: 'COS',          coding: 'function' },
-  { keyword: 'CTRPAD$',      coding: 'function' },
+  { keyword: 'COS',          coding: 'function',           returns: 'number' },
+  { keyword: 'CTRPAD$',      coding: 'function',           returns: 'string' },
   { keyword: 'DATA',         coding: 'statement' },
-  { keyword: 'DATE$',        coding: 'function' },
-  { keyword: 'DATE',         coding: 'function' },
+  { keyword: 'DATE$',        coding: 'function',           returns: 'string' },
+  { keyword: 'DATE',         coding: 'function',           returns: 'number' },
   { keyword: 'DEBUG',        coding: 'command' },
   { keyword: 'DEF',          coding: 'statement' },
   { keyword: 'DLOAD',        coding: 'statement' },
@@ -59,49 +85,49 @@ const keywords = [
   { keyword: 'ELSE',         coding: 'statement' },
   { keyword: 'END',          coding: 'statement' }, // also keyword
   { keyword: 'ENDIF',        coding: 'statement' },
-  { keyword: 'EXIST',        coding: 'function' },
-  { keyword: 'EXP',          coding: 'function' },
+  { keyword: 'EXIST',        coding: 'function',           returns: 'number' },
+  { keyword: 'EXP',          coding: 'function',           returns: 'number' },
   { keyword: 'FGND',         coding: 'print-function' },
   { keyword: 'FILL',         coding: 'statement' },
   { keyword: 'FIND',         coding: 'command' },
   { keyword: 'FIXED',        coding: 'keyword' },
-  { keyword: 'FN',           coding: 'function' },
+  { keyword: 'FN',           coding: 'function',           returns: 'number' },
   { keyword: 'FONT',         coding: 'statement' },
   { keyword: 'FOR',          coding: 'statement' },
   { keyword: 'FRAC',         coding: 'function' },
   { keyword: 'GET',          coding: 'statement' },
   { keyword: 'GETKEY',       coding: 'statement' },
-  { keyword: 'GETSCR$',      coding: 'function' },
+  { keyword: 'GETSCR$',      coding: 'function',           returns: 'string' },
   { keyword: 'GOCHROME',     coding: 'command' },
   { keyword: 'GOSUB',        coding: 'statement' },
   { keyword: 'GOTO',         coding: 'statement' },
-  { keyword: 'HTMLCHR$',     coding: 'function' },
-  { keyword: 'HTMLSAFE$',    coding: 'function' },
-  { keyword: 'HTMLTAG',      coding: 'statement' },
+  { keyword: 'HTMLCHR$',     coding: 'function',           returns: 'string' },
+  { keyword: 'HTMLSAFE$',    coding: 'function',           returns: 'string' },
+  { keyword: 'HTMLTAG$',     coding: 'statement' },
   { keyword: 'HTML',         coding: 'keyword' },
   { keyword: 'ID',           coding: 'keyword' },
   { keyword: 'IF',           coding: 'statement' },
   { keyword: 'IMAGE',        coding: 'statement' },
   { keyword: 'INPUT',        coding: 'statement' },
-  { keyword: 'INSTR',        coding: 'function' },
-  { keyword: 'INT',          coding: 'function' },
-  { keyword: 'ISCHILD',      coding: 'function' },
-  { keyword: 'JOY',          coding: 'function' },
-  { keyword: 'KEY$',         coding: 'function' },
+  { keyword: 'INSTR',        coding: 'function',           returns: 'number' },
+  { keyword: 'INT',          coding: 'function',           returns: 'number' },
+  { keyword: 'ISCHILD',      coding: 'function',           returns: 'number' },
+  { keyword: 'JOY',          coding: 'function',           returns: 'number' },
+  { keyword: 'KEY$',         coding: 'function',           returns: 'string' },
   { keyword: 'KEY',          coding: 'statement' },
   { keyword: 'LABEL',        coding: 'statement' },
-  { keyword: 'LEFT$',        coding: 'function' },
-  { keyword: 'LEN',          coding: 'function' },
+  { keyword: 'LEFT$',        coding: 'function',           returns: 'string' },
+  { keyword: 'LEN',          coding: 'function',           returns: 'number' },
   { keyword: 'LET',          coding: 'statement' },
-  { keyword: 'LINK$',        coding: 'function' },
+  { keyword: 'LINK$',        coding: 'function',           returns: 'string' },
   { keyword: 'LIST',         coding: 'command' },
   { keyword: 'LIVE',         coding: 'command' },
   { keyword: 'LOAD',         coding: 'command' },
   { keyword: 'LOCAL',        coding: 'statement' },
-  { keyword: 'LOG',          coding: 'function' },
-  { keyword: 'LOG10',        coding: 'function' },
-  { keyword: 'LPAD$',        coding: 'function' },
-  { keyword: 'MID$',         coding: 'function' },
+  { keyword: 'LOG',          coding: 'function',           returns: 'number' },
+  { keyword: 'LOG10',        coding: 'function',           returns: 'number' },
+  { keyword: 'LPAD$',        coding: 'function',           returns: 'string' },
+  { keyword: 'MID$',         coding: 'function',           returns: 'string' },
   { keyword: 'MOD',          coding: 'binary-operator' },
   { keyword: 'NEXT',         coding: 'statement' },
   { keyword: 'NEW',          coding: 'command' },
@@ -111,77 +137,78 @@ const keywords = [
   { keyword: 'ONCLICK',      coding: 'statement' },
   { keyword: 'ONSPRCOL',     coding: 'statement' },
   { keyword: 'ONTOUCH',      coding: 'statement' },
-  { keyword: 'OPEN',         coding: 'function' },
+  { keyword: 'OPEN',         coding: 'function',           returns: 'number' },
   { keyword: 'OR',           coding: 'binary-operator' },
   { keyword: 'PARAMS',       coding: 'statement' },
-  { keyword: 'PATCH$',       coding: 'function' },
-  { keyword: 'PI',           coding: 'function' },
+  { keyword: 'PATCH$',       coding: 'function',           returns: 'string' },
+  { keyword: 'PI',           coding: 'function',           returns: 'string' },
   { keyword: 'PLAY',         coding: 'statement' },
   { keyword: 'POS',          coding: 'print-function' },
   { keyword: 'PRINT',        coding: 'statement' },
   { keyword: 'PUTSCR',       coding: 'statement' },
   { keyword: 'READ',         coding: 'statement' },
-  { keyword: 'READC',        coding: 'function' },
-  { keyword: 'READLN$',      coding: 'function' },
+  { keyword: 'READC',        coding: 'function',           returns: 'number' },
+  { keyword: 'READLN$',      coding: 'function',           returns: 'string' },
   { keyword: 'RECT',         coding: 'statement' },
   { keyword: 'REM',          coding: 'remark' },
   { keyword: 'RENUMBER',     coding: 'command' },
   { keyword: 'RESTORE',      coding: 'statement' },
   { keyword: 'RESUME',       coding: 'statement' },
   { keyword: 'RETURN',       coding: 'statement' },
-  { keyword: 'RIGHT$',       coding: 'function' },
-  { keyword: 'RND',          coding: 'function' },
-  { keyword: 'RPAD$',        coding: 'function' },
-  { keyword: 'RPT$',         coding: 'function' },
+  { keyword: 'RIGHT$',       coding: 'function',           returns: 'string' },
+  { keyword: 'RND',          coding: 'function',           returns: 'number' },
+  { keyword: 'RPAD$',        coding: 'function',           returns: 'string' },
+  { keyword: 'RPT$',         coding: 'function',           returns: 'string' },
   { keyword: 'RUN',          coding: 'command' },
   { keyword: 'SAVE',         coding: 'command' },
   { keyword: 'SCREEN',       coding: 'statement' },
-  { keyword: 'SCRDIM',       coding: 'function' },
+  { keyword: 'SCRDIM',       coding: 'function',           returns: 'number' },
   { keyword: 'SCROLL',       coding: 'keyword' },
-  { keyword: 'SCROLLPOS',    coding: 'function' },
+  { keyword: 'SCROLLPOS',    coding: 'function',           returns: 'number' },
   { keyword: 'SCROLLTO',     coding: 'statement' },
-  { keyword: 'SEQUENCE$',    coding: 'function' },
-  { keyword: 'SGN',          coding: 'function' },
-  { keyword: 'SIN',          coding: 'function' },
+  { keyword: 'SEQUENCE$',    coding: 'function',           returns: 'string' },
+  { keyword: 'SGN',          coding: 'function',           returns: 'number' },
+  { keyword: 'SIN',          coding: 'function',           returns: 'number' },
   { keyword: 'SLEEP',        coding: 'statement' },
   { keyword: 'SLOW',         coding: 'command' },
-  { keyword: 'SOUND$',       coding: 'function' },
+  { keyword: 'SOUND$',       coding: 'function',           returns: 'string' },
   { keyword: 'SPRDEF',       coding: 'statement' },
-  { keyword: 'SPRDIM',       coding: 'function' },
+  { keyword: 'SPRDIM',       coding: 'function',           returns: 'number' },
   { keyword: 'SPRMOV',       coding: 'statement' },
-  { keyword: 'SPRPOS',       coding: 'function' },
+  { keyword: 'SPRPOS',       coding: 'function',           returns: 'number' },
   { keyword: 'SPRSHOW',      coding: 'statement' },
-  { keyword: 'SQR',          coding: 'function' },
+  { keyword: 'SQR',          coding: 'function',           returns: 'number' },
   { keyword: 'STEP',         coding: 'keyword' },
   { keyword: 'STOP',         coding: 'statement' },
-  { keyword: 'STR$',         coding: 'function' },
+  { keyword: 'STR$',         coding: 'function',           returns: 'string' },
   { keyword: 'STYLE',        coding: 'statement' },
   { keyword: 'TAB',          coding: 'print-function' },
-  { keyword: 'TAN',          coding: 'function' },
+  { keyword: 'TAN',          coding: 'function',           returns: 'number' },
   { keyword: 'TEMPO',        coding: 'statement' },
   { keyword: 'THEN',         coding: 'keyword' },
-  { keyword: 'TIME$',        coding: 'function' },
-  { keyword: 'TIME',         coding: 'function' },
-  { keyword: 'TIMESTAMP$',   coding: 'function' },
-  { keyword: 'TIMESTAMP',    coding: 'function' },
+  { keyword: 'TIME$',        coding: 'function',           returns: 'string' },
+  { keyword: 'TIME',         coding: 'function',           returns: 'number' },
+  { keyword: 'TIMESTAMP$',   coding: 'function',           returns: 'string' },
+  { keyword: 'TIMESTAMP',    coding: 'function',           returns: 'number' },
   { keyword: 'TO',           coding: 'keyword' },
-  { keyword: 'TOUCHPOS',     coding: 'function' },
+  { keyword: 'TOUCHPOS',     coding: 'function',           returns: 'number' },
   { keyword: 'TRAP',         coding: 'statement' },
   { keyword: 'TRASH',        coding: 'command' },
-  { keyword: 'UNICODE$',     coding: 'function' },
-  { keyword: 'VAL',          coding: 'function' },
+  { keyword: 'UNICODE$',     coding: 'function',           returns: 'string' },
+  { keyword: 'VAL',          coding: 'function',           returns: 'number' },
   { keyword: 'VAR',          coding: 'keyword' },
   { keyword: 'VOICE',        coding: 'statement' },
   { keyword: 'VOLUME',       coding: 'statement' },
   { keyword: 'WAIT',         coding: 'statement' },
-  { keyword: 'WINDIM',       coding: 'function' },
+  { keyword: 'WINDIM',       coding: 'function',           returns: 'number' },
   { keyword: 'WINDOW',       coding: 'statement' },
   { keyword: 'WRITEC',       coding: 'statement' },
   { keyword: 'WRITELN',      coding: 'statement' },
   { keyword: 'XOR',          coding: 'binary-operator' }
 ]
 
-export default function nextToken(restOfLine, tokenStart) {
+export default function nextToken(restOfLine, tokenStart, skipLineNumber) {
+  tokenStart = (tokenStart === null) ? 0 : tokenStart
   const startOfLine = (tokenStart === 0)
   const trimmedLine = restOfLine.trimStart()
   tokenStart += restOfLine.length - trimmedLine.length
@@ -192,7 +219,7 @@ export default function nextToken(restOfLine, tokenStart) {
     return { token: 'eol', coding: 'end-of-statement', restOfLine: null, tokenStart, tokenEnd }
   }
 
-  if (startOfLine && "0123456789".indexOf(restOfLine[0]) >= 0) {
+  if (!skipLineNumber && startOfLine && "0123456789".indexOf(restOfLine[0]) >= 0) {
     tokenEnd = restOfLine.search(/\D+/)
     return { token: restOfLine.substring(0, tokenEnd), coding: 'line-number', restOfLine: restOfLine.substring(tokenEnd), tokenStart, tokenEnd }
   }
@@ -263,7 +290,7 @@ function parseNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd) {
   let numStr = leadChar
   while (!numDone && restOfLine.length > 0) {
     const nextChar = restOfLine[0]
-    if (".0123456789E+-".indexOf(nextChar) >= 0) {
+    if (".0123456789Ee+-".indexOf(nextChar) >= 0) {
       if (nextChar === '.' && hasDecimal) {
         numDone = true
       } else if (nextChar === 'E' || nextChar === 'e') {
@@ -271,7 +298,7 @@ function parseNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd) {
           numDone = true
         } else if (restOfLine.length === 1 || "0123456789+-".indexOf(restOfLine[1]) < 0) {
           numDone = true
-        } else if (restOfLine[1] === '+' || restOfLine[1] === "-" && (restOfLine.length === 2 || "0123456789".indexOf(restOfLine[2]) < 0)) {
+        } else if ((restOfLine[1] === '+' || restOfLine[1] === "-") && (restOfLine.length === 2 || "0123456789".indexOf(restOfLine[2]) < 0)) {
           numDone = true
         } else {
           inExponent = true
@@ -321,7 +348,7 @@ function parseVariableNameOrKeyword(leadChar, restOfLine, tokenStart, tokenEnd) 
   for (const keywordDef of keywords) {
     const keyword = keywordDef.keyword
     if (upperVarName === keyword) {
-      return { token: keyword, coding: keywordDef.coding, restOfLine, tokenStart, tokenEnd }
+      return { token: keyword, coding: keywordDef.coding, restOfLine, tokenStart, tokenEnd, valueType: keywordDef.returns }
     }
   }
   let coding = 'variable-number'

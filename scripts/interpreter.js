@@ -1,70 +1,41 @@
-import nextToken from './tokenizer.js'
-import { displayString } from './fixedscreen.js'
+import Lexifier from './lexifier.js'
+import * as Statements from './statements/statements.js'
 
 export default class Interpreter {
   constructor(options) {
     this.screen = options.screen || {}
     this.machine = options.machine || {}
 
-    this.handlers = {
-      'statement|PRINT' : this.doPrint
-    }
-  }
+    this.lexifier = new Lexifier()
 
-  interpretCode(code) {
-    code = code || []
-    const codeLines = Array.isArray(code) ? code : [ code ]
-    for (const codeLine of codeLines) {
-      const lineResult = this.interpretLine(codeLine)
-      if (lineResult.error) return lineResult
+    this.handlers = {}
+    for (const statement in Statements) {
+      Statements[statement].addInterpreterHandlers(this.handlers)
     }
-    return { success: true }
   }
 
   interpretLine(codeLine) {
-    // parse line to first end-of-statement
-    let statementTokens = []
-    let tokenDef = nextToken(codeLine, 0)
-    while (1 === 1) {
-      console.log(tokenDef)
-      if (tokenDef.error) {
-        return { error: tokenDef.error, location: tokenDef.tokenStart, endLocation: tokenDef.tokenEnd }
-      }
-      if (tokenDef.coding === 'end-of-statement') {
-        const result = this.interpretStatement(statementTokens)
-        if (result.error) { return result }
-        statementTokens = []
-      } else {
-        statementTokens.push(tokenDef)
-      }
-      if (tokenDef.restOfLine === null) {
-        return { success: true }
-      }
-      tokenDef = nextToken(tokenDef.restOfLine, tokenDef.tokenEnd)
+    let lineStatements = this.lexifier.lexifyLine(codeLine)
+    if (lineStatements.error) return { lineStatements }
+
+    for (const statement of lineStatements.lineStatements) {
+      const result = this.interpretStatement(statement)
+      if (result.error) { return result }
     }
+    return { done: true }
   }
 
-  interpretStatement(statementTokens) {
-    if (statementTokens.length === 0) return
-    const firstToken = statementTokens.shift()
-    const handler = this.handlers[`${firstToken.coding}|${firstToken.token}`]
+  interpretStatement(statement) {
+    const key = `${statement.statement.coding}|${statement.statement.token}`
+    const handler = this.handlers[key]
     if (handler) {
-      return handler(this.screen, this.cursorLocation, this.machine, statementTokens)
+      return handler(this.screen, this.machine, statement.parameters)
     } else {
-      return { error: `Unknown ${firstToken.token}`, location: firstToken.tokenStart }
-    }
-  }
-
-  doPrint(screen, cursorLocation, machine, tokens) {
-    let stringToDisplay = ''
-    for (const tokenDef of tokens) {
-      if (tokenDef.coding === 'string-literal') {
-        stringToDisplay += tokenDef.token
-      } else {
-        return { error: 'Bad Syntax', location: tokenDef.tokenStart, endLocation: tokenDef.tokenEnd }
+      return {
+        error: `Unknown Statement ${statement.statement.token}`,
+        location: statement.statement.tokenStart,
+        endLocation: statement.statement.tokenEnd
       }
     }
-    screen.displayStringAtCursor(stringToDisplay)
-    return { success: true }
   }
 }

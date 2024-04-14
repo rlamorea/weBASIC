@@ -25,7 +25,7 @@ export default class LiveScreen {
 
   handleCommand(input) {
     const interpreter = new Interpreter({ screen: this.screen })
-    const result = interpreter.interpretCode(input)
+    const result = interpreter.interpretLine(input)
     let options = { inputHandler: (input) => { this.handleCommand(input) } }
     if (result.error) {
       this.screen.displayStringAtCursor(`ERROR: ${result.error} at position ${result.location}`)

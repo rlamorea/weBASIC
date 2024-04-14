@@ -69,8 +69,9 @@ export default class FixedInput {
     this.active = true
 
     if (options.prefill) {
-      this.screen.displayStringAtCursor(options.prefill)
+      this.screen.displayStringAtCursor(options.prefill, false)
       this.inputText = options.prefill
+      this.cursorEnd = [ ...this.screen.displayCursor ]
       this.screen.displayCursor = [ ...this.cursorLocation ]
     }
     this.hasError = false
@@ -276,10 +277,10 @@ export default class FixedInput {
   }
 
   doArrow(key, evt) {
-    if (evt.ctrlKey && key === "ArrowLeft") { // sol
+    if (evt.shiftKey && evt.altKey && key === "ArrowLeft") { // sol
       this.cursorInputIndex = 0
       this.cursorLocation = [...this.cursorStart]
-    } else if (evt.ctrlKey && key === "ArrowRight") { // eol
+    } else if (evt.shiftKey && evt.altKey && key === "ArrowRight") { // eol
       this.cursorInputIndex = (this.inputText.length === this.maxLength) ? this.maxLength - 1 : this.inputText.length
       this.cursorLocation = [...this.cursorEnd]
     } else if (evt.altKey && key === "ArrowLeft") { // start of word

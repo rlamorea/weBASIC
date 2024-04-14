@@ -68,7 +68,7 @@ test('paren - (255 - 10) + 2', () => {
   assert.is(result.restOfTokens[1].coding, 'number-literal')
 })
 
-test('paren - (255 - (10+foo)', () => {
+test('paren - (255 - (10+foo))', () => {
   let t = tokens('(255 - (10+foo))')
   const op = t.shift()
   const result = lex.parseToCloseParen(t,op.tokenStart)
@@ -92,6 +92,14 @@ test('param - none', () => {
 
 test('param - 0', () => {
   let t = tokens('0')
+  const result = lex.parseIntoParameters(t, t[0].tokenStart)
+
+  assert.is(result.parameters.length, 1)
+  assert.is(result.parameters[0].coding, 'number-literal')
+})
+
+test('param - 0,', () => {
+  let t = tokens('0,')
   const result = lex.parseIntoParameters(t, t[0].tokenStart)
 
   assert.is(result.parameters.length, 1)

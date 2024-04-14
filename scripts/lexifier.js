@@ -137,6 +137,9 @@ export default class Lexifier {
       }
       const token = tokens.shift()
       if (token.coding === 'comma') {
+        if (paramTokens.length === 0) {
+          return { error: 'Unspecified Param', location: token.tokenStart, endLocation: token.tokenEnd }
+        }
         const expression = this.parseExpression(paramTokens, paramTokens[0].tokenStart)
         if (expression.error) { return expression }
         params.push(expression)
@@ -184,6 +187,11 @@ export default class Lexifier {
         if (tokens.length === 0) {
           return { error: 'Syntax Error', location: token.tokenStart, endLocation: tokenEnd }
         }
+        if (hasNumbers && token.valueType === 'string') {
+          return { error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd }
+        } else if (hasStrings && token.valueType === 'number') {
+          return { error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd }
+        }
         const functionDef = token
         token = tokens.shift()
         if (token.coding !== 'open-paren') {
@@ -194,9 +202,9 @@ export default class Lexifier {
         tokens = parenTokens.restOfTokens
         tokenEnd = parenTokens.tokenEnd
         const params = this.parseIntoParameters(parenTokens.parenTokens, tokenStart)
-        clauseTokens.push({ coding: 'function', function: functionDef, parameters: params.parameters, valueType: functionDef.returns, tokenStart: functionDef.tokenStart, tokenEnd })
-        hasStrings = (functionDef.returns === 'string')
-        hasNumbers = (functionDef.returns === 'number')
+        clauseTokens.push({ coding: 'function', function: functionDef, parameters: params.parameters, valueType: functionDef.valueType, tokenStart: functionDef.tokenStart, tokenEnd })
+        hasStrings = (functionDef.valueType === 'string')
+        hasNumbers = (functionDef.valueType === 'number')
         needOperator = true
       } else if (token.coding === 'open-paren') {
         const parenTokens = this.parseToCloseParen(tokens, tokenEnd)

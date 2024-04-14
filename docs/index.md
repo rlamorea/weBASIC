@@ -20,7 +20,12 @@ blah blah blah
 
 By default the CTRL left/right arrow key sequences are mapped
 to Mission Control. As a result, they never get to the browser.
+It is also possible that META left/right won't make it to the
+browser either.
 
-Since CTRL left/right are how you get to the start/end of the
-current input line, you will need to disable the Mission Control
-mappings in order for this functionality to work.
+Keyboard controls for moving the cursor have been set up to
+work around this for now. But if you still are encountering
+problems, you may need to search through keyboard settings
+on the Mac and in your applications to find and disable/remap
+sequences that prevent the proper use of weBASIC inputs and
+editing.

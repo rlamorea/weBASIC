@@ -53,7 +53,7 @@ export default class Lexifier {
   }
 
   lexifyAssignment(variable, tokens) {
-    if (tokens.length() === 0) {
+    if (tokens.length === 0) {
       return { error: `Syntax Error ${variable.token}`, tokenStart: variable.tokenStart, tokenEnd: variable.tokenEnd }
     }
     let variableDef = { variable: variable, valueType: variable.coding.substring(9) }
@@ -69,13 +69,16 @@ export default class Lexifier {
       if (dimensionParams.error) { return dimensionParams }
       variableDef.dimension = dimensionParams.parameters
       tokens = dimensionParams.restOfTokens
+      if (tokens.length === 0) {
+        return { error: 'Syntax Error', location: variable.tokenEnd, endLocation: token.tokenEnd + 1 }
+      }
+      token = tokens.shift()
+    }
+    if (token.coding !== 'equal') {
+      return { error: 'Syntax Error', location: token.tokenStart, endLocation: token.tokenEnd }
     }
     if (tokens.length === 0) {
       return { error: 'Syntax Error', location: variable.tokenEnd, endLocation: token.tokenEnd + 1 }
-    }
-    token = tokens.shift()
-    if (token.coding !== 'equal') {
-      return { error: 'Syntax Error', location: token.tokenStart, endLocation: token.tokenEnd }
     }
     const expression = this.parseExpression(tokens, tokens[0].tokenStart)
     if (expression.error) { return expression }

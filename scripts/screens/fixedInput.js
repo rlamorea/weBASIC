@@ -1,4 +1,4 @@
-import nextToken from "./tokenizer.js"
+import nextToken from "../tokenizer.js"
 
 const insertCursorHeightPct = 0.1
 const cursorHeightIncrement = 0.2
@@ -35,7 +35,7 @@ export default class FixedInput {
   constructor(screen, options) {
     options = options || {}
     this.screen = screen
-    this.cursorLocation = [...(options.startLocation || screen.displayCursor)]
+    this.cursorLocation = [...(options.startLocation || screen.viewportCursorLocation)]
 
     this.mode = options.insertMode || 'insert'
 
@@ -49,8 +49,8 @@ export default class FixedInput {
     if (options.singleLine) { // prep for horizontal scrolling
       // TODO
     } else { // ensure screen can display full input text
-      this.screen.ensureLines(this.screen.linesRequired(this.cursorLocation[0], this.cursorLocation[1], this.maxLength))
-      this.cursorLocation = [...this.screen.displayCursor]
+      this.screen.ensureLines(this.screen.linesRequired(this.maxLength))
+      this.cursorLocation = [...this.screen.viewportCursorLocation]
     }
     this.cursorStart = [...this.cursorLocation]
     this.cursorEnd = [...this.cursorLocation]
@@ -69,20 +69,20 @@ export default class FixedInput {
     this.active = true
 
     if (options.prefill) {
-      this.screen.displayStringAtCursor(options.prefill, false)
+      this.screen.displayString(options.prefill, false)
       this.inputText = options.prefill
-      this.cursorEnd = [ ...this.screen.displayCursor ]
-      this.screen.displayCursor = [ ...this.cursorLocation ]
+      this.cursorEnd = [ ...this.screen.viewportCursorLocation ]
+      this.screen.moveTo([ ...this.cursorLocation ])
     }
     this.hasError = false
     if ('errorLocation' in options) {
       const endLocation = options.errorEndLocation || options.errorLocation + 1
       let errorLoc = [ ...this.cursorLocation ]
-      this.screen.advanceFrom(errorLoc, options.errorLocation)
+      this.screen.advanceCursorFrom(errorLoc, options.errorLocation)
       for (let loc = options.errorLocation; loc < endLocation; loc++) {
-        const cell = this.screen.getCell(errorLoc[0], errorLoc[1])
+        const cell = this.screen.getCell(errorLoc)
         cell.classList.add('error')
-        this.screen.advanceFrom(errorLoc)
+        this.screen.advanceCursorFrom(errorLoc)
       }
       this.hasError = true
     }
@@ -96,15 +96,15 @@ export default class FixedInput {
     if (!this.hasError) return
     let loc = [ ...this.cursorStart ]
     for (let idx = 0; idx < this.inputText.length; idx++) {
-      const cell = this.screen.getCell(loc[0], loc[1])
+      const cell = this.screen.getCell(loc)
       cell.classList.remove('error')
-      this.screen.advanceFrom(loc)
+      this.screen.advanceCursorFrom(loc)
     }
     this.hasError = false
   }
 
   cursor(show) {
-    const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
+    const cell = this.screen.getCell(this.cursorLocation)
     if (show) {
       let cursorClasses = [ 'cursor' ]
       if (show && (this.typeMode === 'overwrite' || this.inputText.length >= this.maxLength)) {
@@ -136,7 +136,7 @@ export default class FixedInput {
       if (this.hasError) { this.clearError() }
       // insert mode works as insert until line is full, then turns into overwrite mode automatically
       // update cell contents
-      const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
+      const cell = this.screen.getCell(this.cursorLocation)
       if (cell.dataset.tempChar) { cell.dataset.tempChar = false }
       cell.innerHTML = evt.key
 
@@ -158,8 +158,8 @@ export default class FixedInput {
         this.inputText = this.inputText.substring(0, this.cursorInputIndex) + evt.key + this.inputText.substring(this.cursorInputIndex)
         let cellLoc = [...this.cursorLocation]
         for (let idx = this.cursorInputIndex + 1; idx < this.inputText.length; idx++) {
-          this.screen.advanceFrom(cellLoc)
-          const moveCell = this.screen.getCell(cellLoc[0], cellLoc[1])
+          this.screen.advanceCursorFrom(cellLoc)
+          const moveCell = this.screen.getCell(cellLoc)
           moveCell.innerHTML = this.inputText[idx]
         }
       }
@@ -172,7 +172,7 @@ export default class FixedInput {
 
       if (advanceCursor) {
         this.cursorInputIndex += 1
-        this.screen.advanceFrom(this.cursorLocation)
+        this.screen.advanceCursorFrom(this.cursorLocation)
         if (this.cursorInputIndex === this.inputText.length) {
           this.cursorEnd = [...this.cursorLocation]
         }
@@ -220,16 +220,16 @@ export default class FixedInput {
       }
     }
 
-    const cell = this.screen.getCell(this.cursorLocation[0], this.cursorLocation[1])
+    const cell = this.screen.getCell(this.cursorLocation)
     cell.innerHTML = ''
 
     if (shiftCells) {
       let cellLoc = [...this.cursorLocation]
       for (let idx = this.cursorInputIndex; idx <= this.inputText.length; idx++) {
-        const cell = this.screen.getCell(cellLoc[0], cellLoc[1])
+        const cell = this.screen.getCell(cellLoc)
         cell.innerHTML = (idx === this.inputText.length) ? '' : this.inputText[idx]
         if (cell.innerHTML === '') { this.cursorEnd = [...cellLoc] }
-        this.screen.advanceFrom(cellLoc)
+        this.screen.advanceCursorFrom(cellLoc)
       }
     }
 
@@ -252,12 +252,12 @@ export default class FixedInput {
         break
       }
       if (keywordCodings.includes(tokenDef.coding)) {
-        this.screen.advanceFrom(upcaseLoc, tokenDef.tokenStart - upcaseIdx)
+        this.screen.advanceCursorFrom(upcaseLoc, tokenDef.tokenStart - upcaseIdx)
         for (let idx = 0; idx < tokenDef.token.length; idx++) {
           const tokenChar = tokenDef.token[idx]
-          const tokenCell = this.screen.getCell(upcaseLoc[0], upcaseLoc[1])
+          const tokenCell = this.screen.getCell(upcaseLoc)
           tokenCell.innerHTML = tokenChar
-          this.screen.advanceFrom(upcaseLoc)
+          this.screen.advanceCursorFrom(upcaseLoc)
         }
         const pre = (tokenDef.tokenStart === 0) ? '' : this.inputText.substring(0, tokenDef.tokenStart)
         const post = (tokenDef.tokenEnd < this.inputText.length - 1) ? this.inputText.substring(tokenDef.tokenEnd) : ''
@@ -269,7 +269,8 @@ export default class FixedInput {
     }
 
     // move the screen cursor past the entered line
-    this.screen.moveCursorDelta(0, this.screen.linesRequiredFromCursor(this.inputText.length) - 1)
+    this.screen.moveTo(this.cursorEnd)
+    this.screen.newline()
     if (this.inputHandler) {
       this.inputHandler(this.inputText)
       this.active = false

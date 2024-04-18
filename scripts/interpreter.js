@@ -3,7 +3,6 @@ import * as Statements from './statements/statements.js'
 
 export default class Interpreter {
   constructor(options) {
-    this.screen = options.screen || {}
     this.machine = options.machine || {}
 
     this.lexifier = new Lexifier()
@@ -16,7 +15,7 @@ export default class Interpreter {
 
   interpretLine(codeLine) {
     let lineStatements = this.lexifier.lexifyLine(codeLine)
-    if (lineStatements.error) return { lineStatements }
+    if (lineStatements.error) { return lineStatements }
 
     for (const statement of lineStatements.lineStatements) {
       const result = this.interpretStatement(statement)
@@ -29,7 +28,7 @@ export default class Interpreter {
     const key = `${statement.statement.coding}|${statement.statement.token}`
     const handler = this.handlers[key]
     if (handler) {
-      return handler(this.screen, this.machine, statement.parameters)
+      return handler(this.machine, statement.parameters)
     } else {
       return {
         error: `Unknown Statement ${statement.statement.token}`,

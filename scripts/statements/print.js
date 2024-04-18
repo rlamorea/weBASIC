@@ -11,7 +11,7 @@ export default class Print extends Statement {
     }
   }
 
-  doPrint(screen, machine, parameters) {
+  doPrint(machine, parameters) {
     let stringToDisplay = ''
     for (const parameter of parameters) {
       if (parameter.coding === 'string-literal') {
@@ -20,7 +20,7 @@ export default class Print extends Statement {
         return { error: 'Syntax Error', location: parameter.tokenStart, endLocation: parameter.tokenEnd }
       }
     }
-    screen.displayStringAtCursor(stringToDisplay)
+    machine.currentScreen.displayString(stringToDisplay)
     return { done: true }
   }
 }

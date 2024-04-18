@@ -1,11 +1,11 @@
 import "../styles/wbasic.scss"
 
-import LiveScreen from "./livescreen.js"
+import Machine from "./machine.js"
 
 window.onload = ev => {
     init()
 }
 
 const init = () => {
-  const liveScreen = new LiveScreen()
+  const machine = new Machine()
 }

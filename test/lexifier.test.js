@@ -130,6 +130,7 @@ test('expression - 0', () => {
   const result = lex.parseExpression(t, t[0].tokenStart)
 
   assert.is(result.coding, 'number-literal')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - "hi"', () => {
@@ -137,6 +138,7 @@ test('expression - "hi"', () => {
   const result = lex.parseExpression(t, t[0].tokenStart)
 
   assert.is(result.coding, 'string-literal')
+  assert.is(result.valueType, 'string')
 })
 
 test('expression - -1', () => {
@@ -145,6 +147,7 @@ test('expression - -1', () => {
 
   assert.is(result.coding, 'number-literal')
   assert.is(result.unaryOperator.coding, 'unary-operator')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - 1+1', () => {
@@ -155,6 +158,7 @@ test('expression - 1+1', () => {
   assert.is(result.pre.coding, 'number-literal')
   assert.is(result.operator.coding, 'binary-operator')
   assert.is(result.post.coding, 'number-literal')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - "1"+"1"', () => {
@@ -165,15 +169,16 @@ test('expression - "1"+"1"', () => {
   assert.is(result.pre.coding, 'string-literal')
   assert.is(result.operator.coding, 'binary-operator')
   assert.is(result.post.coding, 'string-literal')
+  assert.is(result.valueType, 'string')
 })
 
 test('expression - (+2)', () => {
   let t = tokens('(+2)')
   const result = lex.parseExpression(t, t[0].tokenStart)
 
-  assert.is(result.coding, 'paren-group')
-  assert.is(result.expression.coding, 'number-literal')
-  assert.is(result.expression.unaryOperator.coding, 'unary-operator')
+  assert.is(result.coding, 'number-literal')
+  assert.is(result.unaryOperator.coding, 'unary-operator')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - 1+(-2*3)', () => {
@@ -183,12 +188,12 @@ test('expression - 1+(-2*3)', () => {
   assert.is(result.coding, 'calculation')
   assert.is(result.pre.coding, 'number-literal')
   assert.is(result.operator.token, '+')
-  assert.is(result.post.coding, 'paren-group')
-  assert.is(result.post.expression.coding, 'calculation')
-  assert.is(result.post.expression.pre.coding, 'number-literal')
-  assert.is(result.post.expression.pre.unaryOperator.token, '-')
-  assert.is(result.post.expression.operator.coding, 'binary-operator')
-  assert.is(result.post.expression.post.coding, 'number-literal')
+  assert.is(result.post.coding, 'calculation')
+  assert.is(result.post.pre.coding, 'number-literal')
+  assert.is(result.post.pre.unaryOperator.token, '-')
+  assert.is(result.post.operator.coding, 'binary-operator')
+  assert.is(result.post.post.coding, 'number-literal')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - 1--1', () => {
@@ -200,6 +205,7 @@ test('expression - 1--1', () => {
   assert.is(result.operator.coding, 'binary-operator')
   assert.is(result.post.coding, 'number-literal')
   assert.is(result.post.unaryOperator.token, '-')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - 9 * 8 / 7 DIV 6 MOD 5 + 4 - 3 = 2 <> 1', () => {
@@ -208,6 +214,7 @@ test('expression - 9 * 8 / 7 DIV 6 MOD 5 + 4 - 3 = 2 <> 1', () => {
 
   assert.is(result.coding, 'calculation')
   assert.is(result.pre.pre.pre.pre.pre.pre.pre.operator.token, '*')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - 9 - 8 DIV 7 AND 6 * 5 + 4 / 3 OR 2 MOD BNOT 1', () => {
@@ -218,6 +225,7 @@ test('expression - 9 - 8 DIV 7 AND 6 * 5 + 4 / 3 OR 2 MOD BNOT 1', () => {
   assert.is(result.operator.token, 'OR')
   assert.is(result.pre.operator.token, 'AND')
   assert.is(result.post.operator.token, 'MOD')
+  assert.is(result.valueType, 'number')
 })
 
 test('expression - 1 + 1 + 1 * 3 + 2', () => {
@@ -229,6 +237,100 @@ test('expression - 1 + 1 + 1 * 3 + 2', () => {
   assert.is(result.pre.coding, 'number-literal')
   assert.is(result.post.operator.token, '+')
   assert.is(result.post.post.pre.coding, 'calculation')
+})
+
+test('expression - paren priority', () => {
+  let t = tokens('(1 + 2) * 3')
+  const result = lex.parseExpression(t, t[0].tokenStart)
+
+  assert.is(result.coding, 'calculation')
+  assert.is(result.operator.token, '*')
+  assert.is(result.pre.coding, 'calculation')
+  assert.is(result.pre.pre.coding, 'number-literal')
+  assert.is(result.pre.operator.token, '+')
+  assert.is(result.pre.post.coding, 'number-literal')
+  assert.is(result.post.coding, 'number-literal')
+  assert.is(result.valueType, 'number')
+})
+
+test('assignment - var to literal', () => {
+  let t = tokens('a = 2')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-number')
+  assert.is(result.value.coding, 'number-literal')
+})
+
+test('assignment - var to var', () => {
+  let t = tokens('b = b')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-number')
+  assert.is(result.value.coding, 'variable-number')
+})
+
+test('assignment - var to func', () => {
+  let t = tokens('b = ATN(5)')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-number')
+  assert.is(result.value.coding, 'function')
+})
+
+test('assignment - var to func-any', () => {
+  let t = tokens('b = CALL(foo)')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-number')
+  assert.is(result.value.coding, 'function')
+})
+
+test('assignment - var$ to literal', () => {
+  let t = tokens('a$ = "2"')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-string')
+  assert.is(result.value.coding, 'string-literal')
+})
+
+test('assignment - var$ to var$', () => {
+  let t = tokens('b$ = b$')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-string')
+  assert.is(result.value.coding, 'variable-string')
+})
+
+test('assignment - var$ to func$', () => {
+  let t = tokens('b$ = CHR$(5)')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-string')
+  assert.is(result.value.coding, 'function')
+})
+
+test('assignment - var$ to func-any', () => {
+  let t = tokens('b$ = CALL(foo)')
+  let v = t.shift()
+  const result = lex.lexifyAssignment(v, t)
+
+  assert.is(result.coding, 'assignment')
+  assert.is(result.variable.coding, 'variable-string')
+  assert.is(result.value.coding, 'function')
 })
 
 test.run()

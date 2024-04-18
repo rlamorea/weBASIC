@@ -56,7 +56,6 @@ export default class Lexifier {
     if (tokens.length === 0) {
       return { error: `Syntax Error ${variable.token}`, tokenStart: variable.tokenStart, tokenEnd: variable.tokenEnd }
     }
-    let variableDef = { variable: variable, valueType: variable.coding.substring(9) }
     let token = tokens.shift()
     // array dimension(s)
     if (token.coding === 'open-paren') {
@@ -67,7 +66,7 @@ export default class Lexifier {
       }
       const dimensionParams = this.parseIntoParameters(dimension.parenTokens, dimension[0].tokenStart)
       if (dimensionParams.error) { return dimensionParams }
-      variableDef.dimension = dimensionParams.parameters
+      variable.dimension = dimensionParams.parameters
       tokens = dimensionParams.restOfTokens
       if (tokens.length === 0) {
         return { error: 'Syntax Error', location: variable.tokenEnd, endLocation: token.tokenEnd + 1 }
@@ -82,10 +81,10 @@ export default class Lexifier {
     }
     const expression = this.parseExpression(tokens, tokens[0].tokenStart)
     if (expression.error) { return expression }
-    if (variableDef.valueType !== 'any' && expression.valueType !== variableDef.valueType) {
+    if (expression.valueType !== 'any' && expression.valueType !== variable.valueType) {
       return { error: 'Type Mismatch', location: expression.tokenStart, endLocation: expression.tokenEnd }
     }
-    return { coding: 'assignment', variable: variableDef, valueExpression: expression }
+    return { coding: 'assignment', variable: variable, value: expression }
   }
 
   lexifyCommandOrStatement(statement, tokens) {
@@ -217,7 +216,10 @@ export default class Lexifier {
         }
         tokens = parenTokens.restOfTokens
         const subExpression = this.parseExpression(parenTokens.parenTokens, parenTokens.parenTokens[0].tokenStart)
-        clauseTokens.push({ expression: subExpression, coding: 'paren-group', tokenStart, tokenEnd })
+        if (subExpression.error) { return subExpression }
+        // Commented out -- I think there is no need for a paren-group, the calculation will do the encapsulation trick
+        //clauseTokens.push({ expression: subExpression, coding: 'paren-group', tokenStart, tokenEnd })
+        clauseTokens.push(subExpression)
         needOperator = true
       } else if (token.coding === 'string-literal' || token.coding === 'variable-string') {
         if (unaryOperator || hasNumbers) {
@@ -258,17 +260,21 @@ export default class Lexifier {
         for (let idx = clauses.length - 1; idx > 0; idx--) {
           const clause = clauses[idx]
           if (clause.coding === 'binary-operator' && clause.token === operator) {
+            const pre = clauses[idx - 1]
+            const post = clauses[idx + 1]
+            const valueType = (pre.valueType === 'any' || post.valueType === 'any') ? 'any' : pre.valueType
             const replacementClause = {
               coding: 'calculation',
-              pre: clauses[idx - 1],
+              pre,
               operator: clause,
-              post: clauses[idx + 1],
+              post,
               tokenStart: clauses[idx - 1].tokenStart,
-              tokenEnd: clauses[idx + 1].tokenEnd
+              tokenEnd: clauses[idx + 1].tokenEnd,
+              valueType
             }
             const prior = ((idx - 2) >= 0) ? clauses.slice(0, idx - 1) : []
-            const post = ((idx + 2) < clauses.length - 1) ? clauses.slice(idx + 2) : []
-            clauses = [...prior, replacementClause, ...post ]
+            const after = ((idx + 2) < clauses.length - 1) ? clauses.slice(idx + 2) : []
+            clauses = [...prior, replacementClause, ...after ]
             didCalc = true
             break
           }

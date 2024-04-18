@@ -279,7 +279,7 @@ function parseStringLiteral(restOfLine, tokenStart, tokenEnd) {
       strDone = true
     }
   }
-  return { token: str, coding: 'string-literal', restOfLine, tokenStart, tokenEnd }
+  return { token: str, coding: 'string-literal', restOfLine, tokenStart, tokenEnd, valueType: 'string' }
 }
 
 function parseNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd) {
@@ -318,7 +318,7 @@ function parseNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd) {
       restOfLine = restOfLine.substring(1)
     }
   }
-  return { token: numStr, coding: 'number-literal', restOfLine, tokenStart, tokenEnd }
+  return { token: numStr, coding: 'number-literal', restOfLine, tokenStart, tokenEnd, valueType: 'number' }
 }
 
 function parseVariableNameOrKeyword(leadChar, restOfLine, tokenStart, tokenEnd) {
@@ -352,10 +352,12 @@ function parseVariableNameOrKeyword(leadChar, restOfLine, tokenStart, tokenEnd) 
     }
   }
   let coding = 'variable-number'
+  let valueType = 'number'
   if (varName.endsWith('$')) {
     coding = 'variable-string'
+    valueType = 'string'
   } else if (varName.endsWith('%')) {
     coding = 'variable-integer'
   }
-  return { token: varName, coding, restOfLine, tokenStart, tokenEnd }
+  return { token: varName, coding, restOfLine, tokenStart, tokenEnd, valueType }
 }

@@ -1,7 +1,7 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 
-import CharGridScreen from '../scripts/screens/charGridScreen.js';
+import CharGridScreen from '../scripts/machine/screens/charGridScreen.js';
 
 // build mocks
 global.window = {

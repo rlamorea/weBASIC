@@ -1,6 +1,6 @@
 import CharGridScreen from "./charGridScreen.js";
 import FixedInput from "./fixedInput.js";
-import Interpreter from "../interpreter.js";
+import Interpreter from "../../interpreter/interpreter.js";
 
 const startupMessage = 'weBASIC v0.1'
 const prompt = 'READY.'

@@ -1,8 +1,10 @@
-import LiveScreen from "./screens/liveScreen.js";
+import LiveScreen from "./screens/liveScreen.js"
+import Variables from "./variables.js"
 
 export default class Machine {
   constructor() {
     this.currentMode = 'LIVE'
+    this.variables = new Variables()
     this.screens = {
       LIVE: new LiveScreen({ machine: this }),
     }

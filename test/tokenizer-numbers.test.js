@@ -1,7 +1,7 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 
-import nextToken from '../scripts/tokenizer.js'
+import nextToken from '../scripts/interpreter/tokenizer.js'
 
 function testToken(input, coding, token) {
   let inputTok = input

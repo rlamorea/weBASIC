@@ -1,6 +1,6 @@
 import "../styles/wbasic.scss"
 
-import Machine from "./machine.js"
+import Machine from "./machine/machine.js"
 
 window.onload = ev => {
     init()

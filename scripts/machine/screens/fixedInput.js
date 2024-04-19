@@ -1,4 +1,4 @@
-import nextToken from "../tokenizer.js"
+import nextToken from "../../interpreter/tokenizer.js"
 
 const insertCursorHeightPct = 0.1
 const cursorHeightIncrement = 0.2

@@ -90,12 +90,13 @@ export default class Lexifier {
   lexifyCommandOrStatement(statement, tokens) {
     const handler = this.specialHandlers[`${statement.coding}|${statement.token}`]
     if (handler) {
-      return handler(statement, tokens)
+      return handler(statement, tokens, this)
     } else {
       const tokenStart = tokens.length === 0 ? statement.tokenEnd : tokens[0].tokenStart
       const params = this.parseIntoParameters(tokens, tokenStart)
       if (params.error) { return params }
-      return { coding: 'statement', statement: statement, parameters: params.parameters }
+      statement.parameters = params.parameters
+      return statement
     }
   }
 

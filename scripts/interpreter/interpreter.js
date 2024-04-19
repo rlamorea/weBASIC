@@ -25,15 +25,21 @@ export default class Interpreter {
   }
 
   interpretStatement(statement) {
-    const key = `${statement.statement.coding}|${statement.statement.token}`
-    const handler = this.handlers[key]
+    // look for specific handler first
+    let key = `${statement.coding}|${statement.token}`
+    let handler = this.handlers[key]
+    if (!handler) {
+      // then generic handler
+      key = `${statement.coding}*`
+      handler = this.handlers[key]
+    }
     if (handler) {
-      return handler(this.machine, statement.parameters)
+      return handler(this.machine, statement)
     } else {
       return {
-        error: `Unknown Statement ${statement.statement.token}`,
-        location: statement.statement.tokenStart,
-        endLocation: statement.statement.tokenEnd
+        error: `Unknown ${statement.token || statement.coding}`,
+        location: statement.tokenStart,
+        endLocation: statement.tokenEnd
       }
     }
   }

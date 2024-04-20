@@ -14,7 +14,9 @@ const testCases = [
   { test: 'c=a+b', variable: 'c', value: 3 },
   { test: 'd=c+1', variable: 'd', value: 4 },
   { test: 'e$="e"', variable: 'e$', valueType: 'string', coding: 'variable-string', value: 'e' },
-  { test: 'f$=e$+"f"', variable: 'f$', valueType: 'string', coding: 'variable-string', value: 'ef' }
+  { test: 'f$=e$+"f"', variable: 'f$', valueType: 'string', coding: 'variable-string', value: 'ef' },
+  { test: 'let x=2', variable: 'x', value: 2 },
+  { test: 'let y$= "y"', variable: 'y$', valueType: 'string', coding: 'variable-string', value: 'y' },
 ]
 
 for (const testCase of testCases) {

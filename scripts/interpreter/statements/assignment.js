@@ -3,9 +3,23 @@ import Statement from './statement.js'
 export default class Assignment extends Statement {
   constructor() {
     super()
-    this.lexicalHandlers = { }
+    this.lexicalHandlers = {
+      'statement|LET': this.parseLet
+    }
     this.interpreterHandlers = {
       'assignment*' : this.doAssign
+    }
+  }
+
+  parseLet(statement, tokens, lexifier) {
+    if (tokens.length === 0) {
+      return { error: 'Syntax Error', location: statement.tokenStart, endLocation: statement.tokenEnd }
+    }
+    const variable = tokens.shift()
+    if (variable.coding.startsWith('variable-')) {
+      return lexifier.lexifyAssignment(variable, tokens)
+    } else {
+      return { error: 'Syntax Error', location: variable.tokenStart, endLocation: variable.tokenEnd }
     }
   }
 

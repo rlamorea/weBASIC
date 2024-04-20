@@ -3,8 +3,9 @@ import * as Statements from './statements/statements.js'
 
 const prioritizedOperators = [
   '^', '*', '/', 'DIV', 'MOD', '+', '-',
-  'BAND', 'AND', 'BOR', 'OR', 'BXOR',
-  '=', '<>', '>=', '<=', '>', '<'
+  'BAND', 'BOR', 'BXOR',
+  '=', '<>', '>=', '<=', '>', '<',
+  'AND', 'OR'
 ]
 
 export default class Lexifier {

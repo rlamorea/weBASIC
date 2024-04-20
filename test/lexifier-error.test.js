@@ -38,6 +38,7 @@ const testCases = [
   { category: 'expression', test: '"hello " + variable', error: 'Type Mismatch' },
   { category: 'expression', test: 'variable% + "hello', error: 'Type Mismatch' },
   { category: 'expression', test: 'variable% + ', error: 'Syntax Error' },
+  { category: 'expression', test: '"string" "string"', error: 'Syntax Error' },
   { category: 'assignment', test: 'a = "b"', error: 'Type Mismatch'},
   { category: 'assignment', test: 'a = b$', error: 'Type Mismatch'},
   { category: 'assignment', test: 'a = CHR$(5)', error: 'Type Mismatch'},

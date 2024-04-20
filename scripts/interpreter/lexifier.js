@@ -2,8 +2,8 @@ import nextToken from './tokenizer.js'
 import * as Statements from './statements/statements.js'
 
 const prioritizedOperators = [
-  '*', '/', 'DIV', 'MOD', '+', '-',
-  'AND', 'OR', 'NOT',
+  '^', '*', '/', 'DIV', 'MOD', '+', '-',
+  'BAND', 'AND', 'BOR', 'OR', 'BXOR',
   '=', '<>', '>=', '<=', '>', '<'
 ]
 
@@ -184,6 +184,8 @@ export default class Lexifier {
       tokenEnd = token.tokenEnd
       if (token.coding === 'end-of-statement') {
         tokens = [] // push to end
+      } else if (needOperator && [ 'plus', 'minus', 'equal', 'binary-operator' ].indexOf(token.coding) < 0) {
+        return { error: 'Syntax Error', location: token.tokenStart, endLocation: tokenEnd }
       } else if (!needOperator && [ 'plus', 'minus', 'unary-operator' ].indexOf(token.coding) >= 0) {
         unaryOperator = { token: token.token, coding: 'unary-operator', tokenStart: token.tokenStart, tokenEnd: token.tokenEnd }
       } else if (token.coding === 'function') {
@@ -216,6 +218,9 @@ export default class Lexifier {
           return { error: 'Syntax Error', location: tokenEnd, endLocation: tokenEnd + 1 }
         }
         tokens = parenTokens.restOfTokens
+        if (parenTokens.parenTokens.length === 0) {
+          return { error: 'Syntax Error', location: tokenStart, endLocation: tokenEnd }
+        }
         const subExpression = this.parseExpression(parenTokens.parenTokens, parenTokens.parenTokens[0].tokenStart)
         if (subExpression.error) { return subExpression }
         // Commented out -- I think there is no need for a paren-group, the calculation will do the encapsulation trick

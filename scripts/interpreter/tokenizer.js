@@ -51,14 +51,17 @@ const keywords = [
   { keyword: 'AND',          coding: 'binary-operator' },
   { keyword: 'ATN',          coding: 'function',           returns: 'number' },
   { keyword: 'AUTO',         coding: 'command' },
+  { keyword: 'BAND',         coding: 'binary-operator' },
   { keyword: 'BEGIN',        coding: 'statement' },
   { keyword: 'BGND',         coding: 'print-function' },
   { keyword: 'BITMAP',       coding: 'keyword' },
   { keyword: 'BITMAP-FIXED', coding: 'keyword' },
   { keyword: 'BNOT',         coding: 'unary-operator' },
   { keyword: 'BORDER',       coding: 'statement' },
+  { keyword: 'BOR',          coding: 'binary-operator' },
   { keyword: 'BREAK',        coding: 'statement' },
   { keyword: 'BUTTON$',      coding: 'function',           returns: 'string' },
+  { keyword: 'BXOR',         coding: 'binary-operator' },
   { keyword: 'CALL',         coding: 'function',           returns: 'any' },
   { keyword: 'CATALOG',      coding: 'command' },
   { keyword: 'CHORD$',       coding: 'function',           returns: 'string' },
@@ -203,8 +206,7 @@ const keywords = [
   { keyword: 'WINDIM',       coding: 'function',           returns: 'number' },
   { keyword: 'WINDOW',       coding: 'statement' },
   { keyword: 'WRITEC',       coding: 'statement' },
-  { keyword: 'WRITELN',      coding: 'statement' },
-  { keyword: 'XOR',          coding: 'binary-operator' }
+  { keyword: 'WRITELN',      coding: 'statement' }
 ]
 
 export default function nextToken(restOfLine, tokenStart, skipLineNumber) {

@@ -1,5 +1,6 @@
 import Lexifier from './lexifier.js'
 import * as Statements from './statements/statements.js'
+import { unaryOperation, binaryOperation } from "./statements/operators.js";
 
 export default class Interpreter {
   constructor(options) {
@@ -34,7 +35,7 @@ export default class Interpreter {
       handler = this.handlers[key]
     }
     if (handler) {
-      return handler(this.machine, statement)
+      return handler(this.machine, statement, this)
     } else {
       return {
         error: `Unknown ${statement.token || statement.coding}`,
@@ -42,5 +43,39 @@ export default class Interpreter {
         endLocation: statement.tokenEnd
       }
     }
+  }
+
+  interpretExpression(statement) {
+    let value = null
+    switch (statement.coding) {
+      case 'variable-string':
+        value = this.machine.variables.getValue(statement, this)
+        break
+      case 'string-literal':
+        value = { value: statement.token, valueType: 'string' }
+        break
+      case 'number-literal':
+        value = { value: parseFloat(statement.token), valueType: 'number' }
+        if (isNaN(value.value) || !isFinite(value.value)) {
+          return { error: `Illegal Value ${statement.token}`, location: statement.tokenStart, endLocation: statement.tokenEnd }
+        }
+        break
+      case 'variable-number':
+      case 'variable-integer':
+        value = this.machine.variables.getValue(statement, this)
+        break
+      case 'calculation':
+        value = binaryOperation(statement.operator, statement.pre, statement.post, this)
+        if (value.error) { return value }
+        break
+      default:
+        return { error: 'Unknown Expression', location: statement.tokenStart, endLocation: statement.tokenEnd }
+    }
+    // fall through means we have a number value, time to check for unary negation
+    if (statement.unaryOperator) {
+      value = unaryOperation(statement.unaryOperator, value, statement.tokenStart, statement.tokenEnd)
+      if (value.error) { return value }
+    }
+    return value
   }
 }

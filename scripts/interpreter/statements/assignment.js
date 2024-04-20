@@ -9,18 +9,11 @@ export default class Assignment extends Statement {
     }
   }
 
-  doAssign(machine, statement) {
-    if (statement.value.coding === 'number-literal') {
-      let v = statement.variable.coding.endsWith('-integer') ? parseInt(statement.value.token) : parseFloat(statement.value.token)
-      if (isNaN(v) || !isFinite(v)) {
-        return { error: `Illegal Value ${statement.value.token}`, location: statement.value.tokenStart, endLocation: statement.value.tokenEnd }
-      }
-      machine.variables.setValue(statement.variable, v)
-    } else if (statement.value.coding === 'string-literal') {
-      machine.variables.setValue(statement.variable, statement.value.token)
-    } else {
-      return { error: 'Unsupported Operation', location: statement.variable.tokenStart, endLocation: statement.value.tokenEnd }
-    }
+  doAssign(machine, statement, interpreter) {
+    const value = interpreter.interpretExpression(statement.value)
+    if (value.error) { return value }
+
+    machine.variables.setValue(statement.variable, value)
     return { done: true }
   }
 }

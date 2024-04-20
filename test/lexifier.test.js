@@ -253,6 +253,17 @@ test('expression - paren priority', () => {
   assert.is(result.valueType, 'number')
 })
 
+test('expression - negated calculation', () => {
+  let t = tokens('-(1 + 2)')
+  const result = lex.parseExpression(t, t[0].tokenStart)
+
+  assert.is(result.coding, 'calculation')
+  assert.is(result.unaryOperator.token, '-')
+  assert.is(result.pre.coding, 'number-literal')
+  assert.is(result.operator.token, '+')
+  assert.is(result.post.coding, 'number-literal')
+})
+
 test('assignment - var to literal', () => {
   let t = tokens('a = 2')
   let v = t.shift()

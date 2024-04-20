@@ -1,0 +1,133 @@
+import { test } from 'uvu';
+import * as assert from 'uvu/assert';
+
+import nextToken from '../scripts/interpreter/tokenizer.js'
+import Lexifier from '../scripts/interpreter/lexifier.js'
+import Machine from './mockMachine.js'
+
+import Interpreter from "../scripts/interpreter/interpreter.js";
+
+const machine = new Machine()
+const lex = new Lexifier()
+const inter = new Interpreter({ machine })
+
+const vars = [
+  { token: 'a', coding: 'variable-number', valueType: 'number', assignTo: 1 },
+  { token: 'b$', coding: 'variable-string', valueType: 'string', assignTo: 'b' }
+]
+for (let v of vars) {
+  machine.variables.setValue(v, { value: v.assignTo, valueType: v.valueType })
+}
+
+function statementFor(code) {
+  let toks = []
+  let ts = 0
+  while (1 === 1) {
+    if (code === null || code.length === 0) { break }
+    const td = nextToken(code, ts, true)
+    toks.push(td)
+    ts = td.tokenEnd
+    code = td.restOfLine
+  }
+  return lex.parseExpression(toks)
+}
+
+const testCases = [
+  { desc: 'number-literal ', test: '1', type: 'number', value: 1 },
+  { desc: 'string-literal ', test: '"hi"', type: 'string', value: 'hi' },
+  { desc: 'unary-plus ', test: '+1', value: 1 },
+  { desc: 'unary-minus ', test: '-1', value: -1 },
+  { test: 'BNOT 125', value: -126 },
+  { test: 'BNOT 4294967170', value: 125 },
+  { test: 'BNOT 125.3', value: -126 },
+  { test: 'BNOT 0', value: -1 },
+  { test: 'NOT 1', value: 0 },
+  { test: 'NOT 100', value: 0 },
+  { test: 'NOT 0.1', value: 0 },
+  { test: 'NOT 0', value: 1 },
+  { test: 'NOT 0.0', value: 1 },
+  { test: '1+1', value: 2 },
+  { test: '2^3', value: 8 },
+  { test: '27^0.33333333333333333', value: 3 },
+  { test: '2*3', value: 6 },
+  { test: '1.5*2', value: 3 },
+  { test: '6/2', value: 3 },
+  { test: '5/0.5', value: 10 },
+  { test: '8 DIV 2', value: 4 },
+  { test: '9 DIV 2', value: 4 },
+  { test: '8.5 DIV 2.2', value: 4 },
+  { test: '8 MOD 2', value: 0 },
+  { test: '9 MOD 2', value: 1 },
+  { test: '9.5 MOD 2.2', value: 1 },
+  { test: '10.5+3.2', value: 13.7 },
+  { test: '10 - 3', value: 7 },
+  { test: '10 - 12', value: -2 },
+  { test: '0.5 - 0.3', value: 0.2 },
+  { test: '7 BAND 4', value: 4 },
+  { test: '128 BAND 16', value: 0 },
+  { test: '3.5 BAND 2.5', value: 2 },
+  { test: '0 AND 1', value: 0 },
+  { test: '1 AND 1', value: 1 },
+  { test: '10.5 AND 3.2', value: 1 },
+  { test: '4 BOR 3', value: 7 },
+  { test: '128 BOR 16', value: 144 },
+  { test: '1.5 BOR 2.5', value: 3 },
+  { test: '0 OR 1', value: 1 },
+  { test: '0 OR 0', value: 0 },
+  { test: '10.5 OR 0', value: 1 },
+  { test: '0 BXOR 0', value: 0 },
+  { test: '0 BXOR 1', value: 1 },
+  { test: '64 BXOR 128', value: 192 },
+  { test: '255 BXOR 40', value: 215 },
+  { test: '0 = 0', value: 1 },
+  { test: '0 = 1', value: 0 },
+  { test: '200 = 200', value: 1 },
+  { test: '1.5 = 1.5', value: 1 },
+  { test: '1.5 = 1.50001', value: 0 },
+  { test: '0 <> 0', value: 0 },
+  { test: '0 <> 1', value: 1 },
+  { test: '200 <> 200', value: 0 },
+  { test: '1.5 <> 1.5', value: 0 },
+  { test: '1.5 <> 1.50001', value: 1 },
+  { test: '0 <= 1', value: 1 },
+  { test: '1 <= 1', value: 1 },
+  { test: '-3 <= 0', value: 1 },
+  { test: '1 <= 1.00001', value: 1 },
+  { test: '1.00001 <= 1', value: 0 },
+  { test: '0 >= 1', value: 0 },
+  { test: '1 >= 1', value: 1 },
+  { test: '-3 >= 0', value: 0 },
+  { test: '1 >= 1.00001', value: 0 },
+  { test: '1.00001 >= 1', value: 1 },
+  { test: '0 < 1', value: 1 },
+  { test: '1 < 1', value: 0 },
+  { test: '-3 < 0', value: 1 },
+  { test: '1 < 1.00001', value: 1 },
+  { test: '1.00001 < 1', value: 0 },
+  { test: '0 > 1', value: 0 },
+  { test: '1 > 1', value: 0 },
+  { test: '-3 > 0', value: 0 },
+  { test: '1 > 1.00001', value: 0 },
+  { test: '1.00001 > 1', value: 1 },
+  { desc: 'precedence ', test: '1 + 2 > 2', value: 1 },
+  { desc: 'precedence ', test: '1 - 2 * 3', value: -5 },
+  { desc: 'precedence ', test: '(1 - 2) * 3', value: -3 },
+  { test: '"a"+"b"', type: 'string', value: 'ab' },
+  { test: 'a + 1', value: 2 },
+  { test: '"a"+b$', type: 'string', value: 'ab' },
+]
+// need to figure out later
+//   { desc: 'AND sort circuit', test: '0 AND ()', value: 0 }
+
+for (const testCase of testCases) {
+  test(`${testCase.desc || ''}${testCase.test}`, () => {
+    let s = statementFor(testCase.test)
+    const result = inter.interpretExpression(s)
+
+    assert.is(result.error, undefined)
+    assert.is(result.valueType, testCase.type || 'number')
+    assert.is(result.value, testCase.value)
+  })
+}
+
+test.run()

@@ -13,32 +13,40 @@ export default class Variables {
     const dimension = variableDef.dimension
     // TODO: dealing with arrays and user functions later
 
-    const valueDef = this.variableLookup[variableName]
+    let valueDef = this.variableLookup[variableName]
     if (!valueDef) {
       let initValue = (variableType === 'string') ? '' : 0
-      this.variableLookup[variableName] = {
-        type: variableType,
-        value: initValue
+      valueDef = {
+        value: initValue,
+        valueType: variableType
       }
-      return initValue
+      this.variableLookup[variableName] = valueDef
+      return valueDef
     } else {
-      return valueDef.value
+      return valueDef
     }
   }
 
-  setValue(variableDef, value) {
-    // NOTE: assumes value is of correct type
+  setValue(variableDef, valueDef) {
     const variableName = variableDef.token
     const dimension = variableDef.dimension
     // TODO: dealing with arrays and user functions later
 
-    const valueDef = this.variableLookup[variableName]
-    if (valueDef) {
-      valueDef.value = value
+    if (variableDef.coding === 'variable-integer') {
+      valueDef.value = Math.trunc(valueDef.value)
+    }
+
+    if (valueDef.valueType !== variableDef.valueType) {
+      return { error: 'Type Mismatch', location: variableDef.tokenStart, endLocation: variableDef.tokenEnd }
+    }
+
+    const storedValue = this.variableLookup[variableName]
+    if (storedValue) {
+      storedValue.value = valueDef.value
     } else {
       this.variableLookup[variableName] = {
-        valueType: variableDef.valueType,
-        value: value
+        valueType: valueDef.valueType,
+        value: valueDef.value
       }
     }
   }

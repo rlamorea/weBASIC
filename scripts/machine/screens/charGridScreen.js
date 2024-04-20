@@ -97,12 +97,16 @@ export default class CharGridScreen extends Screen {
         }
       }
       this.cellSize = [Math.floor(this.cellSize[0]), Math.floor(this.cellSize[1])]
-    } else if (!requiredRows) {
-      // TODO
-    } else if (!requiredColumns) {
-      // TODO
+    } else if (!width) {
+      // TODO - fit height and flexible width
+    } else if (!height) {
+      // TODO - fit width and flexible height
+    } else if (fixedScreenGlobals.cellSize) {
+      columns = fixedScreenGlobals.columns
+      rows = fixedScreenGlobals.rows
+      this.cellSize = [ ...fixedScreenGlobals.cellSize ]
     } else {
-      // TODO
+      // TODO: fit width and height
     }
 
     fixedScreenGlobals.columns = columns

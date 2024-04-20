@@ -68,6 +68,19 @@ export default class Interpreter {
         value = binaryOperation(statement.operator, statement.pre, statement.post, this)
         if (value.error) { return value }
         break
+      case 'function':
+        let paramValues = []
+        for (const parameter of statement.parameters) {
+          const paramValue = this.interpretExpression(parameter)
+          if (paramValue.error) { return paramValue }
+          paramValues.push(paramValue)
+        }
+        const handler = this.handlers[`${statement.function.coding}|${statement.function.token}`]
+        if (!handler) {
+          return { error: `Unknown ${statement.function.token}`, location: statement.tokenStart, endLocation: statement.tokenEnd }
+        }
+        value = handler(statement, paramValues, this)
+        break
       default:
         return { error: 'Unknown Expression', location: statement.tokenStart, endLocation: statement.tokenEnd }
     }

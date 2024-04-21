@@ -12,6 +12,8 @@ const separatorCharacters = " ()[]{};:,./?"
 const keywordCodings = [ 'keyword', 'function', 'statement', 'command', 'binary-operator', 'unary-operator' ]
 
 // key handling
+const nonRepeatableKeys = [ 'Alt', 'Meta', 'Control', 'Shift', 'Escape', 'CapsLock', 'Enter' ]
+
 window.addEventListener('load', (event) => {
   window.addEventListener('keydown', (e) => { keyDown(e) })
   window.addEventListener('keypress', (e) => { e.preventDefault() })
@@ -19,16 +21,31 @@ window.addEventListener('load', (event) => {
 })
 
 let registeredInput = null
+let repeatKeyDown = null
+const repeatStartDelay = 500
+const repeatDelay = 250
 
 function keyDown(evt) {
   evt.preventDefault()
-  // TODO: later?
+  if (!registeredInput) return // do nothing
+  registeredInput.handleKey(evt)
+  if (nonRepeatableKeys.indexOf(evt.key) < 0) {
+    repeatKeyDown = evt
+    setTimeout( () => { repeatKey(evt) }, repeatStartDelay)
+  }
+}
+
+function repeatKey(keyEvt) {
+  if (keyEvt !== repeatKeyDown) return
+  console.log('repeating', keyEvt.key)
+  keyDown(keyEvt)
+  setTimeout(() => { repeatKey(keyEvt) }, repeatDelay)
 }
 
 function keyUp(evt) {
   evt.preventDefault()
-  if (!registeredInput) return // do nothing
-  registeredInput.handleKey(evt)
+  // TOOD: figure out if we are keeping part of a key sequence down
+  repeatKeyDown = null
 }
 
 export default class FixedInput {
@@ -211,7 +228,7 @@ export default class FixedInput {
     if (moveCursorBackOne) {
       this.cursorLocation[0] -= 1
       if (this.cursorLocation[0] < 1) {
-        this.cursorLocation[0] = this.screen.columns
+        this.cursorLocation[0] = this.screen.viewportSize[0]
         this.cursorLocation[1] -= 1
       }
       this.cursorInputIndex -= 1
@@ -300,7 +317,7 @@ export default class FixedInput {
           for (let idx = this.cursorInputIndex; idx > csrIdx; idx--) {
             this.cursorLocation[0] -= 1
             if (this.cursorLocation[0] < 1) {
-              this.cursorLocation[0] = this.screen.columns
+              this.cursorLocation[0] = this.screen.viewportSize[0]
               this.cursorLocation[1] -= 1
             }
           }
@@ -322,7 +339,7 @@ export default class FixedInput {
         } else {
           for (let idx = this.cursorInputIndex; idx < csrIdx; idx++) {
             this.cursorLocation[0] += 1
-            if (this.cursorLocation[0] > this.screen.columns) {
+            if (this.cursorLocation[0] > this.screen.viewportSize[0]) {
               this.cursorLocation[0] = 1
               this.cursorLocation[1] += 1
             }
@@ -335,7 +352,7 @@ export default class FixedInput {
         this.cursorInputIndex -= 1
         this.cursorLocation[0] -= 1
         if (this.cursorLocation[0] < 1) {
-          this.cursorLocation[0] = this.screen.columns
+          this.cursorLocation[0] = this.screen.viewportSize[0]
           this.cursorLocation[1] -= 1
         }
       }
@@ -343,7 +360,7 @@ export default class FixedInput {
       if (this.cursorInputIndex < this.inputText.length && this.cursorInputIndex < this.maxLength - 1) {
         this.cursorInputIndex += 1
         this.cursorLocation[0] += 1
-        if (this.cursorLocation[0] > this.screen.columns) {
+        if (this.cursorLocation[0] > this.screen.viewportSize[0]) {
           this.cursorLocation[0] = 1
           this.cursorLocation[1] += 1
         }

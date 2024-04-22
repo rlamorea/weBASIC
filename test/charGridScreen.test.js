@@ -199,4 +199,42 @@ test('ensureLines - scroll from bottom', () => {
   assert.is(machine.screenCells[290].innerHTML, 'd')
 })
 
+test('moveBy in viewport positive', () => {
+  machine.screen.clearViewport()
+  machine.screen.moveTo([1, 5])
+  machine.screen.moveBy(1, 1)
+  assert.is(machine.screen.viewportCursorLocation[0], 2)
+  assert.is(machine.screen.viewportCursorLocation[1], 6)
+})
+
+test('moveBy in viewport negative', () => {
+  machine.screen.moveBy(-1, -1)
+  assert.is(machine.screen.viewportCursorLocation[0], 1)
+  assert.is(machine.screen.viewportCursorLocation[1], 5)
+})
+
+test('moveBy wrap back one line', () => {
+  machine.screen.moveBy(-1, 0)
+  assert.is(machine.screen.viewportCursorLocation[0], 40)
+  assert.is(machine.screen.viewportCursorLocation[1], 4)
+})
+
+test('moveBy wrap ahead one line', () => {
+  machine.screen.moveBy(1, 0)
+  assert.is(machine.screen.viewportCursorLocation[0], 1)
+  assert.is(machine.screen.viewportCursorLocation[1], 5)
+})
+
+test('moveBy wrap back three lines by X', () => {
+  machine.screen.moveBy(-120, 0)
+  assert.is(machine.screen.viewportCursorLocation[0], 1)
+  assert.is(machine.screen.viewportCursorLocation[1], 2)
+})
+
+test('moveBy wrap ahead three lines by X', () => {
+  machine.screen.moveBy(120, 0)
+  assert.is(machine.screen.viewportCursorLocation[0], 1)
+  assert.is(machine.screen.viewportCursorLocation[1], 5)
+})
+
 test.run()

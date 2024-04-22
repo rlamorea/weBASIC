@@ -6,11 +6,32 @@ global.window = {
   innerWidth: 900, innerHeight: 650,
   getComputedStyle: (div, x) => {
     return { getPropertyValue: (p) => { return 'black' } }
+  },
+  addEventListener() { /* do nothing */ }
+}
+
+class mockClassList {
+  constructor() { this.classes = {} }
+  add(x) {
+    for (const arg of arguments) {
+      this.classes[arg] = true
+    }
+  }
+  remove(x) {
+    for (const cl of x.split(' ')) {
+      if (cl in this.classes) {
+        delete this.classes[cl]
+      }
+    }
   }
 }
 
 global.document = {
-  createElement: (tag) => { return { innerHTML: '', dataset: { }, classList: { add: (x) => { /* do nothing */ } } } },
+  createElement: (tag) => { return {
+    innerHTML: '',
+    dataset: { },
+    classList: new mockClassList()
+  } },
   adoptedStyleSheets: [ { replace: (x) => { /* do nothing */ }} ]
 }
 

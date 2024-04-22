@@ -6,6 +6,7 @@ const overwriteCursorHeightPct = 0.5
 
 const defaultMaxLength = 160
 const defaultWarnZone = 10 // from end
+const defaultMinimumInputWidth = 10
 
 const separatorCharacters = " ()[]{};:,./?"
 
@@ -63,7 +64,9 @@ export default class FixedInput {
     this.cursorInputIndex = 0
     this.typeMode = 'insert'
 
-    if (options.singleLine) { // prep for horizontal scrolling
+    this.cursorLocation = [ ...this.screen.viewportCursorLocation ]
+    this.singleLine = options.singleLine
+    if (this.singleLine) { // prep for horizontal scrolling
       // TODO
     } else { // ensure screen can display full input text
       this.screen.ensureLines(this.screen.linesRequired(this.maxLength))
@@ -86,17 +89,21 @@ export default class FixedInput {
     this.active = true
 
     if (options.prefill) {
-      this.screen.displayString(options.prefill, false)
-      this.inputText = options.prefill
+      this.inputText = options.prefill.length > this.maxLength ? options.prefill.substring(0, this.maxLength) : options.prefill
+      this.screen.displayString(this.inputText, false)
+      if (this.inputText.length === this.maxLength) { // pull back one
+        this.screen.moveBy(-1, 0)
+      }
       this.cursorEnd = [ ...this.screen.viewportCursorLocation ]
       this.screen.moveTo([ ...this.cursorLocation ])
     }
     this.hasError = false
     if ('errorLocation' in options) {
-      const endLocation = options.errorEndLocation || options.errorLocation + 1
+      const errorLocation = Math.min(options.errorLocation, this.maxLength)
+      const endLocation = Math.min((options.errorEndLocation || errorLocation) + 1, this.maxLength)
       let errorLoc = [ ...this.cursorLocation ]
-      this.screen.advanceCursorFrom(errorLoc, options.errorLocation)
-      for (let loc = options.errorLocation; loc < endLocation; loc++) {
+      this.screen.advanceCursorFrom(errorLoc, errorLocation)
+      for (let loc = errorLocation; loc < endLocation; loc++) {
         const cell = this.screen.getCell(errorLoc)
         cell.classList.add('error')
         this.screen.advanceCursorFrom(errorLoc)
@@ -179,6 +186,9 @@ export default class FixedInput {
           const moveCell = this.screen.getCell(cellLoc)
           moveCell.innerHTML = this.inputText[idx]
         }
+        if (this.inputText.length < this.maxLength) { this.screen.advanceCursorFrom(cellLoc) }
+        // since we moved the end of line, capture the cursor location as new end
+        this.cursorEnd = [ ...this.screen.viewportCursorLocation  ]
       }
 
       if (replaceCurrentChar) {
@@ -297,10 +307,10 @@ export default class FixedInput {
   doArrow(key, evt) {
     if ((evt.metaKey || evt.ctrlKey && evt.altKey) && key === "ArrowLeft") { // sol
       this.cursorInputIndex = 0
-      this.cursorLocation = [...this.cursorStart]
+      this.cursorLocation = [ ...this.cursorStart ]
     } else if ((evt.metaKey || evt.ctrlKey && evt.altKey) && key === "ArrowRight") { // eol
       this.cursorInputIndex = (this.inputText.length === this.maxLength) ? this.maxLength - 1 : this.inputText.length
-      this.cursorLocation = [...this.cursorEnd]
+      this.cursorLocation = [ ...this.cursorEnd ]
     } else if (evt.altKey && key === "ArrowLeft") { // start of word
       if (this.cursorInputIndex > 0) {
         let csrIdx = this.cursorInputIndex

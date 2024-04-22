@@ -20,7 +20,7 @@ export default class LiveScreen extends CharGridScreen {
     this.screen.newline()
     this.screen.displayString(prompt)
 
-    this.commandInput = new FixedInput(this.screen, { inputHandler: (input) => { this.handleCommand(input) } })
+    this.commandInput = new FixedInput(this.screen, { inputHandler: (input) => { this.handleCommand(input) }, singleLine: true  })
     this.machine.activateMode('LIVE')
   }
 

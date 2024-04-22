@@ -36,6 +36,16 @@ body { background: $body-bgnd; color: $body-fgnd; }
       text-decoration: red underline wavy;
     }
 
+    &.selected::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
     &.cursor::after {
       content: "";
       position: absolute;

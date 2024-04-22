@@ -125,9 +125,19 @@ export default class Screen {
     }
   }
 
-  moveBy(xOffset, yOffset) {
-    this.cursorLocation = [ this.cursorLocation[0] + xOffset, this.cursorLocation[1] + yOffset ]
-    this.viewportCursorLocation = [ this.viewportCursorLocation[0] + xOffset, this.viewportCursorLocation[1] + yOffset ]
+  moveBy(xOffset, yOffset, withinViewport = true) {
+    if (withinViewport) {
+      const xOffsetYMod = Math.floor(xOffset / this.viewportSize[0])
+      xOffset = xOffset - (xOffsetYMod * this.viewportSize[0])
+      yOffset += xOffsetYMod
+      const xYMod = Math.floor(((this.viewportCursorLocation[0] - 1) + xOffset) / this.viewportSize[0])
+      this.viewportCursorLocation[0] = (((this.viewportCursorLocation[0] - 1) + xOffset) % this.viewportSize[0]) + 1
+      this.viewportCursorLocation[1] = this.viewportCursorLocation[1] + yOffset + xYMod
+      this.cursorLocation = [ this.viewportCursorLocation[0] + this.viewportStart[0] - 1, this.viewportCursorLocation[1] + this.viewportStart[1] - 1 ]
+    } else {
+      this.cursorLocation = [this.cursorLocation[0] + xOffset, this.cursorLocation[1] + yOffset]
+      this.viewportCursorLocation = [this.viewportCursorLocation[0] + xOffset, this.viewportCursorLocation[1] + yOffset]
+    }
     return this.checkForViewportScroll()
   }
 

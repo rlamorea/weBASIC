@@ -1,4 +1,4 @@
-import "../styles/wbasic.scss"
+import "../styles/webasic.scss"
 
 import Machine from "./machine/machine.js"
 

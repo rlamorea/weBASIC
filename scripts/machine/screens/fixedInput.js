@@ -67,7 +67,13 @@ export default class FixedInput {
     this.cursorLocation = [ ...this.screen.viewportCursorLocation ]
     this.singleLine = options.singleLine
     if (this.singleLine) { // prep for horizontal scrolling
-      // TODO
+      this.singleLineStartIndex = 0
+      this.singleLineViewLength = this.screen.viewportSize[0] - this.cursorLocation[0] + 1 // this is the number of cells available
+      if (this.cursorLocation[0] > 1 && this.singleLineViewLength < defaultMinimumInputWidth) {
+        this.screen.newline()
+        this.cursorLocation = [ ...this.screen.viewportCursorLocation ]
+        this.singleLineViewLength = this.screen.viewportSize[0] // hopefully that's big enough, if not, oh well
+      }
     } else { // ensure screen can display full input text
       this.screen.ensureLines(this.screen.linesRequired(this.maxLength))
       this.cursorLocation = [...this.screen.viewportCursorLocation]
@@ -90,15 +96,20 @@ export default class FixedInput {
 
     if (options.prefill) {
       this.inputText = options.prefill.length > this.maxLength ? options.prefill.substring(0, this.maxLength) : options.prefill
-      this.screen.displayString(this.inputText, false)
-      if (this.inputText.length === this.maxLength) { // pull back one
+      let dispString = this.inputText
+      if (this.singleLine && this.inputText.length >= this.singleLineViewLength) {
+        dispString = this.inputText.substring(0, this.singleLineViewLength)
+      }
+      this.screen.displayString(dispString, false)
+      if (this.inputText.length === this.maxLength || (this.singleLine && dispString.length < this.inputText.length)) { // pull back one
         this.screen.moveBy(-1, 0)
       }
       this.cursorEnd = [ ...this.screen.viewportCursorLocation ]
       this.screen.moveTo([ ...this.cursorLocation ])
     }
     this.hasError = false
-    if ('errorLocation' in options) {
+    // NOTE that single line mode does not support error highlight at this time
+    if ('errorLocation' in options && !this.singleLine) {
       const errorLocation = Math.min(options.errorLocation, this.maxLength)
       const endLocation = Math.min((options.errorEndLocation || errorLocation) + 1, this.maxLength)
       let errorLoc = [ ...this.cursorLocation ]
@@ -125,6 +136,23 @@ export default class FixedInput {
       this.screen.advanceCursorFrom(loc)
     }
     this.hasError = false
+  }
+
+  shiftSingleLineViewport() {
+    let strStart = this.singleLineStartIndex
+    let strEnd = strStart + this.singleLineViewLength
+    let extraSpace = true
+    if (this.inputText.length === this.maxLength) {
+      strStart -= 1 // pull back one
+      extraSpace = false
+    }
+    const viewportStr = this.inputText.substring(strStart, strEnd)
+    this.screen.displayStringAt(this.cursorStart, viewportStr, false)
+    if (extraSpace) { this.screen.displayChar('') }
+    this.screen.viewportCursorLocation = [ ...this.cursorLocation ]
+    // this.screen.moveBy(-1, 0)
+    // this.cursorLocation = [ ...this.screen.viewportCursorLocation ]
+    // this.cursorEnd = [ ...this.cursorLocation ]
   }
 
   cursor(show) {
@@ -182,6 +210,7 @@ export default class FixedInput {
         this.inputText = this.inputText.substring(0, this.cursorInputIndex) + evt.key + this.inputText.substring(this.cursorInputIndex)
         let cellLoc = [...this.cursorLocation]
         for (let idx = this.cursorInputIndex + 1; idx < this.inputText.length; idx++) {
+          if (this.singleLine && idx > (this.singleLineStartIndex + this.singleLineViewLength - 1)) { break }
           this.screen.advanceCursorFrom(cellLoc)
           const moveCell = this.screen.getCell(cellLoc)
           moveCell.innerHTML = this.inputText[idx]
@@ -199,9 +228,14 @@ export default class FixedInput {
 
       if (advanceCursor) {
         this.cursorInputIndex += 1
-        this.screen.advanceCursorFrom(this.cursorLocation)
-        if (this.cursorInputIndex === this.inputText.length) {
-          this.cursorEnd = [...this.cursorLocation]
+        if (this.singleLine && this.cursorInputIndex > (this.singleLineStartIndex + this.singleLineViewLength - 1)) {
+          this.singleLineStartIndex += 1
+          this.shiftSingleLineViewport()
+        } else {
+          this.screen.advanceCursorFrom(this.cursorLocation)
+          if (this.cursorInputIndex === this.inputText.length) {
+            this.cursorEnd = [ ...this.cursorLocation ]
+          }
         }
       }
     }
@@ -236,10 +270,15 @@ export default class FixedInput {
     }
 
     if (moveCursorBackOne) {
-      this.cursorLocation[0] -= 1
-      if (this.cursorLocation[0] < 1) {
-        this.cursorLocation[0] = this.screen.viewportSize[0]
-        this.cursorLocation[1] -= 1
+      if (this.singleLine && this.singleLineStartIndex > 0) {
+        this.singleLineStartIndex -= 1
+        this.shiftSingleLineViewport()
+      } else {
+        this.cursorLocation[0] -= 1
+        if (this.cursorLocation[0] < 1) {
+          this.cursorLocation[0] = this.screen.viewportSize[0]
+          this.cursorLocation[1] -= 1
+        }
       }
       this.cursorInputIndex -= 1
       if (this.cursorInputIndex === this.inputText.length) {
@@ -308,9 +347,17 @@ export default class FixedInput {
     if ((evt.metaKey || evt.ctrlKey && evt.altKey) && key === "ArrowLeft") { // sol
       this.cursorInputIndex = 0
       this.cursorLocation = [ ...this.cursorStart ]
+      if (this.singleLine && this.singleLineStartIndex > 0) {
+        this.singleLineStartIndex = 0
+        this.shiftSingleLineViewport()
+      }
     } else if ((evt.metaKey || evt.ctrlKey && evt.altKey) && key === "ArrowRight") { // eol
       this.cursorInputIndex = (this.inputText.length === this.maxLength) ? this.maxLength - 1 : this.inputText.length
       this.cursorLocation = [ ...this.cursorEnd ]
+      if (this.singleLine && this.cursorInputIndex > this.singleLineViewLength) {
+        this.singleLineStartIndex = this.cursorInputIndex - this.singleLineViewLength + 1
+        this.shiftSingleLineViewport()
+      }
     } else if (evt.altKey && key === "ArrowLeft") { // start of word
       if (this.cursorInputIndex > 0) {
         let csrIdx = this.cursorInputIndex
@@ -321,7 +368,11 @@ export default class FixedInput {
           }
           csrIdx -= 1
         }
-        if (csrIdx === 0) {
+        if (this.singleLine && csrIdx < this.singleLineStartIndex) {
+          this.singleLineStartIndex = csrIdx
+          this.shiftSingleLineViewport()
+          this.cursorLocation = [ ...this.cursorStart ]
+        } else if (csrIdx === 0) {
           this.cursorLocation = [...this.cursorStart]
         } else {
           for (let idx = this.cursorInputIndex; idx > csrIdx; idx--) {
@@ -338,13 +389,14 @@ export default class FixedInput {
       if (this.cursorInputIndex < this.maxLength - 1 && this.cursorInputIndex < this.inputText.length) {
         let csrIdx = this.cursorInputIndex
         while (csrIdx < Math.min(this.maxLength -1, this.inputText.length)) {
-          if (separatorCharacters.indexOf(this.inputText[csrIdx]) >= 0 && csrIdx > this.cursorInputIndex + 1) {
-            csrIdx -= 1
-            break
-          }
+          if (separatorCharacters.indexOf(this.inputText[csrIdx]) >= 0 && csrIdx > this.cursorInputIndex + 1) { break }
           csrIdx += 1
         }
-        if (csrIdx === this.maxLength - 1) {
+        if (this.singleLine && csrIdx >= this.singleLineViewLength) {
+          this.singleLineStartIndex = csrIdx - this.singleLineViewLength + 1
+          this.shiftSingleLineViewport()
+          this.cursorLocation = [ ...this.cursorEnd ]
+        } else if (csrIdx === this.maxLength - 1) {
           this.cursorLocation = [...this.cursorEnd]
         } else {
           for (let idx = this.cursorInputIndex; idx < csrIdx; idx++) {
@@ -360,19 +412,32 @@ export default class FixedInput {
     } else if (key === "ArrowLeft") {
       if (this.cursorInputIndex > 0) {
         this.cursorInputIndex -= 1
-        this.cursorLocation[0] -= 1
-        if (this.cursorLocation[0] < 1) {
-          this.cursorLocation[0] = this.screen.viewportSize[0]
-          this.cursorLocation[1] -= 1
+        if (this.singleLine && this.cursorInputIndex < this.singleLineStartIndex) {
+          this.singleLineStartIndex -= 1
+          this.shiftSingleLineViewport()
+        } else {
+          this.cursorLocation[0] -= 1
+          if (this.cursorLocation[0] < 1) {
+            this.cursorLocation[0] = this.screen.viewportSize[0]
+            this.cursorLocation[1] -= 1
+          }
         }
       }
     } else if (key === "ArrowRight") {
       if (this.cursorInputIndex < this.inputText.length && this.cursorInputIndex < this.maxLength - 1) {
         this.cursorInputIndex += 1
-        this.cursorLocation[0] += 1
-        if (this.cursorLocation[0] > this.screen.viewportSize[0]) {
-          this.cursorLocation[0] = 1
-          this.cursorLocation[1] += 1
+        if (this.singleLine && this.cursorInputIndex >= this.singleLineViewLength) {
+          this.singleLineStartIndex += 1
+          this.shiftSingleLineViewport()
+          if (this.cursorLocation[0] < this.screen.viewportSize[0]) {
+            this.cursorLocation[0] += 1
+          }
+        } else {
+          this.cursorLocation[0] += 1
+          if (this.cursorLocation[0] > this.screen.viewportSize[0]) {
+            this.cursorLocation[0] = 1
+            this.cursorLocation[1] += 1
+          }
         }
       }
     }

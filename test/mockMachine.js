@@ -18,9 +18,9 @@ class mockClassList {
     }
   }
   remove(x) {
-    for (const cl of x.split(' ')) {
-      if (cl in this.classes) {
-        delete this.classes[cl]
+    for (const arg of arguments) {
+      if (arg in this.classes) {
+        delete this.classes[arg]
       }
     }
   }

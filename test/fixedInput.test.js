@@ -112,14 +112,14 @@ test('alt-left arrow - back two words', () => {
 
 test('alt-right arrow - fwd to end of word', () => {
   enterKey('ArrowRight', { altKey: true })
-  assert.is(input.cursorLocation[0], 7)
-  assert.ok(machine.screenCells[6].classList.classes['cursor'])
+  assert.is(input.cursorLocation[0], 8)
+  assert.ok(machine.screenCells[7].classList.classes['cursor'])
 })
 
-test('alt-right arrow - fwd to next word', () => {
+test('alt-right arrow - fwd to end of next word', () => {
   enterKey('ArrowRight', { altKey: true })
-  assert.is(input.cursorLocation[0], 9)
-  assert.ok(machine.screenCells[8].classList.classes['cursor'])
+  assert.is(input.cursorLocation[0], 10)
+  assert.ok(machine.screenCells[9].classList.classes['cursor'])
 })
 
 test('meta-left arrow - sol', () => {

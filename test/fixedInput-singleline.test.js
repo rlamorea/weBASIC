@@ -497,7 +497,7 @@ test('prefill', () => {
   assert.is(prefillInput.cursorEnd[1], 6)
 })
 
-test('prefill', () => {
+test('prefill with overflow', () => {
   machine.screen.moveTo([ 1, 6 ])
   machine.screen.displayString('Input? ', false)
   let prefillInput = new FixedInput(machine.currentScreen, {
@@ -514,6 +514,25 @@ test('prefill', () => {
   assert.is(prefillInput.cursorEnd[0], 40)
   assert.is(prefillInput.cursorEnd[1], 6)
 })
+
+test('move input to new line because too short', () => {
+  machine.screen.clearViewport()
+  machine.screen.displayString('Here is a really long prompt see?', false)
+  let shiftInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  assert.is(shiftInput.cursorLocation[0], 1)
+  assert.is(shiftInput.cursorLocation[1], 2)
+  assert.is(shiftInput.singleLineViewLength, 40)
+})
+
+test('move input to new line with scroll up because too short', () => {
+  machine.screen.moveTo([1, 10])
+  machine.screen.displayString('Here is a really long prompt see?', false)
+  let shiftInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  assert.is(shiftInput.cursorLocation[0], 1)
+  assert.is(shiftInput.cursorLocation[1], 10)
+  assert.is(shiftInput.singleLineViewLength, 40)
+})
+
 
 // TODO: eventually maybe handle error highlighting
 

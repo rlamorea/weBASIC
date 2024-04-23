@@ -162,8 +162,7 @@ export default class Screen {
 
   newline(withinViewport = true) {
     let cursor = withinViewport ? this.viewportCursorLocation : this.cursorLocation
-    this.moveTo([ 1, cursor[1] + 1 ], withinViewport)
-    return cursor
+    return this.moveTo([ 1, cursor[1] + 1 ], withinViewport)
   }
 
   advanceCursor(count = 1, withinViewport = true) {

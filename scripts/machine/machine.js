@@ -9,6 +9,8 @@ export default class Machine {
       LIVE: new LiveScreen({ machine: this }),
     }
     this.currentScreen = this.screens[this.currentMode]
+
+    this.currentInput = null
   }
 
   activateMode(mode) {

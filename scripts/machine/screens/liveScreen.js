@@ -24,15 +24,17 @@ export default class LiveScreen extends CharGridScreen {
     this.machine.activateMode('LIVE')
   }
 
-  handleCommand(input) {
+  async handleCommand(input) {
     const interpreter = new Interpreter({ machine: this.machine })
-    const result = interpreter.interpretLine(input)
+    const result = await interpreter.interpretLine(input)
     let options = { inputHandler: (input) => { this.handleCommand(input) } }
     if (result.error) {
       this.screen.displayString(`ERROR: ${result.error} at position ${result.location}`)
-      options.prefill = input
-      options.errorLocation = result.location
-      options.errorEndLocation = result.endLocation
+      if (!result.sourceText) {
+        options.prefill = input
+        options.errorLocation = result.location
+        options.errorEndLocation = result.endLocation
+      }
     }
 
     this.screen.newline()

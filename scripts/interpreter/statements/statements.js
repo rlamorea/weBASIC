@@ -1,13 +1,16 @@
-import Print from './print.js'
 import Assignment from './assignment.js'
 import MathFunctions from "./mathFunctions.js";
+import Print from './print.js'
+import Input from './input.js'
 
-const print = new Print()
 const assignment = new Assignment()
 const mathFunctions = new MathFunctions()
+const print = new Print()
+const input = new Input()
 
 export {
-  print,
   assignment,
   mathFunctions,
+  print,
+  input,
 }

@@ -533,7 +533,6 @@ test('move input to new line with scroll up because too short', () => {
   assert.is(shiftInput.singleLineViewLength, 40)
 })
 
-
 // TODO: eventually maybe handle error highlighting
 
 test.run()

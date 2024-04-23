@@ -14,18 +14,18 @@ export default class Interpreter {
     }
   }
 
-  interpretLine(codeLine) {
+  async interpretLine(codeLine) {
     let lineStatements = this.lexifier.lexifyLine(codeLine)
     if (lineStatements.error) { return lineStatements }
 
     for (const statement of lineStatements.lineStatements) {
-      const result = this.interpretStatement(statement)
+      const result = await this.interpretStatement(statement)
       if (result.error) { return result }
     }
     return { done: true }
   }
 
-  interpretStatement(statement) {
+  async interpretStatement(statement) {
     // look for specific handler first
     let key = `${statement.coding}|${statement.token}`
     let handler = this.handlers[key]
@@ -35,7 +35,11 @@ export default class Interpreter {
       handler = this.handlers[key]
     }
     if (handler) {
-      return handler(this.machine, statement, this)
+      try {
+        return await handler(this.machine, statement, this)
+      } catch (e) {
+        return e
+      }
     } else {
       return {
         error: `Unknown ${statement.token || statement.coding}`,

@@ -326,7 +326,7 @@ export default class FixedInput {
           this.screen.advanceCursorFrom(upcaseLoc)
         }
         const pre = (tokenDef.tokenStart === 0) ? '' : this.inputText.substring(0, tokenDef.tokenStart)
-        const post = (tokenDef.tokenEnd < this.inputText.length - 1) ? this.inputText.substring(tokenDef.tokenEnd) : ''
+        const post = (tokenDef.tokenEnd < this.inputText.length) ? this.inputText.substring(tokenDef.tokenEnd) : ''
         this.inputText = pre + tokenDef.token + post
         upcaseIdx = tokenDef.tokenEnd
       }

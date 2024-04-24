@@ -10,6 +10,7 @@ let resolvePromise = null
 let rejectPromise = null
 
 function handleInput(machine, statement, interpreter, input) {
+  machine.currentInput = null
   let values = input.split(',')
   const valIdx = 0
   let error = null

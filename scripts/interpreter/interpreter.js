@@ -59,6 +59,7 @@ export default class Interpreter {
         value = { value: statement.token, valueType: 'string' }
         break
       case 'number-literal':
+        if (statement.token.startsWith('.')) { statement.token = '0' + statement.token }
         value = { value: parseFloat(statement.token), valueType: 'number' }
         if (isNaN(value.value) || !isFinite(value.value)) {
           return { error: `Illegal Value ${statement.token}`, location: statement.tokenStart, endLocation: statement.tokenEnd }
@@ -94,5 +95,16 @@ export default class Interpreter {
       if (value.error) { return value }
     }
     return value
+  }
+
+  convertValue(valueDef, asType, tokenStart, tokenEnd) {
+    if (asType === 'character' && valueDef.valueType === 'string') {
+      valueDef.value = (valueDef.value.length === 0) ? '\0' : valueDef.value[0]
+    } else if (asType === 'integer' && valueDef.valueType === 'number') {
+      valueDef.value = Math.trunc(valueDef.value)
+    } else if (asType !== valueDef.valueType) {
+      return { error: 'Type Mismatch', location: tokenStart, endLocation: tokenEnd }
+    }
+    return valueDef
   }
 }

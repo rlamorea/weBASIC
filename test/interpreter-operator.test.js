@@ -1,9 +1,10 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 
+import Machine from './mockMachine.js'
+
 import nextToken from '../scripts/interpreter/tokenizer.js'
 import Lexifier from '../scripts/interpreter/lexifier.js'
-import Machine from './mockMachine.js'
 
 import Interpreter from "../scripts/interpreter/interpreter.js";
 
@@ -115,6 +116,23 @@ const testCases = [
   { test: '"a"+"b"', type: 'string', value: 'ab' },
   { test: 'a + 1', value: 2 },
   { test: '"a"+b$', type: 'string', value: 'ab' },
+  // number format tests
+  { test: '0', type: 'number', value: 0 },
+  { test: '1234', type: 'number', value: 1234 },
+  { test: '01234', type: 'number', value: 1234 },
+  { test: '.', type: 'number', value: 0 },
+  { test: '.02', type: 'number', value: 0.02 },
+  { test: '0.', type: 'number', value: 0 },
+  { test: '0.02', type: 'number', value: 0.02 },
+  { test: '00.02', type: 'number', value: 0.02 },
+  { test: '1E6', type: 'number', value: 1000000 },
+  { test: '.E6', type: 'number', value: 0 },
+  { test: '.02E6', type: 'number', value: 20000 },
+  { test: '1E+2', type: 'number', value: 100 },
+  { test: '1E-2', type: 'number', value: 0.01 },
+  { test: '1E20', type: 'number', value: 100000000000000000000 },
+  { test: '1E02', type: 'number', value: 100 },
+  { test: '1e6', type: 'number', value: 1000000 },
 ]
 // need to figure out later
 //   { desc: 'AND sort circuit', test: '0 AND ()', value: 0 }
@@ -127,6 +145,34 @@ for (const testCase of testCases) {
     assert.is(result.error, undefined)
     assert.is(result.valueType, testCase.type || 'number')
     assert.is(result.value, testCase.value)
+  })
+}
+
+// a few more tests to convert values
+const convertTests = [
+  { test: 1, as: 'integer', value: 1 },
+  { test: 1.0, as: 'integer', value: 1 },
+  { test: 1.0, as: 'integer', value: 1 },
+  { test: 1.999999, as: 'integer', value: 1 },
+  { test: -1, as: 'integer', value: -1 },
+  { test: -1.99999, as: 'integer', value: -1 },
+  { test: 'hi', type: 'string', as: 'integer', error: 'Type Mismatch' },
+  { test: '', as: 'character', value: '\0' },
+  { test: 'h', as: 'character', value: 'h' },
+  { test: 'hello', as: 'character', value: 'h' },
+  { test: 2, type: 'number', as: 'character', error: 'Type Mismatch' },
+]
+
+for (const testCase of convertTests) {
+  test(`convert ${testCase.test} to ${testCase.as}`, () => {
+    let valDef = { value: testCase.test }
+    valDef.valueType = testCase.type || (testCase.as === 'integer' ? 'number' : 'string')
+    const result = inter.convertValue(valDef, testCase.as)
+
+    assert.is(result.error, testCase.error)
+    if (!testCase.error) {
+      assert.is(result.value, testCase.value)
+    }
   })
 }
 

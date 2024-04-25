@@ -7,7 +7,7 @@ export default class Variables {
     this.variableLookup = {}
   }
 
-  getValue(variableDef, interpreter) {
+  getValue(variableDef, interpreter, asType) {
     const variableName = variableDef.token
     const variableType = variableDef.valueType
     const dimension = variableDef.dimension
@@ -21,10 +21,8 @@ export default class Variables {
         valueType: variableType
       }
       this.variableLookup[variableName] = valueDef
-      return valueDef
-    } else {
-      return valueDef
     }
+    return valueDef
   }
 
   setValue(variableDef, valueDef) {

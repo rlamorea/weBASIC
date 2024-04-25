@@ -38,7 +38,8 @@ export default class Interpreter {
       try {
         return await handler(this.machine, statement, this)
       } catch (e) {
-        return e
+        if (e.error) { return e }
+        return { error: e, location: statement.tokenStart, endLocation: statement.tokenEnd }
       }
     } else {
       return {

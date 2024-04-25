@@ -2,8 +2,20 @@ import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 
 import Machine from './mockMachine.js'
+import Interpreter from "../scripts/interpreter/interpreter.js"
+import nextToken from '../scripts/interpreter/tokenizer.js'
 
-import Interpreter from "../scripts/interpreter/interpreter.js";
+function tokens(code) {
+  let toks = []
+  let ts = 0
+  while (1 === 1) {
+    if (code === null || code.length === 0) { return toks }
+    const td = nextToken(code, ts, true)
+    toks.push(td)
+    ts = td.tokenEnd
+    code = td.restOfLine
+  }
+}
 
 const machine = new Machine()
 const inter = new Interpreter({ machine })
@@ -17,13 +29,20 @@ const testCases = [
   { test: 'f$=e$+"f"', variable: 'f$', valueType: 'string', coding: 'variable-string', value: 'ef' },
   { test: 'let x=2', variable: 'x', value: 2 },
   { test: 'let y$= "y"', variable: 'y$', valueType: 'string', coding: 'variable-string', value: 'y' },
+  // auto-dimension
+  { test: 'ar(1)=5', variableExpr: 'ar(1)', dimension: '1', value: 5 },
 ]
 
 for (const testCase of testCases) {
-  test(`${testCase.desc || ''}${testCase.test}`, () => {
-    inter.interpretLine(testCase.test)
+  test(`${testCase.desc || ''}${testCase.test}`, async () => {
+    const result = await inter.interpretLine(testCase.test)
+    assert.is(result.error, undefined)
 
-    const varD = { token: testCase.variable, coding: testCase.coding || 'variable-number', valueType: testCase.valueType || 'number' }
+    let varD = { token: testCase.variable, coding: testCase.coding || 'variable-number', valueType: testCase.valueType || 'number' }
+    if (testCase.variableExpr) {
+      let t = tokens(testCase.variableExpr)
+      varD = inter.lexifier.parseExpression(t, 0)
+    }
     const val = machine.variables.getValue(varD, inter)
 
     assert.is(val.error, undefined)

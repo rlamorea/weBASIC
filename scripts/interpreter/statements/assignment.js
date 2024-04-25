@@ -27,7 +27,7 @@ export default class Assignment extends Statement {
     const value = interpreter.interpretExpression(statement.value)
     if (value.error) { return value }
 
-    machine.variables.setValue(statement.variable, value)
+    machine.variables.setValue(statement.variable, value, interpreter)
     return { done: true }
   }
 }

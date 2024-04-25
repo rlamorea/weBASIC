@@ -116,4 +116,16 @@ test('input c(3)', async() => {
   assert.is(val.value, 2)
 })
 
+test('dim d(3, 3):input d(1, 2)', async() => {
+  machine.screen.clearViewport()
+  sendToInput('2')
+  const result = await inter.interpretLine('dim d(3, 3):input d(1, 2)')
+
+  assert.is(result.error, undefined)
+  const t = tokens('d(1, 2)')
+  const varD = inter.lexifier.parseExpression(t, 0)
+  const val = machine.variables.getValue(varD, inter)
+  assert.is(val.value, 2)
+})
+
 test.run()

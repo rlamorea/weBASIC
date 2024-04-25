@@ -43,13 +43,19 @@ export default class Variables {
     return { value,  valueArray }
   }
 
-  prepValueArray(dimensionValues, dimensions) {
-    if (dimensionValues.length > 1) {
-      return error(ErrorCodes.UNDIM_ARRAY, dimensions[0].tokenStart, dimensions.slice(-1)[0].tokenEnd)
+  prepValueArray(valueType, dimensionValues, dimensions, idx, forceDimension) {
+    let arrayLen = dimensionValues[idx] + 1
+    if (!forceDimension) arrayLen = Math.max(arrayLen, defaultArrayLength + 1)
+    if (arrayLen <= 1) {
+      return error(ErrorCodes.INDEX_OUT_OF_BOUNDS, dimensions[idx].tokenStart, dimensions[idx].tokenEnd)
     }
-    const arrayLen = Math.max(dimensionValues[0], defaultArrayLength) + 1
     let valueArray = Array(arrayLen)
-    valueArray.fill(0, 0, arrayLen)
+    valueArray.fill(valueType === 'string' ? '' : 0, 0, arrayLen)
+    if (idx < dimensionValues.length - 1) {
+      for (let arrayIdx = 0; arrayIdx < arrayLen; arrayIdx++) {
+        valueArray[arrayIdx] = this.prepValueArray(valueType, dimensionValues, dimensions,idx+1, forceDimension)
+      }
+    }
     return valueArray
   }
 
@@ -88,8 +94,11 @@ export default class Variables {
         value: valueArrayInfo.value,
         valueType: valueDef.valueType
       }
-    } else {
-      let valueArray = this.prepValueArray(dimensionValues, dimensions)
+    } else { // automatic dimension
+      if (dimensionValues.length > 1) {
+        return error(ErrorCodes.UNDIM_ARRAY, dimensions[0].tokenStart, dimensions.slice(-1)[0].tokenEnd)
+      }
+      let valueArray = this.prepValueArray(variableDef.valueType, dimensionValues, dimensions,0)
       valueDef = {
         value: 0,
         valueType: variableDef.valueType
@@ -143,8 +152,11 @@ export default class Variables {
       let valueArrayInfo = this.getValueArrayForIndex(storedValue.value, dimensionValues, dimensions)
       if (valueArrayInfo.error) { return valueArrayInfo }
       valueArrayInfo.valueArray[dimensionValues.slice(-1)[0]] = valueDef.value
-    } else {
-      const valueArray = this.prepValueArray(dimensionValues, dimensions)
+    } else { // automatic dimension
+      if (dimensionValues.length > 1) {
+        return error(ErrorCodes.UNDIM_ARRAY, dimensions[0].tokenStart, dimensions.slice(-1)[0].tokenEnd)
+      }
+      const valueArray = this.prepValueArray(variableDef.valueType, dimensionValues, dimensions,0)
       if (valueArray.error) { return valueArray}
       valueArray[dimensionValues[0]] = valueDef.value
       this.variableLookup[variableName] = {
@@ -167,5 +179,23 @@ export default class Variables {
       return error(ErrorCodes.TYPE_MISMATCH, variableDef.tokenStart, variableDef.tokenEnd)
     }
     return valueDef
+  }
+
+  dimensionArray(variableDef, machine, interpreter) {
+    const variableName = variableDef.token
+    const dimensions = variableDef.dimension
+    let valueDef = this.variableLookup[variableName]
+    if (valueDef) {
+      return error(ErrorCodes.REDIM_ARRAY, variableDef.tokenStart, variableDef.dimension.slice(-1)[0].tokenEnd)
+    }
+
+    const dimensionValues = this.getDimensionValues(variableDef.dimension, interpreter)
+    if (dimensionValues.error) { return dimensionValues }
+    const value = this.prepValueArray(variableDef.valueType, dimensionValues, dimensions,0, true)
+    if (value.error) { return value }
+    machine.variables.variableLookup[variableName] = {
+      value, valueType: variableDef.valueType
+    }
+    return { done: true }
   }
 }

@@ -1,4 +1,5 @@
 import Statement from './statement.js'
+import {ErrorCodes} from "../errors.js";
 
 function addParam(params, paramTokens, lexifier) {
   if (paramTokens.length > 0) {
@@ -31,7 +32,17 @@ export default class Print extends Statement {
         break
       }
       const token = tokens.shift()
-      if (token.coding === 'semicolon' || token.coding === 'comma') {
+      if (token.coding === 'open-paren') {
+        paramTokens.push(token)
+        if (tokens.length === 0) {
+          return error(ErrorCodes.UNCLOSED_PAREN, token.tokenStart, token.tokenEnd)
+        }
+        const parenTokens = lexifier.parseToCloseParen(tokens, token.tokenStart)
+        if (parenTokens.error) { return parenTokens }
+        paramTokens.push(...parenTokens.parenTokens)
+        paramTokens.push(parenTokens.closeParen)
+        tokens = parenTokens.restOfTokens
+      } else if (token.coding === 'semicolon' || token.coding === 'comma') {
         params = addParam(params, paramTokens, lexifier)
         if (params.error) { return params }
         paramTokens = []
@@ -54,14 +65,18 @@ export default class Print extends Statement {
           stringToDisplay += parameter.token
           break
         case 'variable-string':
-          stringToDisplay += machine.variables.getValue(parameter).value
+          const varString = machine.variables.getValue(parameter)
+          if (varString.error) { return varString }
+          stringToDisplay += varString.value
           break
         case 'number-literal':
           stringToDisplay += parameter.token.toString()
           break
         case 'variable-number':
         case 'variable-integer':
-          stringToDisplay += machine.variables.getValue(parameter, interpreter).value.toString()
+          const varVal = machine.variables.getValue(parameter, interpreter)
+          if (varVal.error) { return varVal }
+          stringToDisplay += varVal.value.toString()
           break
         case 'calculation':
           const value = interpreter.interpretExpression(parameter)

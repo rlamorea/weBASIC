@@ -1,5 +1,6 @@
 import nextToken from './tokenizer.js'
 import * as Statements from './statements/statements.js'
+import { ErrorCodes, error } from './errors.js'
 
 const prioritizedOperators = [
   '^', '*', '/', 'DIV', 'MOD', '+', '-',
@@ -49,13 +50,13 @@ export default class Lexifier {
     } else if (firstToken.coding === 'command' || firstToken.coding === 'statement') {
       return this.lexifyCommandOrStatement(firstToken, statementTokens)
     } else {
-      return { error: `Syntax Error: ${firstToken.token}`, location: firstToken.tokenStart, endLocation: firstToken.tokenEnd }
+      return error(ErrorCodes.SYNTAX, firstToken.tokenStart, firstToken.tokenEnd)
     }
   }
 
   lexifyAssignment(variable, tokens) {
     if (tokens.length === 0) {
-      return { error: `Syntax Error ${variable.token}`, tokenStart: variable.tokenStart, tokenEnd: variable.tokenEnd }
+      return error(ErrorCodes.SYNTAX, variable.tokenStart, variable.tokenEnd)
     }
     let token = tokens.shift()
     const result = this.parseVariableDimensions(variable, token, tokens)
@@ -63,20 +64,20 @@ export default class Lexifier {
     tokens = result.restOfTokens
     if (result.foundDimensions) {
       if (tokens.length === 0) {
-        return { error: 'Syntax Error', location: variable.tokenEnd, endLocation: token.tokenEnd + 1 }
+        return error(ErrorCodes.SYNTAX, variable.tokenEnd, token.tokenEnd + 1)
       }
       token = tokens.shift()
     }
     if (token.coding !== 'equal') {
-      return { error: 'Syntax Error', location: token.tokenStart, endLocation: token.tokenEnd }
+      return error(ErrorCodes.SYTNAX, token.tokenStart, token.tokenEnd)
     }
     if (tokens.length === 0) {
-      return { error: 'Syntax Error', location: variable.tokenEnd, endLocation: token.tokenEnd + 1 }
+      return error(ErrorCodes.SYNTAX, variable.tokenEnd, token.tokenEnd + 1)
     }
     const expression = this.parseExpression(tokens, tokens[0].tokenStart)
     if (expression.error) { return expression }
     if (expression.valueType !== 'any' && expression.valueType !== variable.valueType) {
-      return { error: 'Type Mismatch', location: expression.tokenStart, endLocation: expression.tokenEnd }
+      return error(ErrorCodes.TYPE_MISMATCH,expression.tokenStart, expression.tokenEnd)
     }
     return { coding: 'assignment', variable: variable, value: expression }
   }
@@ -101,7 +102,7 @@ export default class Lexifier {
       const dimension = this.parseToCloseParen(tokens, testToken.tokenStart)
       if (dimension.error) { return dimension }
       if (dimension.parenTokens.length === 0) {
-        return { error: 'Illegal Index', location: token.tokenStart, endLocation: dimension.tokenEnd }
+        return error(ErrorCodes.ILLEGAL_INDEX, token.tokenStart, dimension.tokenEnd)
       }
       const dimensionParams = this.parseIntoParameters(dimension.parenTokens, dimension.parenTokens[0].tokenStart)
       if (dimensionParams.error) { return dimensionParams }
@@ -117,7 +118,7 @@ export default class Lexifier {
     let tokenEnd = tokenStart + 1
     while (1 === 1) {
       if (tokens.length === 0) {
-        return { error: 'Unclosed Paren', location: tokenStart, endLocation: tokenEnd }
+        return error(ErrorCodes.UNCLOSED_PAREN, tokenStart, tokenEnd)
       }
       const token = tokens.shift()
       if (token.coding === 'open-paren') {
@@ -153,7 +154,7 @@ export default class Lexifier {
       const token = tokens.shift()
       if (token.coding === 'comma') {
         if (paramTokens.length === 0) {
-          return { error: 'Unspecified Param', location: token.tokenStart, endLocation: token.tokenEnd }
+          return error(ErrorCodes.ILLEGAL_VALUE, token.tokenStart, token.tokenEnd)
         }
         const expression = this.parseExpression(paramTokens, paramTokens[0].tokenStart)
         if (expression.error) { return expression }
@@ -187,7 +188,7 @@ export default class Lexifier {
     while (1 === 1) {
       if (tokens.length === 0) {
         if (clauseTokens.length === 0 || !needOperator) {
-          return { error: 'Syntax Error', location: tokenStart, endLocation: tokenEnd }
+          return error(ErrorCodes.SYNTAX, tokenStart, tokenEnd)
         }
         const lastClause = clauseTokens.slice(-1)[0]
         if (unaryOperator) { lastClause.unaryOperator = unaryOperator }
@@ -203,23 +204,23 @@ export default class Lexifier {
         prevVariable = null
         tokens = result.restOfTokens
       } else if (needOperator && [ 'plus', 'minus', 'equal', 'binary-operator' ].indexOf(token.coding) < 0) {
-        return { error: 'Syntax Error', location: token.tokenStart, endLocation: tokenEnd }
+        return error(ErrorCodes.SYNTAX, token.tokenStart, tokenEnd)
       } else if (!needOperator && [ 'plus', 'minus', 'unary-operator' ].indexOf(token.coding) >= 0) {
         unaryOperator = { token: token.token, coding: 'unary-operator', tokenStart: token.tokenStart, tokenEnd: token.tokenEnd }
       } else if (token.coding === 'function') {
         prevVariable = null
         if (tokens.length === 0) {
-          return {error: 'Syntax Error', location: token.tokenStart, endLocation: tokenEnd}
+          return error(ErrorCodes.SYNTAX, token.tokenStart, tokenEnd)
         }
         if (hasNumbers && token.valueType === 'string') {
-          return {error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd}
+          return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         } else if (hasStrings && token.valueType === 'number') {
-          return {error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd}
+          return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         }
         const functionDef = token
         token = tokens.shift()
         if (token.coding !== 'open-paren') {
-          return {error: 'Syntax Error', location: token.tokenStart, endLocation: token.tokenEnd}
+          return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
         }
         const parenTokens = this.parseToCloseParen(tokens, tokenEnd)
         if (parenTokens.error) {
@@ -244,11 +245,11 @@ export default class Lexifier {
         const parenTokens = this.parseToCloseParen(tokens, tokenEnd)
         if (parenTokens.error) { return parenTokens }
         if (parenTokens.length === 0) {
-          return { error: 'Syntax Error', location: tokenEnd, endLocation: tokenEnd + 1 }
+          return error(ErrorCodes.SYNTAX, tokenEnd, tokenEnd + 1)
         }
         tokens = parenTokens.restOfTokens
         if (parenTokens.parenTokens.length === 0) {
-          return { error: 'Syntax Error', location: tokenStart, endLocation: tokenEnd }
+          return error(ErrorCodes.SYNTAX, tokenStart, tokenEnd)
         }
         const subExpression = this.parseExpression(parenTokens.parenTokens, parenTokens.parenTokens[0].tokenStart)
         if (subExpression.error) { return subExpression }
@@ -259,7 +260,7 @@ export default class Lexifier {
       } else if (token.coding === 'string-literal' || token.coding === 'variable-string') {
         prevVariable = null
         if (unaryOperator || hasNumbers) {
-          return { error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd }
+          return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         }
         clauseTokens.push(token)
         hasStrings = true
@@ -268,7 +269,7 @@ export default class Lexifier {
       } else if (token.coding === 'number-literal' || token.coding === 'variable-number' || token.coding === 'variable-integer') {
         prevVariable = null
         if (hasStrings) {
-          return { error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd }
+          return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         }
         clauseTokens.push(token)
         hasNumbers = true
@@ -277,7 +278,7 @@ export default class Lexifier {
       } else if (needOperator && [ 'plus', 'minus', 'equal', 'binary-operator' ].indexOf(token.coding) >= 0) {
         prevVariable = null
         if (hasStrings && token.coding !== 'plus') {
-          return { error: 'Type Mismatch', location: token.tokenStart, endLocation: tokenEnd }
+          return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         }
         const lastClause = clauseTokens.slice(-1)[0]
         if (unaryOperator) { lastClause.unaryOperator = unaryOperator }
@@ -285,7 +286,7 @@ export default class Lexifier {
         needOperator = false
         unaryOperator = null
       } else {
-        return { error: 'Syntax Error', location: token.tokenStart, endLocation: tokenEnd }
+        return error(ErrorCodes.SYNTAX, token.tokenStart, tokenEnd)
       }
     }
     return this.prioritizeExpression(clauseTokens)

@@ -1,6 +1,7 @@
 import Lexifier from './lexifier.js'
 import * as Statements from './statements/statements.js'
 import { unaryOperation, binaryOperation } from "./statements/operators.js";
+import { ErrorCodes, error } from './errors.js'
 
 export default class Interpreter {
   constructor(options) {
@@ -39,7 +40,8 @@ export default class Interpreter {
         return await handler(this.machine, statement, this)
       } catch (e) {
         if (e.error) { return e }
-        return { error: e, location: statement.tokenStart, endLocation: statement.tokenEnd }
+        console.log(e.stack)
+        return error(e.toString(), statement.tokenStart, statement.tokenEnd)
       }
     } else {
       return {
@@ -63,7 +65,7 @@ export default class Interpreter {
         if (statement.token.startsWith('.')) { statement.token = '0' + statement.token }
         value = { value: parseFloat(statement.token), valueType: 'number' }
         if (isNaN(value.value) || !isFinite(value.value)) {
-          return { error: `Illegal Value ${statement.token}`, location: statement.tokenStart, endLocation: statement.tokenEnd }
+          return error(ErrorCodes.ILLEGAL_VALUE, statement.tokenStart, statement.tokenEnd)
         }
         break
       case 'variable-number':
@@ -83,12 +85,12 @@ export default class Interpreter {
         }
         const handler = this.handlers[`${statement.function.coding}|${statement.function.token}`]
         if (!handler) {
-          return { error: `Unknown ${statement.function.token}`, location: statement.tokenStart, endLocation: statement.tokenEnd }
+          return error(ErrorCodes.UNSUPPORTED, statement.tokenStart, statement.tokenEnd)
         }
         value = handler(statement, paramValues, this)
         break
       default:
-        return { error: 'Unknown Expression', location: statement.tokenStart, endLocation: statement.tokenEnd }
+        return error(ErrorCodes.SYNTAX, statement.tokenStart, statement.tokenEnd)
     }
     // fall through means we have a number value, time to check for unary negation
     if (statement.unaryOperator) {
@@ -104,7 +106,7 @@ export default class Interpreter {
     } else if (asType === 'integer' && valueDef.valueType === 'number') {
       valueDef.value = Math.trunc(valueDef.value)
     } else if (asType !== valueDef.valueType) {
-      return { error: 'Type Mismatch', location: tokenStart, endLocation: tokenEnd }
+      return error(ErrorCodes.TYPE_MISMATCH, tokenStart, tokenEnd)
     }
     return valueDef
   }

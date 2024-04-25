@@ -1,8 +1,10 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
+import { ErrorCodes } from '../scripts/interpreter/errors.js'
 
 import Machine from './mockMachine.js'
 import Interpreter from "../scripts/interpreter/interpreter.js";
+import { tokens } from './testHelpers.js'
 
 const machine = new Machine({ addScreen: true })
 const inter = new Interpreter({ machine })
@@ -91,7 +93,7 @@ test('input a - error', async () => {
   sendToInput('hello')
   const result = await inter.interpretLine('input a')
 
-  assert.is(result.error, 'Illegal Value')
+  assert.is(result.error, ErrorCodes.ILLEGAL_VALUE )
 })
 
 test('input b$, a - error', async () => {
@@ -99,7 +101,19 @@ test('input b$, a - error', async () => {
   sendToInput('hello, hi')
   const result = await inter.interpretLine('input b$, a')
 
-  assert.is(result.error, 'Illegal Value')
+  assert.is(result.error, ErrorCodes.ILLEGAL_VALUE )
+})
+
+test('input c(3)', async() => {
+  machine.screen.clearViewport()
+  sendToInput('2')
+  const result = await inter.interpretLine('input c(3)')
+
+  assert.is(result.error, undefined)
+  const t = tokens('c(3)')
+  const varD = inter.lexifier.parseExpression(t, 0)
+  const val = machine.variables.getValue(varD, inter)
+  assert.is(val.value, 2)
 })
 
 test.run()

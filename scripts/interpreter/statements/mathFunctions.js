@@ -1,15 +1,16 @@
 import Statement from './statement.js'
+import { ErrorCodes, error } from '../errors.js'
 
 function confirmParams(statement, paramValues, minimumCount, maximumCount, paramTypes) {
   if (paramValues.length < minimumCount || paramValues.length > maximumCount) {
     const errorStart = (paramValues.length === 0) ? statement.function.tokenStart : statement.parameters[0].tokenStart
     const errorEnd = (paramValues.length === 0) ? statement.function.tokenEnd : statement.parameters.slice(-1)[0].tokenEnd
-    return { error: 'Syntax Error', location: errorStart, endLocation: errorEnd }
+    return error(ErrorCodes.SYNTAX, errorStart, errorEnd)
   }
   for (let idx = 0; idx < paramTypes.length; idx++) {
     if (idx >= paramValues.length) break
     if (paramValues[idx].valueType !== paramTypes[idx]) {
-      return { error: 'Type Mismatch', location: statement.parameters[idx].tokenStart, endLocation: statement.parameters[idx].tokenEnd }
+      return error(ErrorCodes.TYPE_MISMATCH, statement.parameters[idx].tokenStart, statement.parameters[idx].tokenEnd)
     }
   }
   return { success: true }
@@ -19,7 +20,7 @@ function valReturn(statement, value) {
   if (isNaN(value) || !isFinite(value)) {
     const errorStart = statement.parameters.length === 0 ? statement.function.tokenStart : statement.parameters[0].tokenStart
     const errorEnd = statement.parameters.length === 0 ? statement.function.tokenEnd : statement.parameters.slice(-1)[0].tokenEnd
-    return { error: 'Illegal Value', location: errorStart, endLocation: errorEnd }
+    return error(ErrorCodes.ILLEGAL_VALUE, errorStart, errorEnd)
   }
   return { value, valueType: 'number' }
 }

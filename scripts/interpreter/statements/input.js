@@ -1,6 +1,7 @@
 import Statement from './statement.js'
 import FixedInput from '../../machine/screens/fixedInput.js'
 import nextToken from '../tokenizer.js'
+import { ErrorCodes, error } from '../errors.js'
 
 const defaultInputPrompt = '? '
 
@@ -12,8 +13,7 @@ let rejectPromise = null
 function handleInput(machine, statement, interpreter, input) {
   machine.currentInput = null
   let values = input.split(',')
-  const valIdx = 0
-  let error = null
+  let err = null
   let tokenStart = 0
   let tokenEnd = 1
   let varIdx = 0
@@ -22,32 +22,32 @@ function handleInput(machine, statement, interpreter, input) {
     tokenEnd += value.length
     const variable = statement.inputVariables[varIdx++]
     if (varIdx >= statement.inputVariables.length && values.length > 0) {
-      error = { error: 'Too Many Inputs', location: tokenEnd, endLocation: input.length - 1, sourceText: input }
+      err = error(ErrorCodes.TOO_MANY_INPUTS, tokenEnd, input.length - 1, input)
       break
     }
     if (variable.valueType === 'number') {
       const numberToken = nextToken(value, 0, true)
       if (numberToken.error) {
-        error = { sourceText: input, ...numberToken }
+        err = error(numberToken.error, numberToken.location, numberToken.endLocation, input)
         break
       }
       if (numberToken.coding !== 'number-literal') {
-        error = { error: 'Illegal Value', location: tokenStart, endLocation: tokenEnd, sourceText: input }
+        err = error(ErrorCodes.ILLEGAL_VALUE, tokenStart, tokenEnd, input)
         break
       }
       const interpretedValue = interpreter.interpretExpression(numberToken)
       if (interpretedValue.error) {
-        error = { sourceText: input, ...interpretedValue }
+        err = error(interpretedValue.error, interpretedValue.location, interpretedValue.endLocation, input)
         break
       }
-      machine.variables.setValue(variable, interpretedValue)
+      machine.variables.setValue(variable, interpretedValue, interpreter)
     } else {
-      machine.variables.setValue(variable, { value: value.trim(), valueType: 'string' })
+      machine.variables.setValue(variable, { value: value.trim(), valueType: 'string' }, interpreter)
     }
     tokenStart = tokenEnd + 1
   }
-  if (error) {
-    rejectPromise(error)
+  if (err) {
+    rejectPromise(err)
   } else {
     resolvePromise({done: true})
   }
@@ -88,20 +88,25 @@ export default class Input extends Statement {
       let token = tokens.shift()
       tokenEnd = token.tokenEnd
       if (!token.coding.startsWith('variable-')) {
-        return { error: 'Syntax Error', location: statement.tokenStart, endLocation: tokenEnd }
+        return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
       }
       inputVariables.push(token)
-      // TODO: array dimensions!
+      if (tokens.length > 0 && tokens[0].coding === 'open-paren') {
+        const parenToken = tokens.shift()
+        const result = lexifier.parseVariableDimensions(token, parenToken, tokens)
+        if (result.error) { return result }
+        tokens = result.restOfTokens
+      }
       if (tokens.length > 0) {
         token = tokens.shift()
         tokenEnd = token.tokenEnd
         if (token.coding !== 'comma') {
-          return { error: 'Syntax Error', location: statement.tokenStart, endLocation: tokenEnd }
+          return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
         }
       }
     }
     if (inputVariables.length === 0) {
-      return { error: 'Syntax Error', location: statement.tokenStart, endLocation: tokenEnd }
+      return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
     }
     statement.prompt = prompt
     statement.showQuestion = showQuestion
@@ -114,7 +119,7 @@ export default class Input extends Statement {
     if (statement.prompt) {
       stringToDisplay = statement.prompt
     }
-    if (statement.showQuestion) { stringToDisplay += '? ' }
+    if (statement.showQuestion) { stringToDisplay += defaultInputPrompt }
     machine.currentScreen.displayString(stringToDisplay, false)
 
     inputPromise = new Promise((resolve, reject) => {

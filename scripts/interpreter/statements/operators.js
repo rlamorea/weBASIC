@@ -1,7 +1,8 @@
+import { ErrorCodes, error } from '../errors.js'
 
 function unaryOperation(operator, value, expressionStart, expressionEnd) {
   if (value.valueType !== 'number') {
-    return { error: 'Type Mismatch', location: expressionStart, endLocation: expressionEnd }
+    return error(ErrorCodes.TYPE_MISMATCH, expressionStart, expressionEnd)
   }
   switch (operator.token) {
     case '-':
@@ -15,10 +16,10 @@ function unaryOperation(operator, value, expressionStart, expressionEnd) {
       value.value = (value.value === 0) ? 1 : 0
       break
     default:
-      return { error: `Unknown Operator ${operator.token}`, location: operator.tokenStart, endLocation: operator.tokenEnd }
+      return error(ErrorCodes.UNSUPPORTED, operator.tokenStart, operator.tokenEnd)
   }
   if (isNaN(value.value) || !isFinite(value.value)) {
-    return { error: `Illegal Value`, location: expressionStart, endLocation: expressionEnd }
+    return error(ErrorCodes.ILLEGAL_VALUE, expressionStart, expressionEnd)
   }
   return value
 }
@@ -35,7 +36,7 @@ function binaryOperation(operator, preExpression, postExpression, interpreter) {
   const postValue = interpreter.interpretExpression(postExpression)
   if (postValue.error) { return postValue }
   if (preValue.valueType !== postValue.valueType) {
-    return { error: 'Type Mismatch', location: preExpression.tokenStart, endLocation: postExpression.tokenEnd }
+    return error(ErrorCodes.TYPE_MISMATCH, preExpression.tokenStart, postExpression.tokenEnd)
   }
   // string concat -- do here to let rest be numeric math
   if (operator.token === '+' && preValue.valueType === 'string') { // which means postValue type is string too
@@ -99,10 +100,10 @@ function binaryOperation(operator, preExpression, postExpression, interpreter) {
       value = (preValue.value < postValue.value) ? 1 : 0
       break
     default:
-      return { error: `Unknown Operator ${operator.token}`, location: operator.tokenStart, endLocation: operator.tokenEnd }
+      return error(ErrorCodes.UNSUPPORTED, operator.tokenStart, operator.tokenEnd)
   }
   if (isNaN(value) || !isFinite(value)) {
-    return { error: 'Invalid Expression', location: preExpression.tokenStart, endLocation: postExpression.tokenEnd }
+    return error(ErrorCodes.ILLEGAL_VALUE, preExpression.tokenStart, postExpression.tokenEnd)
   }
   return { value, valueType: 'number' }
 }

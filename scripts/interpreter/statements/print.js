@@ -61,7 +61,7 @@ export default class Print extends Statement {
           break
         case 'variable-number':
         case 'variable-integer':
-          stringToDisplay += machine.variables.getValue(parameter).value.toString()
+          stringToDisplay += machine.variables.getValue(parameter, interpreter).value.toString()
           break
         case 'calculation':
           const value = interpreter.interpretExpression(parameter)
@@ -73,7 +73,7 @@ export default class Print extends Statement {
           newline = false
           break
         default:
-          return { error: 'Syntax Error', location: parameter.tokenStart, endLocation: parameter.tokenEnd }
+          return error(ErrorCodes.SYNTAX_ERROR, parameter.tokenStart, parameter.tokenEnd)
       }
     }
     machine.currentScreen.displayString(stringToDisplay, newline)

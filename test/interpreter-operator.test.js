@@ -1,5 +1,6 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
+import { ErrorCodes } from '../scripts/interpreter/errors.js'
 
 import Machine from './mockMachine.js'
 
@@ -156,11 +157,11 @@ const convertTests = [
   { test: 1.999999, as: 'integer', value: 1 },
   { test: -1, as: 'integer', value: -1 },
   { test: -1.99999, as: 'integer', value: -1 },
-  { test: 'hi', type: 'string', as: 'integer', error: 'Type Mismatch' },
+  { test: 'hi', type: 'string', as: 'integer', error: ErrorCodes.TYPE_MISMATCH },
   { test: '', as: 'character', value: '\0' },
   { test: 'h', as: 'character', value: 'h' },
   { test: 'hello', as: 'character', value: 'h' },
-  { test: 2, type: 'number', as: 'character', error: 'Type Mismatch' },
+  { test: 2, type: 'number', as: 'character', error: ErrorCodes.TYPE_MISMATCH },
 ]
 
 for (const testCase of convertTests) {

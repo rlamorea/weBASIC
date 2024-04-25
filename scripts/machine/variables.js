@@ -1,3 +1,5 @@
+import { ErrorCodes, error } from '../interpreter/errors.js'
+
 const defaultArrayLength = 10
 
 export default class Variables {
@@ -15,10 +17,10 @@ export default class Variables {
       const dimValue = interpreter.interpretExpression(dimension, dimension.tokenStart)
       if (dimValue.error) { return dimValue }
       if (dimValue.valueType !== 'number') {
-        return { error: 'Illegal Index', location: dimension.tokenStart, endLocation: dimension.tokenEnd }
+        return error(ErrorCodes.ILLEGAL_INDEX, dimension.tokenStart, dimension.tokenEnd)
       }
       if (dimValue.value < 0) {
-        return { error: 'Index Out Of Bounds', location: dimension.tokenStart, endLocation: dimension.tokenEnd }
+        return error(ErrorCodes.INDEX_OUT_OF_BOUNDS, dimension.tokenStart, dimension.tokenEnd)
       }
       dimensionValues.push(dimValue.value)
     }
@@ -29,11 +31,11 @@ export default class Variables {
     let valueArray = value
     for (let idx = 0; idx < dimensionValues.length; idx++) {
       if (!Array.isArray(value)) {
-        return { error: 'Illegal Index', location: dimensions[0].tokenStart, endLocation: dimensions.slice(-1)[0].tokenEnd }
+        return error(ErrorCodes.ILLEGAL_INDEX, dimensions[0].tokenStart, dimensions.slice(-1)[0].tokenEnd)
       }
       const dimValue = dimensionValues[idx]
-      if (dimValue > value.length) {
-        return { error: 'Index Out of Bounds', location: dimensions[idx].tokenStart, endLocation: dimensions[idx].tokenEnd }
+      if (dimValue >= value.length) {
+        return error(ErrorCodes.INDEX_OUT_OF_BOUNDS, dimensions[idx].tokenStart, dimensions[idx].tokenEnd)
       }
       valueArray = value
       value = value[dimValue]
@@ -43,7 +45,7 @@ export default class Variables {
 
   prepValueArray(dimensionValues, dimensions) {
     if (dimensionValues.length > 1) {
-      return { error: 'Undimensioned Array', location: dimensions[0].tokenStart, endLocation: dimensions.slice(-1)[0].tokenEnd }
+      return error(ErrorCodes.UNDIM_ARRAY, dimensions[0].tokenStart, dimensions.slice(-1)[0].tokenEnd)
     }
     const arrayLen = Math.max(dimensionValues[0], defaultArrayLength) + 1
     let valueArray = Array(arrayLen)
@@ -101,7 +103,7 @@ export default class Variables {
   }
 
   getUserFunctionValue(variableDef, interpreter) {
-    return { error: 'Unsupported Operation', location: variableDef.tokenStart, endLocation: variableDef.tokenEnd }
+    return error(ErrorCodes.UNSUPPORTED, variableDef.tokenStart, variableDef.tokenEnd)
   }
 
   setValue(variableDef, valueDef, interpreter) {
@@ -154,7 +156,7 @@ export default class Variables {
   }
 
   setUserFunctionValue(variableDef, valueDef, interpreter) {
-    return { error: 'Unsupported Operation', location: variableDef.tokenStart, endLocation: variableDef.tokenEnd }
+    return error(ErrorCodes.UNSUPPORTED, variableDef.tokenStart, variableDef.tokenEnd)
   }
 
   cleanValueDef(variableDef, valueDef) {
@@ -162,7 +164,7 @@ export default class Variables {
       valueDef.value = Math.trunc(valueDef.value)
     }
     if (valueDef.valueType !== variableDef.valueType) {
-      return { error: 'Type Mismatch', location: variableDef.tokenStart, endLocation: variableDef.tokenEnd }
+      return error(ErrorCodes.TYPE_MISMATCH, variableDef.tokenStart, variableDef.tokenEnd)
     }
     return valueDef
   }

@@ -1,50 +1,44 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
+import { ErrorCodes } from '../scripts/interpreter/errors.js'
+
+import Machine from './mockMachine.js'
+
+const machine = new Machine();
 
 import nextToken from '../scripts/interpreter/tokenizer.js'
 import Lexifier from '../scripts/interpreter/lexifier.js'
+import { tokens } from './testHelpers.js'
 
 const lex = new Lexifier()
 
-function tokens(code) {
-  let toks = []
-  let ts = 0
-  while (1 === 1) {
-    if (code === null || code.length === 0) { return toks }
-    const td = nextToken(code, ts, true)
-    toks.push(td)
-    ts = td.tokenEnd
-    code = td.restOfLine
-  }
-}
-
 const testCases = [
-  { category: 'paren', test: '(', error: 'Unclosed Paren' },
-  { category: 'paren', test: '(255', error: 'Unclosed Paren' },
-  { category: 'paren', test: '(255 - 10', error: 'Unclosed Paren' },
-  { category: 'paren', test: '(255 - (10 + foo)', error: 'Unclosed Paren' },
-  { category: 'paren', test: '((255 - 10) + foo', error: 'Unclosed Paren' },
-  { category: 'param', test: '0,,0', error: 'Unspecified Param' },
-  { category: 'param', test: 'PRINT', error: 'Syntax Error' },
-  { category: 'param', test: '1, PRINT', error: 'Syntax Error' },
-  { category: 'expression', test: 'PRINT', error: 'Syntax Error' },
-  { category: 'expression', test: '- "hello"', error: 'Type Mismatch' },
-  { category: 'expression', test: '"hello" - " world"', error: 'Type Mismatch' },
-  { category: 'expression', test: '2 + "hello"', error: 'Type Mismatch' },
-  { category: 'expression', test: '3 + CHR$(255)', error: 'Type Mismatch' },
-  { category: 'expression', test: 'CHR$(255) + 3', error: 'Type Mismatch' },
-  { category: 'expression', test: '3 + variable$', error: 'Type Mismatch' },
-  { category: 'expression', test: 'variable$ + 3', error: 'Type Mismatch' },
-  { category: 'expression', test: '"hello " + variable', error: 'Type Mismatch' },
-  { category: 'expression', test: 'variable% + "hello', error: 'Type Mismatch' },
-  { category: 'expression', test: 'variable% + ', error: 'Syntax Error' },
-  { category: 'expression', test: '"string" "string"', error: 'Syntax Error' },
-  { category: 'assignment', test: 'a = "b"', error: 'Type Mismatch'},
-  { category: 'assignment', test: 'a = b$', error: 'Type Mismatch'},
-  { category: 'assignment', test: 'a = CHR$(5)', error: 'Type Mismatch'},
-  { category: 'assignment', test: 'b$ = 2', error: 'Type Mismatch'},
-  { category: 'assignment', test: 'b$ = a', error: 'Type Mismatch'},
-  { category: 'assignment', test: 'b$ = ATN(5)', error: 'Type Mismatch'},
+  { category: 'paren', test: '(', error: ErrorCodes.UNCLOSED_PAREN },
+  { category: 'paren', test: '(255', error: ErrorCodes.UNCLOSED_PAREN },
+  { category: 'paren', test: '(255 - 10', error: ErrorCodes.UNCLOSED_PAREN },
+  { category: 'paren', test: '(255 - (10 + foo)', error: ErrorCodes.UNCLOSED_PAREN },
+  { category: 'paren', test: '((255 - 10) + foo', error: ErrorCodes.UNCLOSED_PAREN },
+  { category: 'param', test: '0,,0', error: ErrorCodes.ILLEGAL_VALUE },
+  { category: 'param', test: 'PRINT', error: ErrorCodes.SYNTAX },
+  { category: 'param', test: '1, PRINT', error: ErrorCodes.SYNTAX },
+  { category: 'expression', test: 'PRINT', error: ErrorCodes.SYNTAX },
+  { category: 'expression', test: '- "hello"', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: '"hello" - " world"', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: '2 + "hello"', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: '3 + CHR$(255)', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: 'CHR$(255) + 3', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: '3 + variable$', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: 'variable$ + 3', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: '"hello " + variable', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: 'variable% + "hello', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'expression', test: 'variable% + ', error: ErrorCodes.SYNTAX },
+  { category: 'expression', test: '"string" "string"', error: ErrorCodes.SYNTAX },
+  { category: 'assignment', test: 'a = "b"', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'assignment', test: 'a = b$', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'assignment', test: 'a = CHR$(5)', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'assignment', test: 'b$ = 2', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'assignment', test: 'b$ = a', error: ErrorCodes.TYPE_MISMATCH },
+  { category: 'assignment', test: 'b$ = ATN(5)', error: ErrorCodes.TYPE_MISMATCH },
 ]
 
 for (const testCase of testCases) {
@@ -63,7 +57,7 @@ for (const testCase of testCases) {
       result = lex.lexifyAssignment(v, t)
     }
 
-    assert.ok(result.error.startsWith(testCase.error))
+    assert.is(result.error, testCase.error)
   })
 }
 

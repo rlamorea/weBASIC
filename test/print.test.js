@@ -122,4 +122,13 @@ test('b=2:print b*b', async () => {
   assert.is(machine.screenCells[0].innerHTML, '4')
 })
 
+test('ar(5)=2:print ar(5);ar(2)', async () => {
+  machine.screen.home()
+  const result = await inter.interpretLine('ar(5)=2:print ar(5);ar(2)')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.screenCells[0].innerHTML, '2')
+  assert.is(machine.screenCells[1].innerHTML, '0')
+})
+
 test.run()

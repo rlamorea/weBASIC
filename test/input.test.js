@@ -16,7 +16,7 @@ function sendToInput(string) {
     }
     machine.execution.currentInput.handleKey({ key: 'Enter' })
   } else {
-    setTimeout(() => { sendToInput(string) }, 100 )
+    setTimeout(() => { sendToInput(string) }, 25 )
   }
 }
 

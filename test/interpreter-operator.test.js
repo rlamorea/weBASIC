@@ -138,6 +138,11 @@ const testCases = [
   { test: '1E20', type: 'number', value: 100000000000000000000 },
   { test: '1E02', type: 'number', value: 100 },
   { test: '1e6', type: 'number', value: 1000000 },
+  // short circuit tests
+  { desc: 'AND short circuit', test: '0 AND q(3,4)=1', value: 0 },
+  { desc: 'AND short circuit fail', test: '1 AND q(3,4)=1', error: ErrorCodes.UNDIM_ARRAY },
+  { desc: 'OR short circuit', test: '1 OR q(3,4)=1', value: 1 },
+  { desc: 'OR short circuit', test: '0 OR q(3,4)=1', error: ErrorCodes.UNDIM_ARRAY },
 ]
 // need to figure out later
 //   { desc: 'AND sort circuit', test: '0 AND ()', value: 0 }
@@ -147,9 +152,11 @@ for (const testCase of testCases) {
     let s = statementFor(testCase.test)
     const result = inter.interpretExpression(s)
 
-    assert.is(result.error, undefined)
-    assert.is(result.valueType, testCase.type || 'number')
-    assert.is(result.value, testCase.value)
+    assert.is(result.error, testCase.error)
+    if (!testCase.error) {
+      assert.is(result.valueType, testCase.type || 'number')
+      assert.is(result.value, testCase.value)
+    }
   })
 }
 

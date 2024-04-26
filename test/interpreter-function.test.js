@@ -1,13 +1,14 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 
+import Machine from './mockMachine.js'
+const machine = new Machine()
+
 import nextToken from '../scripts/interpreter/tokenizer.js'
 import Lexifier from '../scripts/interpreter/lexifier.js'
-import Machine from './mockMachine.js'
 
 import Interpreter from "../scripts/interpreter/interpreter.js";
 
-const machine = new Machine()
 const lex = new Lexifier()
 const inter = new Interpreter({ machine })
 
@@ -63,8 +64,6 @@ const testCases = [
   { test: `TAN(${pi}/2)`, value: 16331239353195370},
   { test: 'TAN(-1)', value: -1.5574077246549023 },
 ]
-
-// TODO: SQR of a negative?
 
 for (const testCase of testCases) {
   test(`${testCase.desc || ''}${testCase.test}`, () => {

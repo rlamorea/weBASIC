@@ -144,8 +144,6 @@ const testCases = [
   { desc: 'OR short circuit', test: '1 OR q(3,4)=1', value: 1 },
   { desc: 'OR short circuit', test: '0 OR q(3,4)=1', error: ErrorCodes.UNDIM_ARRAY },
 ]
-// need to figure out later
-//   { desc: 'AND sort circuit', test: '0 AND ()', value: 0 }
 
 for (const testCase of testCases) {
   test(`${testCase.desc || ''}${testCase.test}`, () => {

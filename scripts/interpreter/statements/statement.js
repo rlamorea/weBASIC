@@ -3,8 +3,11 @@ import {error, ErrorCodes} from "../errors.js";
 // parsing handler signature:
 // parseN(statement, tokens, lexifier)
 
-// interpreter handler signature:
+// interpreter handler signature - for statements
 // doN(machine, statement, interpreter)
+
+// interpreter handler signature - for functions
+// doN(machine, statement, paramValues, interpreter)
 
 function addHandlers(handlers, toAdd) {
   for (const handler in toAdd) {

@@ -218,25 +218,34 @@ export default class Lexifier {
           return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         }
         const functionDef = token
-        token = tokens.shift()
-        if (token.coding !== 'open-paren') {
-          return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
+        const handler = this.specialHandlers[`${token.coding}|${token.token}`]
+        if (handler) {
+          const result = handler(token, tokens, this)
+          if (result.error) { return result }
+          clauseTokens.push(result)
+          tokens = result.restOfTokens
+        } else {
+          token = tokens.shift()
+          if (token.coding !== 'open-paren') {
+            return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
+          }
+          const parenTokens = this.parseToCloseParen(tokens, tokenEnd)
+          if (parenTokens.error) {
+            return parenTokens
+          }
+          tokens = parenTokens.restOfTokens
+          tokenEnd = parenTokens.tokenEnd
+          const params = this.parseIntoParameters(parenTokens.parenTokens, tokenStart)
+          if (params.error) { return params }
+          clauseTokens.push({
+            coding: 'function',
+            function: functionDef,
+            parameters: params.parameters,
+            valueType: functionDef.valueType,
+            tokenStart: functionDef.tokenStart,
+            tokenEnd
+          })
         }
-        const parenTokens = this.parseToCloseParen(tokens, tokenEnd)
-        if (parenTokens.error) {
-          return parenTokens
-        }
-        tokens = parenTokens.restOfTokens
-        tokenEnd = parenTokens.tokenEnd
-        const params = this.parseIntoParameters(parenTokens.parenTokens, tokenStart)
-        clauseTokens.push({
-          coding: 'function',
-          function: functionDef,
-          parameters: params.parameters,
-          valueType: functionDef.valueType,
-          tokenStart: functionDef.tokenStart,
-          tokenEnd
-        })
         hasStrings = (functionDef.valueType === 'string')
         hasNumbers = (functionDef.valueType === 'number')
         needOperator = true

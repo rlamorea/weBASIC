@@ -5,7 +5,6 @@ import Execution from './execution.js'
 export default class Machine {
   constructor(options = {}) {
     this.currentMode = 'LIVE'
-    this.variables = new Variables()
     if (options.noScreens)
     this.screens = {
       LIVE: new LiveScreen({ machine: this }),
@@ -13,7 +12,8 @@ export default class Machine {
     this.currentScreen = this.screens[this.currentMode]
 
     this.currentInput = null // TODO: move current input to execution?
-    this.execution = new Execution()
+    this.variables = new Variables(thie)
+    this.execution = new Execution(this)
   }
 
   activateMode(mode) {

@@ -1,12 +1,58 @@
 export default class Execution {
-  constructor() {
+  constructor(machine, options = {}) {
+    this.machine = machine
+
     this.skipTo = null
+    this.executionId = 0
+    this.executionStack = []
 
     this.currentInput = null
   }
 
   setCurrentInput(input) {
     this.currentInput = input // default is null to clear
+  }
+
+  startExecution(localVariables, initialValues = {}) {
+    const executionId = ++this.executionId
+    this.executionStack.push({ id: executionId, variables: localVariables })
+
+    // put local variables for this execution into the variable set
+    for (const variable of localVariables) {
+      let varDef = { ...variable }
+      varDef.token = `x${executionId}-${varDef.token}`
+      const value = initialValues[variable.token] || (variable.valueType === 'string' ? '' : 0)
+      const valueDef = { value, valueType: variable.valueType }
+      this.machine.variables.setValue(varDef, valueDef)
+    }
+    return executionId
+  }
+
+  endExecution(executionId) {
+    const currentExecution = this.executionStack.pop()
+    if (currentExecution.id !== executionId) {
+      return error(ErrorCodes.CORRUPTED_SYSTEM, 0, 0, '')
+    }
+    // pull local variables out of variable lookup
+    for (const variable of currentExecution.localVariables) {
+      this.machine.variables.removeVariable(variable, executionId)
+    }
+    return { done: true }
+  }
+
+  getExecutionStack() {
+    return this.executionStack.map((x) => x.id).reverse()
+  }
+
+  getExecutionVariableName(variableName) {
+    if (this.executionStack.length > 0) {
+      for (const executionId of this.getExecutionStack()) {
+        variableName = `x${executionId}-${variableName}`
+        const valueDef = this.machine.variables.getRawValue(variableName)
+        if (valueDef) { break }
+      }
+    }
+    return variableName
   }
 
   setExecutionSkip(skipTo) {

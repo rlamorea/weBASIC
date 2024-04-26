@@ -89,7 +89,7 @@ export default class Interpreter {
         if (!handler) {
           return error(ErrorCodes.UNSUPPORTED, statement.tokenStart, statement.tokenEnd)
         }
-        value = handler(statement, paramValues, this)
+        value = handler(this.machine, statement, paramValues, this)
         break
       default:
         return error(ErrorCodes.SYNTAX, statement.tokenStart, statement.tokenEnd)

@@ -20,43 +20,43 @@ export default class MathFunctions extends Statement {
     }
   }
 
-  doABS(statement, paramValues, lexifier) {
+  doABS(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.abs(paramValues[0].value))
   }
 
-  doATN(statement, paramValues, lexifier) {
+  doATN(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.atan(paramValues[0].value))
   }
 
-  doCOS(statement, paramValues, lexifier) {
+  doCOS(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.cos(paramValues[0].value))
   }
 
-  doEXP(statement, paramValues, lexifier) {
+  doEXP(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.exp(paramValues[0].value))
   }
 
-  doINT(statement, paramValues, lexifier) {
+  doINT(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.trunc(paramValues[0].value))
   }
 
-  doLOG(statement, paramValues, lexifier) {
+  doLOG(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.log(paramValues[0].value))
   }
 
-  doRND(statement, paramValues, lexifier) {
+  doRND(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 0, 2, [ 'number', 'number' ])
     if (confirm.error) { return confirm }
     let val = Math.random()
@@ -70,19 +70,19 @@ export default class MathFunctions extends Statement {
     return Statement.valReturn(statement, val)
   }
 
-  doSIN(statement, paramValues, lexifier) {
+  doSIN(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.sin(paramValues[0].value))
   }
 
-  doSQR(statement, paramValues, lexifier) {
+  doSQR(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.sqrt(paramValues[0].value))
   }
 
-  doTAN(statement, paramValues, lexifier) {
+  doTAN(machine, statement, paramValues, interpreter) {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.tan(paramValues[0].value))

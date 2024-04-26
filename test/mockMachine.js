@@ -44,8 +44,8 @@ let refCell = {
 export default class Machine {
   constructor(options) {
     options = options || {}
-    this.variables = new Variables()
-    this.execution = new Execution()
+    this.variables = new Variables(this)
+    this.execution = new Execution(this)
 
     if (options.addScreen) {
       this.screenCells = []

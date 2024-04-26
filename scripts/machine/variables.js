@@ -3,7 +3,8 @@ import { ErrorCodes, error } from '../interpreter/errors.js'
 const defaultArrayLength = 10
 
 export default class Variables {
-  constructor() {
+  constructor(machine, options = {}) {
+    this.machine = machine
     this.variableLookup = {}
   }
 
@@ -59,13 +60,17 @@ export default class Variables {
     return valueArray
   }
 
+  getRawValue(variableName) {
+    return this.variableLookup[variableName]
+  }
+
   getValue(variableDef, interpreter) {
     if (variableDef.dimension) {
       return this.getArrayValue(variableDef, interpreter)
-    } else if (variableDef.userFunction) {
+    } else if (variableDef.valueType === 'function') {
       return this.getUserFunctionValue(variableDef.userFunction)
     }
-    const variableName = variableDef.token
+    const variableName = this.machine.execution.getExecutionVariableName(variableDef.token)
     const variableType = variableDef.valueType
 
     let valueDef = this.variableLookup[variableName]
@@ -81,7 +86,7 @@ export default class Variables {
   }
 
   getArrayValue(variableDef, interpreter) {
-    const variableName = variableDef.token
+    const variableName = this.machine.execution.getExecutionVariableName(variableDef.token)
     const dimensions = variableDef.dimension
     const dimensionValues = this.getDimensionValues(variableDef.dimension, interpreter)
     if (dimensionValues.error) { return dimensionValues }
@@ -112,17 +117,22 @@ export default class Variables {
   }
 
   getUserFunctionValue(variableDef, interpreter) {
-    return error(ErrorCodes.UNSUPPORTED, variableDef.tokenStart, variableDef.tokenEnd)
+    // NOTE: user functions cannot be local!
+    const valueDef = this.variableLookup[variableDef.token]
+    if (!valueDef) {
+      return error(ErrorCodes.UNDEF_FUNCTION, variableDef.tokenStart, variableDef.tokenEnd)
+    }
+    return valueDef
   }
 
   setValue(variableDef, valueDef, interpreter) {
     if (variableDef.dimension) {
       return this.setArrayValue(variableDef, valueDef, interpreter)
-    } else if (variableDef.userFunction) {
+    } else if (variableDef.valueType === 'function') {
       return this.setUserFunctionValue(variableDef, valueDef, interpreter)
     }
 
-    const variableName = variableDef.token
+    const variableName = this.machine.execution.getExecutionVariableName(variableDef.token)
     valueDef = this.cleanValueDef(variableDef, valueDef)
     if (valueDef.error) { return valueDef }
 
@@ -139,7 +149,7 @@ export default class Variables {
   }
 
   setArrayValue(variableDef, valueDef, interpreter) {
-    const variableName = variableDef.token
+    const variableName = this.machine.execution.getExecutionVariableName(variableDef.token)
     const dimensions = variableDef.dimension
     const dimensionValues = this.getDimensionValues(variableDef.dimension, interpreter)
     if (dimensionValues.error) { return dimensionValues }
@@ -168,7 +178,11 @@ export default class Variables {
   }
 
   setUserFunctionValue(variableDef, valueDef, interpreter) {
-    return error(ErrorCodes.UNSUPPORTED, variableDef.tokenStart, variableDef.tokenEnd)
+    // NOTE: user functions cannot be local
+    if (valueDef.coding !== 'function') {
+      return error(ErrorCodes.TYPE_MISMATCH, variableDef.tokenStart, variableDef.tokenEnd)
+    }
+    this.variableLookup[variableDef.token] = valueDef
   }
 
   cleanValueDef(variableDef, valueDef) {
@@ -197,5 +211,10 @@ export default class Variables {
       value, valueType: variableDef.valueType
     }
     return { done: true }
+  }
+
+  removeVariable(variableDef, executionId = null) {
+    const variableName = executionId ? `x${executionId}-${variableDef.token}` : variableDef.token
+    delete this.variableLookup[variableName]
   }
 }

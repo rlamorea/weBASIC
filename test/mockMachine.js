@@ -1,5 +1,6 @@
 import Variables from '../scripts/machine/variables.js'
-import CharGridScreen from '../scripts/machine/screens/charGridScreen.js';
+import CharGridScreen from '../scripts/machine/screens/charGridScreen.js'
+import Execution from '../scripts/machine/execution.js'
 
 // build mocks
 global.window = {
@@ -44,6 +45,8 @@ export default class Machine {
   constructor(options) {
     options = options || {}
     this.variables = new Variables()
+    this.execution = new Execution()
+
     if (options.addScreen) {
       this.screenCells = []
 

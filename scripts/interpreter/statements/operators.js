@@ -38,9 +38,15 @@ function binaryOperation(operator, preExpression, postExpression, interpreter) {
   if (preValue.valueType !== postValue.valueType) {
     return error(ErrorCodes.TYPE_MISMATCH, preExpression.tokenStart, postExpression.tokenEnd)
   }
-  // string concat -- do here to let rest be numeric math
-  if (operator.token === '+' && preValue.valueType === 'string') { // which means postValue type is string too
-    return { value: preValue.value + postValue.value, valueType: 'string' }
+  // string concat and compares -- do here to let rest be numeric math
+  if (preValue.valueType === 'string') { // which means postValue type is string too
+    if (operator.token === '+') {
+      return {value: preValue.value + postValue.value, valueType: 'string'}
+    } else if (operator.token === '=') {
+      return { value: (preValue.value === postValue.value) ? 1 : 0, valueType: 'number' }
+    } else if (operator.token === '<>') {
+      return { value: (preValue.value !== postValue.value) ? 1 : 0, valueType: 'number' }
+    }
   }
   // on with numerical math
   let value = null

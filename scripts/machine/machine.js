@@ -1,16 +1,19 @@
 import LiveScreen from "./screens/liveScreen.js"
 import Variables from "./variables.js"
+import Execution from './execution.js'
 
 export default class Machine {
-  constructor() {
+  constructor(options = {}) {
     this.currentMode = 'LIVE'
     this.variables = new Variables()
+    if (options.noScreens)
     this.screens = {
       LIVE: new LiveScreen({ machine: this }),
     }
     this.currentScreen = this.screens[this.currentMode]
 
-    this.currentInput = null
+    this.currentInput = null // TODO: move current input to execution?
+    this.execution = new Execution()
   }
 
   activateMode(mode) {

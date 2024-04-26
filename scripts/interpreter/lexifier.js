@@ -277,7 +277,7 @@ export default class Lexifier {
         if (token.coding.startsWith('variable-')) { prevVariable = token }
       } else if (needOperator && [ 'plus', 'minus', 'equal', 'binary-operator' ].indexOf(token.coding) >= 0) {
         prevVariable = null
-        if (hasStrings && token.coding !== 'plus') {
+        if (hasStrings && !(token.coding === 'plus' || token.coding === 'equal' || token.token === '<>')) {
           return error(ErrorCodes.TYPE_MISMATCH, token.tokenStart, tokenEnd)
         }
         const lastClause = clauseTokens.slice(-1)[0]

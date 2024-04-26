@@ -115,6 +115,10 @@ const testCases = [
   { desc: 'precedence ', test: '1 - 2 * 3', value: -5 },
   { desc: 'precedence ', test: '(1 - 2) * 3', value: -3 },
   { test: '"a"+"b"', type: 'string', value: 'ab' },
+  { test: '"a"="a"', type: 'number', value: 1 },
+  { test: '"a"="b"', type: 'number', value: 0 },
+  { test: '"a"<>"a"', type: 'number', value: 0 },
+  { test: '"a"<>"b"', type: 'number', value: 1 },
   { test: 'a + 1', value: 2 },
   { test: '"a"+b$', type: 'string', value: 'ab' },
   // number format tests

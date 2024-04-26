@@ -20,9 +20,11 @@ export default class Interpreter {
     if (lineStatements.error) { return lineStatements }
 
     for (const statement of lineStatements.lineStatements) {
+      if (this.machine.execution.skipExecution(statement)) continue;
       const result = await this.interpretStatement(statement)
       if (result.error) { return result }
     }
+    this.machine.execution.skipExecution('eol') // line is done, so see if we need to clear skip
     return { done: true }
   }
 

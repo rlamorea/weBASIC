@@ -11,7 +11,7 @@ let resolvePromise = null
 let rejectPromise = null
 
 function handleInput(machine, statement, interpreter, input) {
-  machine.currentInput = null
+  machine.execution.setCurrentInput()
   let values = input.split(',')
   let err = null
   let tokenStart = 0
@@ -130,7 +130,7 @@ export default class Input extends Statement {
       singleLine: true,
       inputHandler: (input) => { handleInput(machine, statement, interpreter, input) }
     })
-    machine.currentInput = currentInput // this is really here so we can do testing by pushing to input
+    machine.execution.setCurrentInput(currentInput) // this is really here so we can do testing by pushing to input
     return inputPromise
   }
 }

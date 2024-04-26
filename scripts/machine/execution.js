@@ -1,6 +1,12 @@
 export default class Execution {
   constructor() {
     this.skipTo = null
+
+    this.currentInput = null
+  }
+
+  setCurrentInput(input) {
+    this.currentInput = input // default is null to clear
   }
 
   setExecutionSkip(skipTo) {

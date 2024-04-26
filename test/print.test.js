@@ -140,4 +140,13 @@ test('dim ax(3, 3):ax(1, 2)=2:print ax(1, 2);ax(2, 1)', async () => {
   assert.is(machine.screenCells[1].innerHTML, '0')
 })
 
+test('z1=2:z2=2:ax(z1, z2)=27:print ax(2, 2)', async () => {
+  machine.screen.home()
+  const result = await inter.interpretLine('z1=2:z2=2:ax(z1, z2)=27:print ax(2, 2)')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.screenCells[0].innerHTML, '2')
+  assert.is(machine.screenCells[1].innerHTML, '7')
+})
+
 test.run()

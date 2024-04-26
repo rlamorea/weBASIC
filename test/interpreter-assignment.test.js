@@ -18,7 +18,7 @@ const testCases = [
   { test: 'f$=e$+"f"', variable: 'f$', valueType: 'string', coding: 'variable-string', value: 'ef' },
   { test: 'let x=2', variable: 'x', value: 2 },
   { test: 'let y$= "y"', variable: 'y$', valueType: 'string', coding: 'variable-string', value: 'y' },
-  // // auto-dimension
+  // array tests
   { test: 'ar(1)=5', variableExpr: 'ar(1)', value: 5, arrayLength: 11 },
   { test: 'as$(1)="hello"', variableExpr: 'as$(1)', value: 'hello', valueType: 'string', arrayLength: 11 },
   { test: 'at(35)=10', variableExpr: 'at(35)', value: 10, arrayLength: 36 },
@@ -37,6 +37,9 @@ const testCases = [
   { test: 'ds(4, 2)=7', interError: ErrorCodes.INDEX_OUT_OF_BOUNDS },
   { test: 'ds(1, -1)=7', interError: ErrorCodes.INDEX_OUT_OF_BOUNDS },
   { test: 'ds(1, 4)=7', interError: ErrorCodes.INDEX_OUT_OF_BOUNDS },
+  { test: 'y=2:dq(y)=77', variableExpr: 'dq(2)', value: 77 },
+  { test: 'u=2:p=2:dim dh(u,p):dh(u,p)=777', variableExpr: 'dh(2,2)', value: 777 },
+  { test: 'dh(4-2,p*1+0)=555', variableExpr: 'dh(2,2)', value: 555 },
 ]
 
 for (const testCase of testCases) {

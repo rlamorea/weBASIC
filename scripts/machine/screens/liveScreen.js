@@ -22,9 +22,11 @@ export default class LiveScreen extends CharGridScreen {
 
     this.commandInput = new FixedInput(this.screen, { inputHandler: (input) => { this.handleCommand(input) }, singleLine: true  })
     this.machine.activateMode('LIVE')
+    this.machine.io.setActiveListener(this.commandInput)
   }
 
   async handleCommand(input) {
+    this.machine.io.setActiveListener()
     const interpreter = new Interpreter({ machine: this.machine })
     const result = await interpreter.interpretLine(input)
     let options = { inputHandler: (input) => { this.handleCommand(input) } }
@@ -41,5 +43,6 @@ export default class LiveScreen extends CharGridScreen {
     this.screen.displayString(prompt)
     delete this.commandInput
     this.commandInput = new FixedInput(this.screen, options)
+    this.machine.io.setActiveListener(this.commandInput)
   }
 }

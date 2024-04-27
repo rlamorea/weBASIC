@@ -1,15 +1,14 @@
-import Variables from '../scripts/machine/variables.js'
-import CharGridScreen from '../scripts/machine/screens/charGridScreen.js'
-import Execution from '../scripts/machine/execution.js'
-
 // build mocks
 global.window = {
   innerWidth: 900, innerHeight: 650,
   getComputedStyle: (div, x) => {
     return { getPropertyValue: (p) => { return 'black' } }
-  },
-  addEventListener() { /* do nothing */ }
+  }
 }
+
+import Variables from '../scripts/machine/variables.js'
+import CharGridScreen from '../scripts/machine/screens/charGridScreen.js'
+import Execution from '../scripts/machine/execution.js'
 
 class mockClassList {
   constructor() { this.classes = {} }
@@ -41,9 +40,12 @@ let refCell = {
   remove: () => { /* do nothing */ }
 }
 
+import IO from '../scripts/machine/io.js'
+
 export default class Machine {
   constructor(options) {
     options = options || {}
+    this.io = new IO(this)
     this.variables = new Variables(this)
     this.execution = new Execution(this)
 

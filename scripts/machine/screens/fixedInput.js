@@ -12,43 +12,6 @@ const separatorCharacters = " ()[]{};:,./?"
 
 const keywordCodings = [ 'keyword', 'function', 'statement', 'command', 'binary-operator', 'unary-operator' ]
 
-// key handling
-const nonRepeatableKeys = [ 'Alt', 'Meta', 'Control', 'Shift', 'Escape', 'CapsLock', 'Enter' ]
-
-window.addEventListener('load', (event) => {
-  window.addEventListener('keydown', (e) => { keyDown(e) })
-  window.addEventListener('keypress', (e) => { e.preventDefault() })
-  window.addEventListener('keyup', (e) => { keyUp(e) })
-})
-
-let registeredInput = null
-let repeatKeyDown = null
-const repeatStartDelay = 500
-const repeatDelay = 250
-
-function keyDown(evt) {
-  evt.preventDefault()
-  if (!registeredInput) return // do nothing
-  registeredInput.handleKey(evt)
-  if (nonRepeatableKeys.indexOf(evt.key) < 0) {
-    repeatKeyDown = evt
-    setTimeout( () => { repeatKey(evt) }, repeatStartDelay)
-  }
-}
-
-function repeatKey(keyEvt) {
-  if (keyEvt !== repeatKeyDown) return
-  console.log('repeating', keyEvt.key)
-  keyDown(keyEvt)
-  setTimeout(() => { repeatKey(keyEvt) }, repeatDelay)
-}
-
-function keyUp(evt) {
-  evt.preventDefault()
-  // TOOD: figure out if we are keeping part of a key sequence down
-  repeatKeyDown = null
-}
-
 export default class FixedInput {
   constructor(screen, options) {
     options = options || {}
@@ -123,8 +86,6 @@ export default class FixedInput {
     }
 
     this.cursor(true)
-
-    registeredInput = this
   }
 
   clearError() {

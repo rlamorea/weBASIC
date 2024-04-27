@@ -6,11 +6,17 @@ export default class Execution {
     this.executionId = 0
     this.executionStack = []
 
-    this.currentInput = null
+    this.running = false
   }
 
   setCurrentInput(input) {
-    this.currentInput = input // default is null to clear
+    if (input) {
+      this.machine.io.enableCapture(false)
+      this.machine.io.setActiveListener(input)
+    } else {
+      this.machine.io.setActiveListener()
+      this.machine.io.enableCapture(this.running)
+    }
   }
 
   startExecution(localVariables, initialValues = {}) {

@@ -10,11 +10,11 @@ const machine = new Machine({ addScreen: true })
 const inter = new Interpreter({ machine })
 
 function sendToInput(string) {
-  if (machine.execution.currentInput) {
+  if (machine.io.activeListener) {
     for (const ch of string) {
-      machine.execution.currentInput.handleKey({ key: ch })
+      machine.io.activeListener.handleKey({ key: ch })
     }
-    machine.execution.currentInput.handleKey({ key: 'Enter' })
+    machine.io.activeListener.handleKey({ key: 'Enter' })
   } else {
     setTimeout(() => { sendToInput(string) }, 25 )
   }

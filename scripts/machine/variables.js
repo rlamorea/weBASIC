@@ -67,7 +67,7 @@ export default class Variables {
   getValue(variableDef, interpreter) {
     if (variableDef.dimension) {
       return this.getArrayValue(variableDef, interpreter)
-    } else if (variableDef.valueType === 'function') {
+    } else if (variableDef.userFunction) {
       return this.getUserFunctionValue(variableDef.userFunction)
     }
     const variableName = this.machine.execution.getExecutionVariableName(variableDef.token)
@@ -128,7 +128,7 @@ export default class Variables {
   setValue(variableDef, valueDef, interpreter) {
     if (variableDef.dimension) {
       return this.setArrayValue(variableDef, valueDef, interpreter)
-    } else if (variableDef.valueType === 'function') {
+    } else if (variableDef.userFunction) {
       return this.setUserFunctionValue(variableDef, valueDef, interpreter)
     }
 
@@ -179,10 +179,11 @@ export default class Variables {
 
   setUserFunctionValue(variableDef, valueDef, interpreter) {
     // NOTE: user functions cannot be local
-    if (valueDef.coding !== 'function') {
+    if (valueDef.valueType !== 'function') {
       return error(ErrorCodes.TYPE_MISMATCH, variableDef.tokenStart, variableDef.tokenEnd)
     }
     this.variableLookup[variableDef.token] = valueDef
+    return valueDef
   }
 
   cleanValueDef(variableDef, valueDef) {

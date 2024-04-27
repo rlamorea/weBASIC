@@ -15,15 +15,15 @@ export default class Execution {
 
   startExecution(localVariables, initialValues = {}) {
     const executionId = ++this.executionId
-    this.executionStack.push({ id: executionId, variables: localVariables })
+    this.executionStack.push({ id: executionId, localVariables: localVariables })
 
     // put local variables for this execution into the variable set
     for (const variable of localVariables) {
-      let varDef = { ...variable }
-      varDef.token = `x${executionId}-${varDef.token}`
-      const value = initialValues[variable.token] || (variable.valueType === 'string' ? '' : 0)
-      const valueDef = { value, valueType: variable.valueType }
-      this.machine.variables.setValue(varDef, valueDef)
+      //let varDef = { ...variable }
+      const value = (variable.token in initialValues) ?
+        initialValues[variable.token] :
+        { value: (variable.valueType === 'string' ? '' : 0), valueType: variable.valueType }
+      this.machine.variables.setValue(variable, value)
     }
     return executionId
   }

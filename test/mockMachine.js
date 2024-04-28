@@ -6,6 +6,8 @@ global.window = {
   }
 }
 
+import { default as MachineX } from '../scripts/machine/machine.js'
+
 import Variables from '../scripts/machine/variables.js'
 import CharGridScreen from '../scripts/machine/screens/charGridScreen.js'
 import Execution from '../scripts/machine/execution.js'
@@ -42,12 +44,9 @@ let refCell = {
 
 import IO from '../scripts/machine/io.js'
 
-export default class Machine {
-  constructor(options) {
-    options = options || {}
-    this.io = new IO(this)
-    this.variables = new Variables(this)
-    this.execution = new Execution(this)
+export default class Machine extends MachineX {
+  constructor(options = {}) {
+    super({ ...options, noscreens: true })
 
     if (options.addScreen) {
       this.screenCells = []

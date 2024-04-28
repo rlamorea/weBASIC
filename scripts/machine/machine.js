@@ -8,13 +8,17 @@ export default class Machine {
     this.currentMode = 'LIVE'
     this.io = new IO(this, { ...options, breakCallback: () => { this.onBreak() } })
 
-    this.screens = {
-      LIVE: new LiveScreen({ machine: this }),
+    if (!options.noscreens) {
+      this.screens = {
+        LIVE: new LiveScreen(this),
+      }
+      this.currentScreen = this.screens[this.currentMode]
     }
-    this.currentScreen = this.screens[this.currentMode]
 
-    this.variables = new Variables(thie)
+    this.variables = new Variables(this)
     this.execution = new Execution(this)
+
+    this.liveCodespace = this.execution.createCodespace('LIVE')
   }
 
   activateMode(mode) {
@@ -23,6 +27,12 @@ export default class Machine {
     for (const screen in this.screens) {
       this.screens[screen].div.style.display = (screen === this.currentMode) ? 'block' : 'none'
     }
+  }
+
+  async runLiveCode(codeLine) {
+    const result = this.execution.addCodeLine(this.liveCodespace, 0, codeLine)
+    if (result.error) { return result }
+    return await this.execution.runCode(this.liveCodespace)
   }
 
   onBreak() {

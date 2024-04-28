@@ -5,7 +5,7 @@ import Machine from './mockMachine.js'
 import Interpreter from "../scripts/interpreter/interpreter.js";
 
 const machine = new Machine({ addScreen: true })
-const inter = new Interpreter({ machine })
+const inter = new Interpreter(machine)
 
 test('PRINT', async () => {
   const result = await inter.interpretLine('PRINT')

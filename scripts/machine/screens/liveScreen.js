@@ -1,15 +1,15 @@
 import CharGridScreen from "./charGridScreen.js";
 import FixedInput from "./fixedInput.js";
-import Interpreter from "../../interpreter/interpreter.js";
+import { errorString } from '../../interpreter/errors.js'
 
 const startupMessage = 'weBASIC v0.1'
 const prompt = 'READY.'
 
 export default class LiveScreen extends CharGridScreen {
-  constructor(options) {
+  constructor(machine, options = {}) {
     const div = document.getElementById('live-screen')
     super('live-screen', div, options)
-    this.machine = options.machine
+    this.machine = machine
   }
 
   initialized() {
@@ -27,11 +27,10 @@ export default class LiveScreen extends CharGridScreen {
 
   async handleCommand(input) {
     this.machine.io.setActiveListener()
-    const interpreter = new Interpreter({ machine: this.machine })
-    const result = await interpreter.interpretLine(input)
+    const result = this.machine.runLiveCode(input)
     let options = { inputHandler: (input) => { this.handleCommand(input) } }
     if (result.error) {
-      this.screen.displayString(`ERROR: ${result.error} at position ${result.location}`)
+      this.screen.displayString(errorString(result))
       if (!result.sourceText) {
         options.prefill = input
         options.errorLocation = result.location

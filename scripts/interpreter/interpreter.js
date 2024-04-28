@@ -4,9 +4,8 @@ import { unaryOperation, binaryOperation } from "./statements/operators.js";
 import { ErrorCodes, error } from './errors.js'
 
 export default class Interpreter {
-  constructor(options) {
-    this.machine = options.machine || {}
-
+  constructor(machine, options) {
+    this.machine = machine
     this.lexifier = new Lexifier()
 
     this.handlers = {}
@@ -15,17 +14,12 @@ export default class Interpreter {
     }
   }
 
-  async interpretLine(codeLine) {
-    let lineStatements = this.lexifier.lexifyLine(codeLine)
-    if (lineStatements.error) { return lineStatements }
+  prepLine(codeLine) {
+    return this.lexifier.lexifyLine(codeLine)
+  }
 
-    for (const statement of lineStatements.lineStatements) {
-      if (this.machine.execution.skipExecution(statement)) continue;
-      const result = await this.interpretStatement(statement)
-      if (result.error) { return result }
-    }
-    this.machine.execution.skipExecution('eol') // line is done, so see if we need to clear skip
-    return { done: true }
+  async interpretLine(codeLine) {
+    return await this.machine.runLiveCode(codeLine)
   }
 
   async interpretStatement(statement) {

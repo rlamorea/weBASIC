@@ -7,7 +7,7 @@ import Interpreter from "../scripts/interpreter/interpreter.js"
 import { tokens } from './testHelpers.js'
 
 const machine = new Machine()
-const inter = new Interpreter({ machine })
+const inter = new Interpreter(machine)
 
 const testCases = [
   { test: 'a=1', variable: 'a', value: 1 },

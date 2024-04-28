@@ -11,7 +11,7 @@ import Interpreter from "../scripts/interpreter/interpreter.js";
 
 const machine = new Machine()
 const lex = new Lexifier()
-const inter = new Interpreter({ machine })
+const inter = new Interpreter(machine)
 
 const vars = [
   { token: 'a', coding: 'variable-number', valueType: 'number', assignTo: 1 },

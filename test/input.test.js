@@ -7,7 +7,7 @@ import Interpreter from "../scripts/interpreter/interpreter.js";
 import { tokens } from './testHelpers.js'
 
 const machine = new Machine({ addScreen: true })
-const inter = new Interpreter({ machine })
+const inter = new Interpreter(machine)
 
 function sendToInput(string) {
   if (machine.io.activeListener) {

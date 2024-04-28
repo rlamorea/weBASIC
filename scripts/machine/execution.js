@@ -12,7 +12,6 @@ export default class Execution {
     this.currentCodespace = null
 
     this.gotBreak = false
-    this.machine.io.setBreakHandler( () => { this.break() })
     this.loopDelay = defaultLoopDelay
   }
 

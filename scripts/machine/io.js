@@ -98,8 +98,4 @@ export default class IO {
     this.captureBreakKey = enable
     this.breakKey = breakKey
   }
-
-  setBreakHandler(handler) {
-    this.breakHandler = handler
-  }
 }

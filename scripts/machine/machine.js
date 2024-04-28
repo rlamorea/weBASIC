@@ -36,7 +36,7 @@ export default class Machine {
   }
 
   onBreak() {
-    // TODO
+    this.execution.break()
   }
 }
 

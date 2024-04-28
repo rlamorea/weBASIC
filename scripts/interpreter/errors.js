@@ -1,5 +1,6 @@
 
 const ErrorCodes = {
+  BREAK: 'Break',
   CORRUPTED_SYSTEM: 'System Corruption. Execution Halted.',
   ILLEGAL_INDEX: 'Illegal Index',
   ILLEGAL_VALUE: 'Illegal Value',

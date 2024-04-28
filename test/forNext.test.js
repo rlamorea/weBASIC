@@ -1,7 +1,7 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 import { ErrorCodes } from '../scripts/interpreter/errors.js'
-import { assertFloat } from './testHelpers.js'
+import { assertFloat, sendKey } from './testHelpers.js'
 
 import MockMachine from './mockMachine.js'
 import Interpreter from "../scripts/interpreter/interpreter.js";
@@ -83,7 +83,6 @@ test('float step', async () => {
   assert.is(machine.variables.variableLookup['n'].value, 3.5)
 })
 
-
 test('negative float step', async () => {
   const testCode = 'b=0:for n=3.2 to 0.5 step -0.75:b=b+n:next'
   const result = await machine.runLiveCode(testCode)
@@ -113,6 +112,15 @@ test('string index', async () => {
   const result = await machine.runLiveCode(testCode)
 
   assert.is(result.error, ErrorCodes.TYPE_MISMATCH)
+})
+
+// breakable infinite for loop
+test('break infinite loop', async () => {
+  sendKey(machine, 'Escape', 25)
+  const testCode = 'for x=1 to 2 step 0:next'
+  const result = await machine.runLiveCode(testCode)
+
+  assert.is(result.error, ErrorCodes.BREAK)
 })
 
 test.run()

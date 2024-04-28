@@ -4,25 +4,14 @@ import { ErrorCodes } from '../scripts/interpreter/errors.js'
 
 import Machine from './mockMachine.js'
 import Interpreter from "../scripts/interpreter/interpreter.js";
-import { tokens } from './testHelpers.js'
+import { tokens, sendToInput } from './testHelpers.js'
 
 const machine = new Machine({ addScreen: true })
 const inter = new Interpreter(machine)
 
-function sendToInput(string) {
-  if (machine.io.activeListener) {
-    for (const ch of string) {
-      machine.io.activeListener.handleKey({ key: ch })
-    }
-    machine.io.activeListener.handleKey({ key: 'Enter' })
-  } else {
-    setTimeout(() => { sendToInput(string) }, 25 )
-  }
-}
-
 test('input a', async () => {
   machine.screen.clearViewport()
-  sendToInput('2')
+  sendToInput(machine, '2')
   const result = await inter.interpretLine('input a')
 
   assert.is(result.error, undefined)
@@ -33,7 +22,7 @@ test('input a', async () => {
 
 test('input b$', async () => {
   machine.screen.clearViewport()
-  sendToInput('hello')
+  sendToInput(machine, 'hello')
   const result = await inter.interpretLine('input b$')
 
   assert.is(result.error, undefined)
@@ -44,7 +33,7 @@ test('input b$', async () => {
 
 test('input a,b$', async () => {
   machine.screen.clearViewport()
-  sendToInput('2, hello')
+  sendToInput(machine, '2, hello')
   const result = await inter.interpretLine('input a, b$')
 
   assert.is(result.error, undefined)
@@ -59,7 +48,7 @@ test('input a,b$', async () => {
 
 test('input "prompt"; a', async () => {
   machine.screen.clearViewport()
-  sendToInput('2')
+  sendToInput(machine, '2')
   const result = await inter.interpretLine('input "prompt"; a')
 
   assert.is(result.error, undefined)
@@ -74,7 +63,7 @@ test('input "prompt"; a', async () => {
 
 test('input "prompt" a', async () => {
   machine.screen.clearViewport()
-  sendToInput('2')
+  sendToInput(machine, '2')
   const result = await inter.interpretLine('input "prompt" a')
 
   assert.is(result.error, undefined)
@@ -90,7 +79,7 @@ test('input "prompt" a', async () => {
 // error cases
 test('input a - error', async () => {
   machine.screen.clearViewport()
-  sendToInput('hello')
+  sendToInput(machine, 'hello')
   const result = await inter.interpretLine('input a')
 
   assert.is(result.error, ErrorCodes.ILLEGAL_VALUE )
@@ -98,7 +87,7 @@ test('input a - error', async () => {
 
 test('input b$, a - error', async () => {
   machine.screen.clearViewport()
-  sendToInput('hello, hi')
+  sendToInput(machine, 'hello, hi')
   const result = await inter.interpretLine('input b$, a')
 
   assert.is(result.error, ErrorCodes.ILLEGAL_VALUE )
@@ -106,7 +95,7 @@ test('input b$, a - error', async () => {
 
 test('input c(3)', async() => {
   machine.screen.clearViewport()
-  sendToInput('2')
+  sendToInput(machine, '2')
   const result = await inter.interpretLine('input c(3)')
 
   assert.is(result.error, undefined)
@@ -118,7 +107,7 @@ test('input c(3)', async() => {
 
 test('dim d(3, 3):input d(1, 2)', async() => {
   machine.screen.clearViewport()
-  sendToInput('2')
+  sendToInput(machine, '2')
   const result = await inter.interpretLine('dim d(3, 3):input d(1, 2)')
 
   assert.is(result.error, undefined)
@@ -130,7 +119,7 @@ test('dim d(3, 3):input d(1, 2)', async() => {
 
 test('d1=2:d2=1:input d(d1, d2)', async() => {
   machine.screen.clearViewport()
-  sendToInput('223')
+  sendToInput(machine, '223')
   const result = await inter.interpretLine('d1=2:d2=1:input d(d1, d2)')
 
   assert.is(result.error, undefined)

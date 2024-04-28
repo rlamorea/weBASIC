@@ -1,7 +1,7 @@
 import Interpreter from '../interpreter/interpreter.js'
 import { error, errorat, ErrorCodes } from '../interpreter/errors.js'
 
-const defaultLoopDelay = 10 // 10ms for now, will lower this as we can
+const defaultLoopDelay = 1 // 2ms for now, will lower this as we can
 
 export default class Execution {
   constructor(machine, options = {}) {
@@ -99,7 +99,8 @@ export default class Execution {
     }
     const statement = codespace.codeLine[codespace.currentStatementIndex]
     if (this.gotBreak) {
-      const err = errorat(ErrorCodes.BREAK, `at ${codespace.currentLineNumber}`, statement.tokenStart, statement.tokenEnd)
+      let err = errorat(ErrorCodes.BREAK, `in line ${codespace.currentLineNumber}`, statement.tokenStart, statement.tokenEnd, ' ')
+      if (codespace.mode === 'LIVE') { err = error(ErrorCodes.BREAK, -1, null, ' ') }
       codespace.resolve(err)
       return err
     }

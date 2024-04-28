@@ -27,7 +27,7 @@ export default class ForNext extends Statement {
       return error(ErrorCodes.SYNTAX, equal.tokenStart, equal.tokenEnd)
     }
     const startTokens = lexifier.parseToToken('keyword', tokens, tokens[0].tokenStart, ErrorCodes.SYNTAX, 'TO')
-    if (startTokens.error) { return startToken }
+    if (startTokens.error) { return startTokens }
     tokens = startTokens.restOfTokens
     const startExpression = lexifier.parseExpression(startTokens.insideTokens, startTokens.insideTokens[0].tokenStart)
     if (startExpression.error) { return startExpression }

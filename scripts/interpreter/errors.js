@@ -61,8 +61,8 @@ function errorat(errorCode, at, startLoc = -1, endLoc, sourceText) {
   return error(`${errorCode} ${at}`, startLoc, endLoc, sourceText)
 }
 
-function errorString(error) {
-  return `ERROR: ${result.error}${result.location >= 0 ? `at position ${result.location}` : ''}`
+function errorString(result) {
+  return `ERROR: ${result.error}${result.location >= 0 ? ` at position ${result.location}` : ''}`
 }
 
 export {

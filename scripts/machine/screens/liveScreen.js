@@ -7,7 +7,10 @@ const prompt = 'READY.'
 
 export default class LiveScreen extends CharGridScreen {
   constructor(machine, options = {}) {
-    const div = document.getElementById('live-screen')
+    let div = document.createElement('div')
+    div.id = 'live-screen'
+    div.classList.add('chargrid', 'fixed')
+    document.body.appendChild(div)
     super('live-screen', div, options)
     this.machine = machine
   }

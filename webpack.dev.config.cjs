@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 module.exports = {
   mode: 'development',
@@ -10,7 +11,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './webasic.html',
       filename: 'index.html'
-    })
+    }),
+    new MonacoWebpackPlugin()
   ],
   module: {
     rules: [

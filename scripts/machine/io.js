@@ -94,7 +94,12 @@ export default class IO {
     this.captureCurrentKey = enable
   }
 
-  enableBreak(enable = true) {
+  enableBreak(enable = true, breakKey = defaultBreakKey) {
     this.captureBreakKey = enable
+    this.breakKey = breakKey
+  }
+
+  setBreakHandler(handler) {
+    this.breakHandler = handler
   }
 }

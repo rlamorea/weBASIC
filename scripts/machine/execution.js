@@ -1,6 +1,8 @@
 import Interpreter from '../interpreter/interpreter.js'
 import { error, errorat, ErrorCodes } from '../interpreter/errors.js'
 
+const defaultLoopDelay = 10 // 10ms for now, will lower this as we can
+
 export default class Execution {
   constructor(machine, options = {}) {
     this.machine = machine
@@ -8,6 +10,14 @@ export default class Execution {
 
     this.interpreter = new Interpreter(this.machine)
     this.currentCodespace = null
+
+    this.gotBreak = false
+    this.machine.io.setBreakHandler( () => { this.break() })
+    this.loopDelay = defaultLoopDelay
+  }
+
+  break() {
+    this.gotBreak = true
   }
 
   setCurrentInput(input) {
@@ -26,16 +36,23 @@ export default class Execution {
       codeLines: {},
       mode,
       running: false,
+      lineNumberIndex: 0,
+      codeLine: null,
       currentLineNumber: -1,
       currentStatementIndex: 0,
       skipTo: null,
       executionStack: [],
-      forStack: []
+      forStack: [],
+      promise: null,
+      resolve: null,
+      reject: null
     }
   }
 
   resetCodespaceAfterRun(codespace) {
     codespace.running = false
+    codespace.codeLine = null
+    codespace.lineNumberIndex = 0
     codespace.currentLineNumber = -1
     codespace.currentStatementIndex = -1
     codespace.skipTo = null
@@ -59,54 +76,81 @@ export default class Execution {
     return { done: true }
   }
 
+  async runLoop() {
+    let codespace = this.currentCodespace
+    if (codespace.codeLine && codespace.currentStatementIndex >= codespace.codeLine.length) {
+      this.skipExecution('eol')
+      codespace.lineNumberIndex += 1
+      if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
+        const result = { done: true }
+        codespace.resolve(result)
+        return result
+      }
+      codespace.currentLineNumber = codespace.lineNumbers[lineNumberIndex]
+      codespace.codeLine = null
+    }
+    if (!codespace.codeLine) {
+      codespace.codeLine = codespace.codeLines[codespace.currentLineNumber]
+      if (!codespace.codeLine) {
+        const err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
+        codespace.resolve(err)
+        return err
+      }
+      codespace.currentStatementIndex = 0
+    }
+    const statement = codespace.codeLine[codespace.currentStatementIndex]
+    if (this.gotBreak) {
+      const err = errorat(ErrorCodes.BREAK, `at ${codespace.currentLineNumber}`, statement.tokenStart, statement.tokenEnd)
+      codespace.resolve(err)
+      return err
+    }
+    if (!this.skipExecution(statement)) {
+      const result = await this.interpreter.interpretStatement(statement)
+      if (result.error) {
+        codespace.resolve(result)
+        return result
+      }
+    }
+    codespace.currentStatementIndex += 1
+    setTimeout( () => { this.runLoop() }, this.loopDelay)
+
+    return codespace.promise
+  }
+
   async runCode(codespace, lineNumber = -1) {
     if (this.currentCodespace) { debugger } // shouldn't happen, so stop now
     if (codespace.lineNumbers.length === 0) { return { done: true } } // nothing to do!
 
     if (lineNumber < 0) { lineNumber = codespace.lineNumbers[0] } // start from beginning
-    let lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
-    if (lineNumberIndex < 0) { return errorat(ErrorCodes.UNKNOWN_LINE, `${lineNumber}`) }
+    codespace.lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
+    if (codespace.lineNumberIndex < 0) { return errorat(ErrorCodes.UNKNOWN_LINE, `${lineNumber}`) }
 
     codespace.currentLineNumber = lineNumber
     codespace.currentStatementIndex = 0
 
-    let newLine = true
     this.currentCodespace = codespace
+    this.machine.io.enableBreak()
+    this.machine.io.enableCapture()
     codespace.running = true
-    let codeLine = null
-    let err = null
-    while (codespace.running) {
-      if (!newLine && codespace.currentStatementIndex >= codeLine.length) {
-        this.skipExecution('eol')
-        lineNumberIndex += 1
-        if (lineNumberIndex >= codespace.lineNumbers.length) { break }
-        codespace.currentLineNumber = codespace.lineNumbers[lineNumberIndex]
-        newLine = true
-      }
-      if (newLine) {
-        codeLine = codespace.codeLines[codespace.currentLineNumber]
-        if (!codeLine) {
-          codespace.running = false
-          this.currentCodespace = null
-          err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
-          break
-        }
-        codespace.currentStatementIndex = 0
-        newLine = false
-      }
-      const statement = codeLine[codespace.currentStatementIndex]
-      if (!this.skipExecution(statement)) {
-        const result = await this.interpreter.interpretStatement(statement)
-        if (result.error) {
-          err = result
-          break
-        }
-      }
-      codespace.currentStatementIndex += 1
+
+    codespace.promise = new Promise((resolve, reject) => {
+      codespace.resolve = resolve
+      codespace.reject = reject
+    })
+
+    let result = { done: true }
+    try {
+      result = await this.runLoop()
+    } catch (e) {
+      result = error(e)
     }
     this.currentCodespace = null
+    // reset IO
+    this.machine.io.enableCapture(false)
+    this.machine.io.enableBreak(false)
+    this.machine.io.setActiveListener()
     this.resetCodespaceAfterRun(codespace)
-    return err || { done: true }
+    return result
   }
 
   startExecution(localVariables, initialValues = {}) {

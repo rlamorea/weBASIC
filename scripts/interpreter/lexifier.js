@@ -113,12 +113,15 @@ export default class Lexifier {
     return { restOfTokens, foundDimensions }
   }
 
-  parseToCloseParen(tokens, tokenStart) {
+  parseToToken(targetCoding, tokens, tokenStart, notFoundError, targetToken) {
+    const eosOk = !(notFoundError)
     let insideTokens = []
     let tokenEnd = tokenStart + 1
+    let closeToken = null
     while (1 === 1) {
       if (tokens.length === 0) {
-        return error(ErrorCodes.UNCLOSED_PAREN, tokenStart, tokenEnd)
+        if (!eosOk) { return error(notFoundError, tokenStart, tokenEnd) }
+        break
       }
       const token = tokens.shift()
       if (token.coding === 'open-paren') {
@@ -128,14 +131,25 @@ export default class Lexifier {
         insideTokens.push(...result.parenTokens) // flatten back out for later
         insideTokens.push(result.closeParen) // put close paren back
         tokens = result.restOfTokens
-      } else if (token.coding === 'close-paren') {
-        return { parenTokens: insideTokens, restOfTokens: tokens, tokenEnd: token.tokenEnd, closeParen: token }
+      } else if (token.coding === targetCoding && (!targetToken || token.token === targetToken)) {
+        closeToken = token
+        tokenEnd = token.tokenEnd
+        break
       } else if (token.coding === 'end-of-statement') {
         tokens = [] // force end
       } else {
         insideTokens.push(token)
       }
     }
+    return { insideTokens: insideTokens, restOfTokens: tokens, tokenEnd, closeToken }
+  }
+
+  parseToCloseParen(tokens, tokenStart) {
+    let result = this.parseToToken('close-paren', tokens, tokenStart, ErrorCodes.UNCLOSED_PAREN)
+    if (result.error) { return result }
+    result.parenTokens = result.insideTokens
+    result.closeParen = result.closeToken
+    return result
   }
 
   parseIntoParameters(tokens, tokenStart) {

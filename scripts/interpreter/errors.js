@@ -12,6 +12,7 @@ const ErrorCodes = {
   UNCLOSED_PAREN: 'Unclosed Parentheses',
   UNDEF_FUNCTION: 'Undefined Function',
   UNDIM_ARRAY: 'Undimensioned Array',
+  UNEXPECTED_NEXT: 'NEXT without FOR',
   UNKNOWN_LINE: 'Unknown Line',
   UNSUPPORTED: 'Unsupported Operation',
 }

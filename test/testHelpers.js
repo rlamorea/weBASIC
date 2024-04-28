@@ -1,3 +1,5 @@
+import * as assert from 'uvu/assert';
+
 import nextToken from "../scripts/interpreter/tokenizer.js";
 
 function tokens(code) {
@@ -12,4 +14,12 @@ function tokens(code) {
   }
 }
 
-export { tokens }
+function precision(x, digits = 4) {
+  return x.toPrecision(digits)
+}
+
+function assertFloat(x, y, digits = 4) {
+  assert.is(precision(x, digits), precision(y, digits))
+}
+
+export { tokens, precision, assertFloat }

@@ -9,12 +9,12 @@ const machine = new MockMachine({ addScreen: true })
 const inter = new Interpreter(machine)
 
 const testCases = [
-  // { test: 'if 1 then', value: 1 },
-  // { test: 'if 0 then', value: 0 },
-  // { test: 'if 1 > 0 then', value: 1 },
-  // { test: 'if 1 < 0 then', value: 0 },
-  // { test: 'if 1 > 0 and 0 < 1 then', value: 1 },
-  // { test: 'if 1 > 0 and 0 > 1 then', value: 0 },
+  { test: 'if 1 then', value: 1 },
+  { test: 'if 0 then', value: 0 },
+  { test: 'if 1 > 0 then', value: 1 },
+  { test: 'if 1 < 0 then', value: 0 },
+  { test: 'if 1 > 0 and 0 < 1 then', value: 1 },
+  { test: 'if 1 > 0 and 0 > 1 then', value: 0 },
   { test: 'if 1 then:', value: 1 },
   { test: 'if 0 then:', value: 0 },
   { test: 'if 1 then r=3:', value: 1 },

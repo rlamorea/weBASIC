@@ -78,7 +78,7 @@ export default class Variables {
       let initValue = (variableType === 'string') ? '' : 0
       valueDef = {
         value: initValue,
-        valueType: variableDef.variableType
+        valueType: variableDef.valueType
       }
       this.variableLookup[variableName] = valueDef
     }

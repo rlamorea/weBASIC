@@ -1,5 +1,5 @@
 import Interpreter from '../interpreter/interpreter.js'
-import {errorat, ErrorCodes as ErrorCode, ErrorCodes} from '../interpreter/errors.js'
+import { error, errorat, ErrorCodes } from '../interpreter/errors.js'
 
 export default class Execution {
   constructor(machine, options = {}) {
@@ -34,6 +34,15 @@ export default class Execution {
     }
   }
 
+  resetCodespaceAfterRun(codespace) {
+    codespace.running = false
+    codespace.currentLineNumber = -1
+    codespace.currentStatementIndex = -1
+    codespace.skipTo = null
+    codespace.executionStack = []
+    codespace.forStack = []
+  }
+
   addCodeLine(codespace, lineNumber, codeLine) {
     if (codespace.running) { debugger }
     const statements = this.interpreter.prepLine(codeLine)
@@ -56,7 +65,7 @@ export default class Execution {
 
     if (lineNumber < 0) { lineNumber = codespace.lineNumbers[0] } // start from beginning
     let lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
-    if (lineNumberIndex < 0) { return errorat(ErrorCode.UNKNOWN_LINE, `${lineNumber}`) }
+    if (lineNumberIndex < 0) { return errorat(ErrorCodes.UNKNOWN_LINE, `${lineNumber}`) }
 
     codespace.currentLineNumber = lineNumber
     codespace.currentStatementIndex = 0
@@ -65,7 +74,7 @@ export default class Execution {
     this.currentCodespace = codespace
     codespace.running = true
     let codeLine = null
-    let statement = null
+    let err = null
     while (codespace.running) {
       if (!newLine && codespace.currentStatementIndex >= codeLine.length) {
         this.skipExecution('eol')
@@ -79,25 +88,25 @@ export default class Execution {
         if (!codeLine) {
           codespace.running = false
           this.currentCodespace = null
-          return errorat(ErrorCode.UNKNOWN_LINE, codespace.currentLineNumber)
+          err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
+          break
         }
         codespace.currentStatementIndex = 0
         newLine = false
       }
-      statement = codeLine[codespace.currentStatementIndex]
+      const statement = codeLine[codespace.currentStatementIndex]
       if (!this.skipExecution(statement)) {
         const result = await this.interpreter.interpretStatement(statement)
         if (result.error) {
-          codespace.running = false
-          this.currentCodespace = null
-          return result
+          err = result
+          break
         }
       }
       codespace.currentStatementIndex += 1
     }
-    codespace.running = false
     this.currentCodespace = null
-    return { done: true }
+    this.resetCodespaceAfterRun(codespace)
+    return err || { done: true }
   }
 
   startExecution(localVariables, initialValues = {}) {
@@ -160,5 +169,40 @@ export default class Execution {
     } // NOTE: this means we can only stop at a specific statement
     if (foundEnd) { this.skipTo = null }
     return !foundEnd
+  }
+
+  startForLoop(indexVariable, startValue, endValue, stepValue) {
+    if (!this.currentCodespace) { debugger }
+    this.currentCodespace.forStack.push({
+      lineNumber: this.currentCodespace.currentLineNumber,
+      statementIndex: this.currentCodespace.currentStatementIndex,
+      indexVariable, startValue, endValue, stepValue
+    })
+  }
+
+  nextForLoop(indexVariable, statement) {
+    if (!this.currentCodespace) { debugger }
+    if (this.currentCodespace.forStack.length === 0) {
+      return error(ErrorCodes.UNEXPECTED_NEXT, statement.tokenStart, statement.tokenEnd)
+    }
+    let forLoop = this.currentCodespace.forStack.pop()
+    if (indexVariable && indexVariable.token !== forLoop.indexVariable.token) {
+      return error(ErrorCodes.UNEXPECTED_NEXT, statement.tokenStart, indexVariable.tokenEnd)
+    }
+    let indexValue = this.machine.variables.getValue(forLoop.indexVariable)
+    if (indexValue.error) { return indexValue }
+    // increment index
+    const stepVal = forLoop.stepValue.value
+    indexValue.value += stepVal
+    if (forLoop.indexVariable.coding === 'variable-integer') { indexValue.value = Math.trunc(indexValue.value) }
+
+    // check end condition
+    if ((stepVal >= 0 && indexValue.value <= forLoop.endValue.value) ||
+        (stepVal < 0 && indexValue.value >= forLoop.endValue.value)) {
+      this.currentCodespace.forStack.push(forLoop)
+      this.currentCodespace.currentLineNumber = forLoop.lineNumber
+      this.currentCodespace.currentStatementIndex = forLoop.statementIndex
+    }
+    return { done: true }
   }
 }

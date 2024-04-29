@@ -1,5 +1,3 @@
-import LiveScreen from "./screens/liveScreen.js"
-import EditorScreen from './screens/editorScreen.js'
 import Variables from "./variables.js"
 import Execution from './execution.js'
 import IO from './io.js'
@@ -10,11 +8,15 @@ export default class Machine {
     this.io = new IO(this, { ...options, breakCallback: () => { this.onBreak() } })
 
     if (!options.noscreens) {
-      this.screens = {
-        LIVE: new LiveScreen(this),
-        EDIT: new EditorScreen(this),
-      }
-      this.currentScreen = this.screens[this.currentMode]
+      this.screens = {}
+      let self = this
+      import('./screens/liveScreen.js').then( (module) => {
+        self.screens.LIVE = new module.default(self)
+        this.currentScreen = this.screens[this.currentMode]
+      })
+      import('./screens/editorScreen.js').then( (module) => {
+        self.screens.EDIT = new module.default(self)
+      })
     }
 
     this.variables = new Variables(this)

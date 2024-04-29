@@ -11,19 +11,17 @@ export default class LiveScreen extends CharGridScreen {
     div.id = 'live-screen'
     div.classList.add('chargrid', 'fixed')
     document.body.appendChild(div)
-    super('live-screen', div, options)
-    this.machine = machine
+    super('live-screen', div, machine, options)
   }
 
   initialized() {
     this.div.style.display = 'block' // show it
-    this.screen = this.machine.screens.LIVE // for convenience
 
-    this.screen.displayString(startupMessage)
-    this.screen.newline()
-    this.screen.displayString(prompt)
+    this.displayString(startupMessage)
+    this.newline()
+    this.displayString(prompt)
 
-    this.commandInput = new FixedInput(this.screen, { inputHandler: (input) => { this.handleCommand(input) }, singleLine: true  })
+    this.commandInput = new FixedInput(this, { inputHandler: (input) => { this.handleCommand(input) }, singleLine: true  })
     this.machine.activateMode('LIVE')
     this.machine.io.setActiveListener(this.commandInput)
   }
@@ -33,7 +31,7 @@ export default class LiveScreen extends CharGridScreen {
     const result = await this.machine.runLiveCode(input)
     let options = { inputHandler: (input) => { this.handleCommand(input) } }
     if (result.error) {
-      this.screen.displayString(errorString(result))
+      this.displayString(errorString(result))
       if (!result.sourceText) {
         options.prefill = input
         options.errorLocation = result.location
@@ -41,10 +39,10 @@ export default class LiveScreen extends CharGridScreen {
       }
     }
 
-    this.screen.newline()
-    this.screen.displayString(prompt)
+    this.newline()
+    this.displayString(prompt)
     delete this.commandInput
-    this.commandInput = new FixedInput(this.screen, options)
+    this.commandInput = new FixedInput(this, options)
     this.machine.io.setActiveListener(this.commandInput)
   }
 }

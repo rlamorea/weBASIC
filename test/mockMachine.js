@@ -64,7 +64,7 @@ export default class Machine extends MachineX {
         querySelectorAll: (x) => { return self.screenCells }
       }
 
-      this.screen = new CharGridScreen('fixed-test', this.div, { refCell });
+      this.screen = new CharGridScreen('fixed-test', this.div, this, { refCell });
       this.currentScreen = this.screen
     }
   }

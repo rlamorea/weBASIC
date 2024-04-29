@@ -4,7 +4,7 @@ import * as assert from 'uvu/assert'
 import Machine from './mockMachine.js'
 import FixedInput from '../scripts/machine/screens/fixedInput.js'
 
-let machine = new Machine({addScreen: true})
+let machine = new Machine({ addScreen: true })
 
 machine.screen.displayString('Input? ', false)
 

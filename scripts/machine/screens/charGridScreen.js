@@ -9,8 +9,7 @@ const fontHeightPct = 0.85 // rough estimate of font height in pixels vs specifi
 let fixedScreenGlobals = {
   columns: 0,
   rows: 0,
-  registeredScreens: [],
-  refCell: null
+  registeredScreens: []
 }
 
 // internal locals
@@ -18,14 +17,16 @@ let computingReference = false
 let referenceCellPx = null
 
 export default class CharGridScreen extends Screen {
-  constructor(screenName, div, options) {
+  constructor(screenName, div, machine, options) {
     options = options || {}
     super(screenName, div, 'charGrid-fixed', options)
+    this.machine = machine
     this.hasBorder = ('hasBorder' in options) ? options.hasBorder : true
+    this.scrolling = options.scrolling
+    this.panelSettings = options.panel
     fixedScreenGlobals.columns = options.columns || fixedScreenGlobals.columns
     fixedScreenGlobals.rows = options.rows || fixedScreenGlobals.rows
     this.setViewport(fixedScreenGlobals.columns, fixedScreenGlobals.rows, options.refCell) // for testing
-    this.scrolling = options.scrolling
   }
 
   setViewport(width, height, refCell) {
@@ -59,7 +60,7 @@ export default class CharGridScreen extends Screen {
     // standardize required columns/rows
     if (width) {
       for (const vcols of validColumns) {
-        if (width <= vcols) {
+        if (width >= vcols) {
           width = vcols
           break
         }
@@ -67,7 +68,7 @@ export default class CharGridScreen extends Screen {
     }
     if (height) {
       for (const vrows of validRows) {
-        if (height <= vrows) {
+        if (height >= vrows) {
           height = vrows
           break
         }
@@ -76,7 +77,11 @@ export default class CharGridScreen extends Screen {
 
     let columns = 0
     let rows = 0
-    if (!width && !height) {
+    if (width && height && fixedScreenGlobals.cellSize) {
+      columns = fixedScreenGlobals.columns
+      rows = fixedScreenGlobals.rows
+      this.cellSize = [ ...fixedScreenGlobals.cellSize ]
+    } else if (!width && !height) {
       // find best fit
       for (const valCols of validColumns) {
         this.cellSize[0] = this.screenSize[0] / valCols
@@ -102,15 +107,41 @@ export default class CharGridScreen extends Screen {
       }
       this.cellSize = [Math.floor(this.cellSize[0]), Math.floor(this.cellSize[1])]
     } else if (!width) {
-      // TODO - fit height and flexible width
+      rows = height
+      this.cellSize[1] = this.screenSize[1] / height
+      this.cellSize[0] = this.cellSize[1] * referenceCellRatio
+      columns = Math.floor(this.screenSize[0] / this.cellSize[0])
+      for (const valCols of validColumns) {
+        if(columns >= valCols) {
+          columns = valCols
+          break
+        }
+      }
+      this.cellSize = [Math.floor(this.cellSize[0]), Math.floor(this.cellSize[1])]
     } else if (!height) {
-      // TODO - fit width and flexible height
-    } else if (fixedScreenGlobals.cellSize) {
-      columns = fixedScreenGlobals.columns
-      rows = fixedScreenGlobals.rows
-      this.cellSize = [ ...fixedScreenGlobals.cellSize ]
+      columns = width
+      this.cellSize[0] = this.screenSize[0] / width
+      this.cellSize[1] = this.cellSize[0] / referenceCellRatio
+      rows = Math.floor(this.screenSize[1] / this.cellSize[1])
+      for (const valRows of validRows) {
+        if (rows >= valRows) {
+          rows = valRows
+          break
+        }
+      }
+      this.cellSize = [Math.floor(this.cellSize[0]), Math.floor(this.cellSize[1])]
     } else {
-      // TODO: fit width and height
+      columns = width
+      rows = height
+      this.cellSize[0] = this.screenSize[0] / width
+      this.cellSize[1] = this.screenSize[1] / height
+      let heightByWidth = this.cellSize[0] / referenceCellRatio
+      if (heightByWidth <= this.cellSize[1]) {
+        this.cellSize[1] = heightByWidth
+      } else {
+        this.cellSize[0] = this.cellSize[1] * referenceCellRatio
+      }
+      this.cellSize = [Math.floor(this.cellSize[0]), Math.floor(this.cellSize[1])]
     }
 
     fixedScreenGlobals.columns = columns
@@ -121,6 +152,20 @@ export default class CharGridScreen extends Screen {
     this.viewportStart = [ 1, 1 ]
     fixedScreenGlobals.screenTextSize = [columns * this.cellSize[0], rows * this.cellSize[1]]
     this.borderSize = [(this.screenSize[0] - fixedScreenGlobals.screenTextSize[0]) / 2, (this.screenSize[1] - fixedScreenGlobals.screenTextSize[1]) / 2]
+
+    if (this.panelSettings) {
+      this.panelSettings.borderOffset = {}
+      if (this.panelSettings.location === 'top' || this.panelSettings.location === 'bottom') {
+        this.viewportSize[1] = this.panelSettings.rows
+        this.panelSettings.height = this.panelSettings.rows * this.cellSize[1]
+        this.panelSettings.borderOffset[this.panelSettings.location] = (rows - this.panelSettings.rows) * this.cellSize[1]
+      } else if (this.panelSettings.location === 'left' || this.panelSettings.location === 'right') {
+        this.viewportSize[0] = this.panelSettings.columns
+        this.panelSettings.width = this.panelSettings.columns * this.cellSize[0]
+        this.panelSettings.borderOffset[this.panelSettings.location] = (columns - this.panelSettings.colunns) * this.cellSize[0]
+      }
+    }
+
     console.log(`Screen: ${columns}x${rows}, cell size ${this.cellSize}, border: ${this.borderSize}`)
     fixedScreenGlobals.fontSize = Math.floor(this.cellSize[1] * fontHeightPct)
 
@@ -132,15 +177,15 @@ export default class CharGridScreen extends Screen {
     this.div.innerHTML = ''
 
     // adjust screen size
-    this.div.style.width = fixedScreenGlobals.screenTextSize[0] + 'px'
-    this.div.style.height = fixedScreenGlobals.screenTextSize[1] + 'px'
+    this.div.style.width = (this?.panelSettings?.width || fixedScreenGlobals.screenTextSize[0]) + 'px'
+    this.div.style.height = (this?.panelSettings?.height || fixedScreenGlobals.screenTextSize[1]) + 'px'
     this.div.style.fontSize = fixedScreenGlobals.fontSize + 'px'
     this.cursorLocation = [ 1, 1 ]
     this.viewportCursorLocation = [ 1, 1 ]
 
     // set border
-    let borderSizes = [ 0, 0 ]
     if (this.hasBorder) {
+      let borderSizes = [ 0, 0, 0, 0 ]
       if (this.borderSize[0] % 1 > 0) {
         borderSizes[3] = Math.floor(this.borderSize[0])
         borderSizes[1] = borderSizes[3] + 1
@@ -153,6 +198,11 @@ export default class CharGridScreen extends Screen {
       } else {
         borderSizes[2] = borderSizes[0] = this.borderSize[1]
       }
+      // note border opposite the panel location is offset
+      borderSizes[2] += this.panelSettings?.borderOffset?.top || 0
+      borderSizes[3] += this.panelSettings?.borderOffset?.right || 0
+      borderSizes[0] += this.panelSettings?.borderOffset?.bottom || 0
+      borderSizes[1] += this.panelSettings?.borderOffset?.left || 0
       this.div.style.borderStyle = 'solid'
       this.div.style.borderWidth = borderSizes.map((bs) => {
         return `${bs}px`

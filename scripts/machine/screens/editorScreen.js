@@ -17,6 +17,13 @@ export default class EditorScreen extends CharGridScreen {
 
   initialized() {
     this.div.style.display = 'none' // show it
+    this.firstActivated = false
+
+    this.displayString('weBASIC 0.1 Editor Test', false)
+  }
+
+  activated(active) {
+    if (!active || this.firstActivated) { return }
 
     this.editorDiv = document.createElement('div')
     this.editorDiv.style.position = 'absolute'
@@ -27,11 +34,40 @@ export default class EditorScreen extends CharGridScreen {
 
     this.div.appendChild(this.editorDiv)
 
-    monaco.editor.create(this.editorDiv, {
+    // NOTE: full list of colors here - https://github.com/microsoft/monaco-editor/issues/1631
+    monaco.editor.defineTheme('weBASIC', {
+      base: 'vs', inherit: true, rules: [],
+      colors: {
+        'editor.background': '#000000',
+        'editor.foreground': '#ffffff',
+        'editorCursor.foreground': '#ffffff',
+      }
+    })
+
+    this.editor = monaco.editor.create(this.editorDiv, {
+      lineNumbers: false,
+      fontFamily: 'monospace',
+      fontSize: `${this.fontSize}px`,
+      glyphMargin: false,
+      folding: false,
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 0,
+      minimap: { enabled: false },
+      overviewRulerLanes: 0,
+      hideCursorInOverviewRuler: true,
+      overviewRulerBorder: false,
+      cursorStyle: 'underline',
+      renderLineHighlight: 'none',
+      letterSpacing: `${this.letterSpacing}px`,
+      scrollBeyondLastLine: false,
+      scrollBar: { horizontal: "hidden" },
+      wordWrap: 'on',
+      theme: 'weBASIC',
       value: '0 REM Hello World',
-      language: 'basic'
+      language: 'BASIC'
     });
 
-    this.displayString('weBASIC 0.1 Editor Test', false)
+    this.editor.focus()
+    this.machine.io.useDefault()
   }
 }

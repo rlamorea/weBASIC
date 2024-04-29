@@ -54,6 +54,8 @@ export default class Screen {
 
   initialized() { /* do nothing */ }
 
+  activated(active) { /* do nothing */ }
+
   setViewport(width, height) {
     this.resetOtherScreenStatus()
     this.viewportSize = [ width, height ]

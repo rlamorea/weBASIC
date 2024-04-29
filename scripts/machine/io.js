@@ -9,22 +9,35 @@ let gwindow = (typeof window === 'undefined') ? { addEventListener: () => { } } 
 
 gwindow.addEventListener('load', (event) => {
   gwindow.addEventListener('keydown', (e) => { keyDown(e) })
-  gwindow.addEventListener('keypress', (e) => { e.preventDefault() })
+  gwindow.addEventListener('keypress', (e) => { keyPress(e) })
   gwindow.addEventListener('keyup', (e) => { keyUp(e) })
 })
 
 let registeredInput = null
+let overrideDefault = true
+let defaultToggle = null
 
 function keyDown(evt) {
-  evt.preventDefault()
-  if (!registeredInput) return // do nothing
-  registeredInput.handleKeyDown(evt)
+  if (overrideDefault) {
+    evt.preventDefault()
+    if (!registeredInput) return // do nothing
+    registeredInput.handleKeyDown(evt)
+  } else if (evt.key === defaultToggle) {
+    evt.preventDefault()
+    overrideDefault = true
+  }
+}
+
+function keyPress(evt) {
+  if (overrideDefault) { evt.preventDefault() }
 }
 
 function keyUp(evt) {
-  evt.preventDefault()
-  if (!registeredInput) return
-  registeredInput.handleKeyUp(evt)
+  if (overrideDefault) {
+    evt.preventDefault()
+    if (!registeredInput) return
+    registeredInput.handleKeyUp(evt)
+  }
 }
 
 export default class IO {
@@ -45,6 +58,11 @@ export default class IO {
     this.breakCallback = options.breakCallback
 
     registeredInput = this
+  }
+
+  useDefault(use = true, toggleBack = 'Escape') {
+    overrideDefault = !use
+    defaultToggle = toggleBack
   }
 
   handleKeyDown(evt) {

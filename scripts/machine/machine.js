@@ -30,6 +30,7 @@ export default class Machine {
     this.currentScreen = this.screens[this.currentMode]
     for (const screen in this.screens) {
       this.screens[screen].div.style.display = (screen === this.currentMode) ? 'block' : 'none'
+      this.screens[screen].activated(screen === this.currentMode)
     }
   }
 

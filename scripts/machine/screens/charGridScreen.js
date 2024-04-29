@@ -168,6 +168,22 @@ export default class CharGridScreen extends Screen {
 
     console.log(`Screen: ${columns}x${rows}, cell size ${this.cellSize}, border: ${this.borderSize}`)
     fixedScreenGlobals.fontSize = Math.floor(this.cellSize[1] * fontHeightPct)
+    this.fontSize = fixedScreenGlobals.fontSize
+
+    if (!fixedScreenGlobals.letterSpacing) {
+      const refText = document.createElement('div')
+      refText.style.position = 'fixed'
+      refText.style.fontFamily = 'monospace'
+      refText.style.fontSize = `${this.fontSize}px`
+      refText.innerHTML = '0123456789'
+      document.body.appendChild(refText)
+
+      const charWidth = refText.offsetWidth / 10
+      fixedScreenGlobals.letterSpacing = this.cellSize[0] - charWidth
+
+      refText.remove()
+    }
+    this.letterSpacing = fixedScreenGlobals.letterSpacing
 
     this.layCells()
   }

@@ -9,10 +9,12 @@ const fontHeightPct = 0.85 // rough estimate of font height in pixels vs specifi
 let fixedScreenGlobals = {
   columns: 0,
   rows: 0,
-  registeredScreens: []
+  registeredScreens: [],
+  refCell: null
 }
 
 // internal locals
+let computingReference = false
 let referenceCellPx = null
 
 export default class CharGridScreen extends Screen {
@@ -29,7 +31,10 @@ export default class CharGridScreen extends Screen {
   setViewport(width, height, refCell) {
     if (referenceCellPx) {
       this.fitScreen(width, height)
+    } else if (!refCell && computingReference) {
+      setTimeout( () => { this.setViewport(width, height) })
     } else if (!refCell) {
+      computingReference = true
       refCell = document.createElement('div')
       refCell.style.position = 'fixed'
       refCell.style.fontFamily = 'monospace'
@@ -37,11 +42,10 @@ export default class CharGridScreen extends Screen {
       refCell.innerHTML = 'M'
 
       document.body.appendChild(refCell)
-      setTimeout(() => {
-        this.setViewport(width, height, refCell)
-      }, 10)
+      setTimeout(() => { this.setViewport(width, height, refCell) }, 10)
     } else {
       referenceCellPx = [refCell.offsetWidth, refCell.offsetHeight]
+      computingReference = false
       refCell.remove()
       this.fitScreen(width, height)
     }
@@ -158,7 +162,7 @@ export default class CharGridScreen extends Screen {
 
     // set up cell style
     let stylesheet = (document.adoptedStyleSheets && document.adoptedStyleSheets.length > 0) ? document.adoptedStyleSheets[0] : new CSSStyleSheet()
-    stylesheet.replace(`#${this.div.id} .cell { width: ${fixedScreenGlobals.cellSize[0]}px; height: ${fixedScreenGlobals.cellSize[1]}px; line-height: ${fixedScreenGlobals.cellSize[1]}px; }`)
+    stylesheet.insertRule(`#${this.div.id} .cell { width: ${fixedScreenGlobals.cellSize[0]}px; height: ${fixedScreenGlobals.cellSize[1]}px; line-height: ${fixedScreenGlobals.cellSize[1]}px; }`)
     document.adoptedStyleSheets = [stylesheet]
 
     // insert cells

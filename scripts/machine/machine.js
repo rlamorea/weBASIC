@@ -1,4 +1,5 @@
 import LiveScreen from "./screens/liveScreen.js"
+import EditorScreen from './screens/editorScreen.js'
 import Variables from "./variables.js"
 import Execution from './execution.js'
 import IO from './io.js'
@@ -11,6 +12,7 @@ export default class Machine {
     if (!options.noscreens) {
       this.screens = {
         LIVE: new LiveScreen(this),
+        EDIT: new EditorScreen(this),
       }
       this.currentScreen = this.screens[this.currentMode]
     }

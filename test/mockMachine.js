@@ -34,7 +34,7 @@ global.document = {
     dataset: { },
     classList: new mockClassList()
   } },
-  adoptedStyleSheets: [ { replace: (x) => { /* do nothing */ }} ]
+  adoptedStyleSheets: [ { insertRule: (x) => { /* do nothing */ }} ]
 }
 
 let refCell = {

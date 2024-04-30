@@ -52,7 +52,7 @@ VERIFY
  */
 
 function error(errorCode, startLoc = -1, endLoc, sourceText) {
-  if (!errorCode) { debug } // catch errors
+  if (!errorCode) { debugger } // catch errors
   startLoc = startLoc || 0
   return { error: errorCode, location: startLoc, endLocation: endLoc || startLoc + 1, sourceText }
 }

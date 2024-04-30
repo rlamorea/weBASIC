@@ -2,6 +2,7 @@ $body-bgnd: black;
 $body-fgnd: white;
 
 body { background: $body-bgnd; color: $body-fgnd; }
+.inverted { background: $body-fgnd; color: $body-bgnd; }
 
 .fixed {
   width: 100%;

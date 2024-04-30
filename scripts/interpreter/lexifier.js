@@ -9,6 +9,8 @@ const prioritizedOperators = [
   'AND', 'OR'
 ]
 
+const keywordCodings = [ 'keyword', 'function', 'statement', 'command', 'binary-operator', 'unary-operator' ]
+
 export default class Lexifier {
   constructor() {
     this.specialHandlers = { }
@@ -17,15 +19,39 @@ export default class Lexifier {
     }
   }
 
-  lexifyLine(codeLine) {
+  identifyCleanTokens(codeLine) {
+    let tokenStart = 0
+    let cleanTokens = []
+    while (1 === 1) {
+      const tokenDef = nextToken(codeLine, tokenStart)
+      if (tokenDef.restOfLine === null) {
+        break
+      }
+      if (keywordCodings.includes(tokenDef.coding)) {
+        cleanTokens.push({
+          start: tokenDef.tokenStart,
+          end: tokenDef.tokenEnd,
+          replace: tokenDef.token
+        })
+      }
+      tokenStart = tokenDef.tokenEnd
+      codeLine = tokenDef.restOfLine
+    }
+    return cleanTokens
+  }
+
+  lexifyLine(codeLine, allowLineNumbers = false) {
     // parse line to first end-of-statement (LIVE only for now)
     let lineStatements = []
     let statementTokens = []
     let tokenStart = 0
+    let lineNumber = null
     while (1 === 1) {
       let tokenDef = nextToken(codeLine, tokenStart)
       if (tokenDef.error) { return tokenDef }
-      if (tokenDef.coding === 'end-of-statement') {
+      if (allowLineNumbers && tokenStart === 0 && tokenDef.coding === 'line-number') {
+        lineNumber = tokenDef
+      } else if (tokenDef.coding === 'end-of-statement') {
         const result = this.lexifyStatement(statementTokens)
         if (result.error) { return result }
         lineStatements.push(result)
@@ -34,7 +60,7 @@ export default class Lexifier {
         statementTokens.push(tokenDef)
       }
       if (tokenDef.restOfLine === null) {
-        return { lineStatements }
+        return { lineStatements, lineNumber }
       }
       codeLine = tokenDef.restOfLine
       tokenStart = tokenDef.tokenEnd
@@ -69,7 +95,7 @@ export default class Lexifier {
       token = tokens.shift()
     }
     if (token.coding !== 'equal') {
-      return error(ErrorCodes.SYTNAX, token.tokenStart, token.tokenEnd)
+      return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
     }
     if (tokens.length === 0) {
       return error(ErrorCodes.SYNTAX, variable.tokenEnd, token.tokenEnd + 1)

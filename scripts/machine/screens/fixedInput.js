@@ -88,6 +88,11 @@ export default class FixedInput {
     this.cursor(true)
   }
 
+  activate(active = true) {
+    this.active = active
+    this.cursor(active)
+  }
+
   clearError() {
     if (!this.hasError) return
     let loc = [ ...this.cursorStart ]
@@ -109,7 +114,7 @@ export default class FixedInput {
     }
     const viewportStr = this.inputText.substring(strStart, strEnd)
     this.screen.displayStringAt(this.cursorStart, viewportStr, false)
-    if (extraSpace) { this.screen.displayChar('') }
+    if (extraSpace) { this.screen.displayCharAt(this.cursorEnd, '') }
     this.screen.viewportCursorLocation = [ ...this.cursorLocation ]
     // this.screen.moveBy(-1, 0)
     // this.cursorLocation = [ ...this.screen.viewportCursorLocation ]
@@ -296,8 +301,10 @@ export default class FixedInput {
     }
 
     // move the screen cursor past the entered line
-    this.screen.moveTo(this.cursorEnd)
-    this.screen.newline()
+    if (!this.singleLine) {
+      this.screen.moveTo(this.cursorEnd)
+      this.screen.newline()
+    }
     if (this.inputHandler) {
       this.inputHandler(this.inputText)
       this.active = false

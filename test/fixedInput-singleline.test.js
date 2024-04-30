@@ -10,17 +10,17 @@ machine.screen.displayString('Input? ', false)
 
 let input = new FixedInput(machine.currentScreen, { singleLine: true })
 
-function enterKey(char, controls = {}) {
+function enterKey(char, controls = {}, inp = input) {
   const evt = { key: char, ...controls }
-  input.handleKey(evt)
+  inp.handleKey(evt)
 }
 
-function enterString(str) {
-  for (const char of str) { enterKey(char) }
+function enterString(str, inp = input) {
+  for (const char of str) { enterKey(char, {}, inp) }
 }
 
-function repeatKey(char, count) {
-  for (let i = 0; i < count; i++) { enterKey(char) }
+function repeatKey(char, count, inp = input) {
+  for (let i = 0; i < count; i++) { enterKey(char, {}, inp) }
 }
 
 test('initialized', () => {
@@ -483,6 +483,31 @@ test('check the buffer after all that', () => {
   )
 })
 
+test('newline in input at bottom of screen', () => {
+  machine.screen.moveTo([ 1, 10 ])
+  let testInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  enterString('HELLO', testInput)
+  enterKey('Enter', {}, testInput)
+
+  assert.is(testInput.cursorLocation[0], 6)
+  assert.is(testInput.cursorLocation[1], 10)
+  assert.is(machine.screenCells[360].innerHTML, 'H')
+  assert.is(machine.screenCells[364].innerHTML, 'O')
+})
+
+test('text overflow width at bottom of screen', () => {
+  machine.screen.clearViewport()
+  machine.screen.moveTo([ 1, 10 ])
+  let testInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  repeatKey('A', 39, testInput)
+  enterKey('B', {}, testInput)
+
+  assert.is(testInput.cursorLocation[0], 40)
+  assert.is(testInput.cursorLocation[1], 10)
+  assert.is(machine.screenCells[360].innerHTML, 'A')
+  assert.is(machine.screenCells[398].innerHTML, 'B')
+})
+
 test('prefill', () => {
   machine.screen.moveTo([ 1, 6 ])
   machine.screen.displayString('Input? ', false)
@@ -531,6 +556,7 @@ test('move input to new line with scroll up because too short', () => {
   assert.is(shiftInput.cursorLocation[0], 1)
   assert.is(shiftInput.cursorLocation[1], 10)
   assert.is(shiftInput.singleLineViewLength, 40)
+  assert.ok(machine.screenCells[399].classList.classes['cursor'])
 })
 
 // TODO: eventually maybe handle error highlighting

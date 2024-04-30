@@ -16,6 +16,7 @@ gwindow.addEventListener('load', (event) => {
 let registeredInput = null
 let overrideDefault = true
 let defaultToggle = null
+let defaultOffHandler = null
 
 function keyDown(evt) {
   if (overrideDefault) {
@@ -25,6 +26,7 @@ function keyDown(evt) {
   } else if (evt.key === defaultToggle) {
     evt.preventDefault()
     overrideDefault = true
+    if (defaultOffHandler) { defaultOffHandler() }
   }
 }
 
@@ -56,13 +58,15 @@ export default class IO {
     this.captureBreakKey = options.captureBreakKey
     this.breakKey = defaultBreakKey
     this.breakCallback = options.breakCallback
+    this.oldBreakCallback = options.breakCallback
 
     registeredInput = this
   }
 
-  useDefault(use = true, toggleBack = 'Escape') {
+  useDefault(use = true, toggleBack = 'Escape', toggleBackHandler) {
     overrideDefault = !use
     defaultToggle = toggleBack
+    defaultOffHandler = toggleBackHandler
   }
 
   handleKeyDown(evt) {
@@ -112,8 +116,14 @@ export default class IO {
     this.captureCurrentKey = enable
   }
 
-  enableBreak(enable = true, breakKey = defaultBreakKey) {
+  enableBreak(enable = true, breakKey = defaultBreakKey, breakHandler) {
     this.captureBreakKey = enable
     this.breakKey = breakKey
+    if (breakHandler) {
+      this.oldBreakCallback = this.breakCallback
+      this.breakCallback = breakHandler
+    } else {
+      this.breakCallback = this.oldBreakCallback
+    }
   }
 }

@@ -31,10 +31,13 @@ class mockClassList {
 global.document = {
   createElement: (tag) => { return {
     innerHTML: '',
+    style: { },
     dataset: { },
-    classList: new mockClassList()
+    classList: new mockClassList(),
+    remove: () => { /* do nothing */ }
   } },
-  adoptedStyleSheets: [ { insertRule: (x) => { /* do nothing */ }} ]
+  adoptedStyleSheets: [ { insertRule: (x) => { /* do nothing */ }} ],
+  body: { appendChild: () => { /* do nothing */ } }
 }
 
 let refCell = {

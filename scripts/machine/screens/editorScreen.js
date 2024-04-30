@@ -330,5 +330,6 @@ export default class EditorScreen extends CharGridScreen {
     const result = await this.machine.runLiveCode(input, allowedEditCommands)
     if (result.error) { this.displayError(result) }
     this.commandInput.reset()
+    this.machine.io.setActiveListener(this.commandInput)
   }
 }

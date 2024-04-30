@@ -28,14 +28,15 @@ export default class Machine {
   activateMode(mode) {
     this.currentMode = mode
     this.currentScreen = this.screens[this.currentMode]
+    this.io.setActiveListener() // clear any active listener from old mode
     for (const screen in this.screens) {
       this.screens[screen].div.style.display = (screen === this.currentMode) ? 'block' : 'none'
       this.screens[screen].activated(screen === this.currentMode)
     }
   }
 
-  async runLiveCode(codeLine) {
-    const result = this.execution.addCodeLine(this.liveCodespace, 0, codeLine)
+  async runLiveCode(codeLine, acceptedList) {
+    const result = this.execution.addCodeLine(this.liveCodespace, 0, codeLine, acceptedList)
     if (result.error) { return result }
     return await this.execution.runCode(this.liveCodespace)
   }

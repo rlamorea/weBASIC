@@ -7,6 +7,7 @@ const ErrorCodes = {
   ILLEGAL_VALUE: 'Illegal Value',
   ILLEGAL_REASSIGN: 'Illegal Reassignment',
   INDEX_OUT_OF_BOUNDS: 'Index Out of Bounds',
+  NOT_ALLOWED: 'Not Allowed',
   REDIM_ARRAY: 'Redimensioned Array',
   SYNTAX: 'Syntax Error',
   TOO_MANY_INPUTS: 'Too Many Inputs',

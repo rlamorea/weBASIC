@@ -14,8 +14,8 @@ export default class Interpreter {
     }
   }
 
-  prepLine(codeLine) {
-    return this.lexifier.lexifyLine(codeLine)
+  prepLine(codeLine, allowLineNumbers, acceptedList) {
+    return this.lexifier.lexifyLine(codeLine, allowLineNumbers, acceptedList)
   }
 
   async interpretLine(codeLine) {

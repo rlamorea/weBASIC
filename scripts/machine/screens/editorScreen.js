@@ -33,6 +33,21 @@ const overwriteKeyGroups = [
   'Numpad', // 98-113
 ]
 
+const allowedEditCommands = [
+  'command|AUTO',
+  'command|DEBUG',
+  'command|EDIT',
+  'command|FINE',
+  'command|KEY',
+  'command|LIST',
+  'command|LIVE',
+  'command|NEW',
+  'command|RENUMBER',
+  'command|RUN',
+  'command|LOAD',
+  'command|SAVE',
+]
+
 // NOTE: full list of colors here - https://github.com/microsoft/monaco-editor/issues/1631
 monaco.editor.defineTheme('weBASIC', {
   base: 'vs', inherit: true, rules: [],
@@ -65,7 +80,10 @@ export default class EditorScreen extends CharGridScreen {
       cell.classList.add('inverted')
     }
     this.moveTo( [ 1, 2 ])
-    this.commandInput = new FixedInput(this, { singleLine: true })
+    this.commandInput = new FixedInput(this, {
+      singleLine: true,
+      inputHandler: (input) => { this.handleCommand(input) }
+    })
   }
 
   activated(active) {
@@ -286,17 +304,19 @@ export default class EditorScreen extends CharGridScreen {
 
   displayError(error, lineNumber) {
     this.displayMessage(error.error)
-    this.currentErrorMarker = {
-      startLineNumber: lineNumber,
-      endLineNumber: lineNumber,
-      startColumn: error.location + 1,
-      endColumn: error.endLocation + 1,
-      message: error.error,
-      severity: 3,
-      source: 'weBASIC'
+    if (lineNumber) {
+      this.currentErrorMarker = {
+        startLineNumber: lineNumber,
+        endLineNumber: lineNumber,
+        startColumn: error.location + 1,
+        endColumn: error.endLocation + 1,
+        message: error.error,
+        severity: 3,
+        source: 'weBASIC'
+      }
+      const model = this.editor.getModel()
+      monaco.editor.setModelMarkers(model, 'eslint', [this.currentErrorMarker])
     }
-    const model = this.editor.getModel()
-    monaco.editor.setModelMarkers(model, 'eslint', [ this.currentErrorMarker ])
   }
 
   clearError() {
@@ -304,5 +324,11 @@ export default class EditorScreen extends CharGridScreen {
     const model = this.editor.getModel()
     monaco.editor.setModelMarkers(model, 'eslint', [ ])
     this.displayMessage(defaultMessage)
+  }
+
+  async handleCommand(input) {
+    const result = await this.machine.runLiveCode(input, allowedEditCommands)
+    if (result.error) { this.displayError(result) }
+    this.commandInput.reset()
   }
 }

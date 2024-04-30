@@ -26,6 +26,11 @@ export default class LiveScreen extends CharGridScreen {
     this.machine.io.setActiveListener(this.commandInput)
   }
 
+  activated(active) {
+    this.machine.io.setActiveListener(active ? this.commandInput : null)
+    this.commandInput.activate(active)
+  }
+
   async handleCommand(input) {
     this.machine.io.setActiveListener()
     this.newline()

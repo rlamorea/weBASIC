@@ -40,7 +40,7 @@ export default class Lexifier {
     return cleanTokens
   }
 
-  lexifyLine(codeLine, allowLineNumbers = false) {
+  lexifyLine(codeLine, allowLineNumbers = false, acceptedList = null) {
     // parse line to first end-of-statement (LIVE only for now)
     let lineStatements = []
     let statementTokens = []
@@ -63,6 +63,13 @@ export default class Lexifier {
         lineStatements.push(result)
         statementTokens = []
       } else {
+        if (acceptedList) {
+          let tokenIdx = acceptedList.indexOf(`${tokenDef.coding}|${tokenDef.token}`)
+          if (tokenIdx < 0) { tokenIdx = acceptedList.indexOf(`${tokenDef.coding}|*`) }
+          if (tokenIdx < 0) {
+            return error(ErrorCodes.NOT_ALLOWED, tokenDef.tokenStart, tokenDef.tokenEnd)
+          }
+        }
         statementTokens.push(tokenDef)
       }
       if (tokenDef.coding === 'command') { commandLine = tokenDef }

@@ -59,9 +59,9 @@ export default class Execution {
     codespace.forStack = []
   }
 
-  addCodeLine(codespace, lineNumber, codeLine) {
+  addCodeLine(codespace, lineNumber, codeLine, allowedList) {
     if (codespace.running) { debugger }
-    const statements = this.interpreter.prepLine(codeLine)
+    const statements = this.interpreter.prepLine(codeLine, lineNumber >= 0, allowedList)
     if (statements.error) { return statements }
 
     const lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
@@ -75,13 +75,13 @@ export default class Execution {
     return { done: true }
   }
 
-  async runLoop() {
+  async runLoop(carryThrough = {}) {
     let codespace = this.currentCodespace
     if (codespace.codeLine && codespace.currentStatementIndex >= codespace.codeLine.length) {
       this.skipExecution('eol')
       codespace.lineNumberIndex += 1
       if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
-        const result = { done: true }
+        const result = { done: true, preserveListener: carryThrough.preserveListener }
         codespace.resolve(result)
         return result
       }
@@ -110,9 +110,10 @@ export default class Execution {
         codespace.resolve(result)
         return result
       }
+      carryThrough.preserveListener ||= result.preserveListener
     }
     codespace.currentStatementIndex += 1
-    setTimeout( () => { this.runLoop() }, this.loopDelay)
+    setTimeout( () => { this.runLoop(carryThrough) }, this.loopDelay)
 
     return codespace.promise
   }
@@ -148,7 +149,7 @@ export default class Execution {
     // reset IO
     this.machine.io.enableCapture(false)
     this.machine.io.enableBreak(false)
-    this.machine.io.setActiveListener()
+    if (!result.preserveListener) { this.machine.io.setActiveListener() }
     this.resetCodespaceAfterRun(codespace)
     return result
   }

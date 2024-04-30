@@ -10,8 +10,7 @@ export default class ModeSwaps extends Statement {
       'command|LIVE': this.parseLive,
     }
     this.interpreterHandlers = {
-      'command|EDIT': this.doEdit,
-      'command|LIST': this.doList,
+      'command|EDIT': this.doEditList,
       'command|LIVE': this.doLive,
     }
   }
@@ -27,17 +26,13 @@ export default class ModeSwaps extends Statement {
     return statement
   }
 
-  doEdit(machine, statement, interpreter) {
+  doEditList(machine, statement, interpreter) {
     machine.activateMode('EDIT')
     return { done: true }
   }
 
-  doList(machine, statement, interpreter) {
-    return error(ErrorCodes.UNSUPPORTED, statement.tokenStart, statement.tokenEnd)
-  }
-
   doLive(machine, statement, interpreter) {
     machine.activateMode('LIVE')
-    return { done: true }
+    return { done: true, preserveListener: true }
   }
 }

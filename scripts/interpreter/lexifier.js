@@ -45,13 +45,19 @@ export default class Lexifier {
     let lineStatements = []
     let statementTokens = []
     let tokenStart = 0
+    let commandLine = null
     let lineNumber = null
     while (1 === 1) {
       let tokenDef = nextToken(codeLine, tokenStart)
       if (tokenDef.error) { return tokenDef }
       if (allowLineNumbers && tokenStart === 0 && tokenDef.coding === 'line-number') {
         lineNumber = tokenDef
+      } else if (tokenDef.coding === 'statement' && (lineNumber || tokenStart !== 0)) {
+        return error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
       } else if (tokenDef.coding === 'end-of-statement') {
+        if (commandLine && lineStatements.length > 0) {
+          return error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
+        }
         const result = this.lexifyStatement(statementTokens)
         if (result.error) { return result }
         lineStatements.push(result)
@@ -59,6 +65,7 @@ export default class Lexifier {
       } else {
         statementTokens.push(tokenDef)
       }
+      if (tokenDef.coding === 'command') { commandLine = tokenDef }
       if (tokenDef.restOfLine === null) {
         return { lineStatements, lineNumber }
       }

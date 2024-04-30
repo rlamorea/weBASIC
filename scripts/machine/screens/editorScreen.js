@@ -152,7 +152,7 @@ export default class EditorScreen extends CharGridScreen {
       newMode = this.insertMode
     }
     this.displayStringAt([ this.overInsDisp.column, 1 ], this.overInsDisp[newMode], false)
-    if (origMode !== newMode) { 
+    if (origMode !== newMode) {
       this.insertMode = newMode
       const cursorStyle = this.insertMode === 'insert' ? 'underline' : 'block'
       this.editor.updateOptions({ cursorStyle })

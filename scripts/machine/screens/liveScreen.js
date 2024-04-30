@@ -28,6 +28,7 @@ export default class LiveScreen extends CharGridScreen {
 
   async handleCommand(input) {
     this.machine.io.setActiveListener()
+    this.newline()
     const result = await this.machine.runLiveCode(input)
     let options = { inputHandler: (input) => { this.handleCommand(input) } }
     if (result.error) {

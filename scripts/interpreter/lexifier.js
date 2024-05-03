@@ -22,10 +22,14 @@ export default class Lexifier {
   identifyCleanTokens(codeLine) {
     let tokenStart = 0
     let cleanTokens = []
+    let lineNumber = null
     while (1 === 1) {
       const tokenDef = nextToken(codeLine, tokenStart)
       if (tokenDef.restOfLine === null) {
         break
+      }
+      if (tokenDef.coding === 'line-number') {
+        lineNumber = tokenDef
       }
       if (keywordCodings.includes(tokenDef.coding)) {
         cleanTokens.push({
@@ -37,7 +41,16 @@ export default class Lexifier {
       tokenStart = tokenDef.tokenEnd
       codeLine = tokenDef.restOfLine
     }
-    return cleanTokens
+    return { cleanTokens, lineNumber }
+  }
+
+  cleanCodeLine(code, cleanTokens) {
+    for (const token of cleanTokens) {
+      const pre = (token.start === 0) ? '' : code.substring(0, token.start)
+      const post = (token.end === code.length - 1) ? '' : code.substring(token.end)
+      code = pre + token.replace + post
+    }
+    return code
   }
 
   lexifyLine(codeLine, allowLineNumbers = false, acceptedList = null) {
@@ -47,12 +60,15 @@ export default class Lexifier {
     let tokenStart = 0
     let commandLine = null
     let lineNumber = null
+    let acceptedCommand = false
     while (1 === 1) {
       let tokenDef = nextToken(codeLine, tokenStart)
       if (tokenDef.error) { return tokenDef }
       if (allowLineNumbers && tokenStart === 0 && tokenDef.coding === 'line-number') {
         lineNumber = tokenDef
-      } else if (tokenDef.coding === 'statement' && (lineNumber || tokenStart !== 0)) {
+      } else if (tokenDef.coding === 'line-number') {
+        return error('unexpected-line-number', tokenDef.tokenStart, tokenDef.tokenEnd)
+      } else if (tokenDef.coding === 'command' && (lineNumber || tokenStart !== 0)) {
         return error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
       } else if (tokenDef.coding === 'end-of-statement') {
         if (commandLine && lineStatements.length > 0) {
@@ -62,13 +78,15 @@ export default class Lexifier {
         if (result.error) { return result }
         lineStatements.push(result)
         statementTokens = []
+        acceptedCommand = false
       } else {
-        if (acceptedList) {
+        if (acceptedList && !acceptedCommand) {
           let tokenIdx = acceptedList.indexOf(`${tokenDef.coding}|${tokenDef.token}`)
           if (tokenIdx < 0) { tokenIdx = acceptedList.indexOf(`${tokenDef.coding}|*`) }
           if (tokenIdx < 0) {
             return error(ErrorCodes.NOT_ALLOWED, tokenDef.tokenStart, tokenDef.tokenEnd)
           }
+          acceptedCommand = true
         }
         statementTokens.push(tokenDef)
       }

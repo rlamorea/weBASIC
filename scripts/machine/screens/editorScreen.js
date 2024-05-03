@@ -87,79 +87,90 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   activated(active) {
-    if (!active || this.firstActivated) { return }
+    if (!this.firstActivated) {
+      this.editorDiv = document.createElement('div')
+      this.editorDiv.style.position = 'absolute'
+      this.editorDiv.style.top = `-${this.panelSettings.borderOffset.bottom}px`
+      this.editorDiv.style.left = '0'
+      this.editorDiv.style.width = '100%'
+      this.editorDiv.style.height = this.panelSettings.borderOffset.bottom + 'px'
 
-    this.editorDiv = document.createElement('div')
-    this.editorDiv.style.position = 'absolute'
-    this.editorDiv.style.top = `-${this.panelSettings.borderOffset.bottom}px`
-    this.editorDiv.style.left = '0'
-    this.editorDiv.style.width = '100%'
-    this.editorDiv.style.height = this.panelSettings.borderOffset.bottom + 'px'
+      this.div.appendChild(this.editorDiv)
 
-    this.div.appendChild(this.editorDiv)
+      this.editor = monaco.editor.create(this.editorDiv, {
+        lineNumbers: false,
+        fontFamily: 'monospace',
+        fontSize: `${this.fontSize}px`,
+        glyphMargin: false,
+        folding: false,
+        lineDecorationsWidth: 0,
+        lineNumbersMinChars: 0,
+        minimap: {enabled: false},
+        overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false,
+        cursorStyle: 'underline',
+        renderLineHighlight: 'none',
+        letterSpacing: `${this.letterSpacing}px`,
+        scrollBeyondLastLine: false,
+        scrollBar: {horizontal: "hidden"},
+        wordWrap: 'on',
+        theme: 'weBASIC',
+        value: '',
+        language: 'weBASIC'
+      });
 
-    this.editor = monaco.editor.create(this.editorDiv, {
-      lineNumbers: false,
-      fontFamily: 'monospace',
-      fontSize: `${this.fontSize}px`,
-      glyphMargin: false,
-      folding: false,
-      lineDecorationsWidth: 0,
-      lineNumbersMinChars: 0,
-      minimap: { enabled: false },
-      overviewRulerLanes: 0,
-      hideCursorInOverviewRuler: true,
-      overviewRulerBorder: false,
-      cursorStyle: 'underline',
-      renderLineHighlight: 'none',
-      letterSpacing: `${this.letterSpacing}px`,
-      scrollBeyondLastLine: false,
-      scrollBar: { horizontal: "hidden" },
-      wordWrap: 'on',
-      theme: 'weBASIC',
-      value: '',
-      language: 'weBASIC'
-    });
+      console.log(monaco.KeyMod.CtrlCmd, monaco.KeyCode.KeyI, monaco.KeyCode.Enter)
 
-    console.log(monaco.KeyMod.CtrlCmd, monaco.KeyCode.KeyI, monaco.KeyCode.Enter)
+      this.editor.addCommand(monaco.KeyCode.Enter, (accessor) => {
+        this.processLine()
+      })
+      // this.editor.addCommand(
+      //   monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI,
+      //   (accessor) => { this.updateInsertOverwrite('toggle') }
+      // )
+      this.editor.onKeyDown((accessor) => {
+        this.keyDown(accessor)
+      })
 
-    this.editor.addCommand(monaco.KeyCode.Enter, (accessor) => { this.processLine() })
-    // this.editor.addCommand(
-    //   monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI,
-    //   (accessor) => { this.updateInsertOverwrite('toggle') }
-    // )
-    this.editor.onKeyDown( (accessor) => { this.keyDown(accessor) })
+      // set up insert/overwrite tracking
+      this.insertMode = 'insert'
+      const overInsWidth = this.viewportSize[0] <= 20 ? 2 : 4
+      this.overInsDisp = {
+        column: this.viewportSize[0] - overInsWidth + 1,
+        insert: overInsWidth === 2 ? 'I' : 'INS',
+        overwrite: overInsWidth === 2 ? 'O' : 'OVR'
+      }
+      this.updateInsertOverwrite()
 
-    // set up insert/overwrite tracking
-    this.insertMode = 'insert'
-    const overInsWidth = this.viewportSize[0] <= 20 ? 2 : 4
-    this.overInsDisp = {
-      column: this.viewportSize[0] - overInsWidth + 1,
-      insert: overInsWidth === 2 ? 'I' : 'INS',
-      overwrite: overInsWidth === 2 ? 'O' : 'OVR'
+      // set up cursor tracking
+      const columnPadding = this.viewportSize[0] < 100 ? 2 : 3
+      const cursorGap = this.viewportSize[0] <= 20 ? '' : ' '
+      const lineOrRow = this.viewportSize[0] <= 20 ? 'R' : 'L'
+      const rowPadding = this.viewportSize[0] <= 20 ? 2 : 5
+      this.cursorPosDisp = {
+        columnPadding, gap: cursorGap, lineOrRow, rowPadding,
+        column: this.viewportSize[0] - (1 + columnPadding + cursorGap.length + 1 + rowPadding + 1 + overInsWidth) + 1
+      }
+      this.editor.onDidChangeCursorPosition((e) => {
+        this.updateCursorPosition([e.position.column, e.position.lineNumber])
+      })
+      this.editor.onDidPaste((e) => this.pastedCode(e))
+      this.updateCursorPosition([1, 1])
+
+      this.messageWidth = this.cursorPosDisp.column - 2
+      this.displayMessage(defaultMessage)
+      this.currentErrorMarker = null
+      this.cursorStyle = 'underline'
+      this.firstActivated = true
+      this.currentMode = 'edit'
     }
-    this.updateInsertOverwrite()
-
-    // set up cursor tracking
-    const columnPadding = this.viewportSize[0] < 100 ? 2 : 3
-    const cursorGap = this.viewportSize[0] <= 20 ? '' : ' '
-    const lineOrRow = this.viewportSize[0] <= 20 ? 'R' : 'L'
-    const rowPadding = this.viewportSize[0] <= 20 ? 2 : 5
-    this.cursorPosDisp = {
-      columnPadding, gap: cursorGap, lineOrRow, rowPadding,
-      column: this.viewportSize[0] - (1 + columnPadding + cursorGap.length + 1 + rowPadding + 1 + overInsWidth) + 1
+    if (active) {
+      this.setMode(this.currentMode)
+    } else {
+      this.machine.io.useDefault(false)
+      this.machine.io.setActiveListener()
     }
-    this.editor.onDidChangeCursorPosition( (e) => {
-      this.updateCursorPosition([ e.position.column, e.position.lineNumber ])
-    })
-    this.updateCursorPosition([ 1, 1 ])
-
-    this.messageWidth = this.cursorPosDisp.column - 2
-    this.displayMessage(defaultMessage)
-    this.currentErrorMarker = null
-    this.cursorStyle = 'underline'
-
-    this.setMode('edit')
   }
 
   updateInsertOverwrite(newMode) {
@@ -190,6 +201,24 @@ export default class EditorScreen extends CharGridScreen {
     this.displayStringAt([ this.cursorPosDisp.column, 1 ], posString, false)
   }
 
+  showLines(startLine, endLine) {
+    let startIndex = 0
+    let endIndex = -1
+    if (startLine >= 0) {
+      startIndex = this.machine.execution.indexForLineNumber(this.machine.runCodespace, startLine, 'after')
+    }
+    if (endLine >= 0) {
+      endIndex = this.machine.execution.indexForLineNumber(this.machine.runCodespace, endLine, 'before')
+    }
+    if (startIndex < 0) { startIndex = 0 }
+    if (endIndex < 0) {
+      this.editor.revealLineNearTop(startIndex + 1, 0)
+    } else {
+      this.editor.revealLinesNearTop(startIndex + 1, endIndex + 1, 0)
+    }
+    this.editor.setPosition({ lineNumber: startIndex + 1, column: 1 })
+  }
+
   setMode(newMode) {
     const commandMode = newMode === 'command'
     this.editor.updateOptions({ readOnly: commandMode })
@@ -204,13 +233,19 @@ export default class EditorScreen extends CharGridScreen {
       this.editor.focus()
       this.machine.io.useDefault(true, 'Escape', () => { this.setMode('command') })
     }
+    this.currentMode = newMode
   }
 
   processLine() {
     this.clearError()
     const position = this.editor.getPosition()
-    const lineNumber = position.lineNumber
+    let lineNumber = position.lineNumber
     const lines = this.editor.getValue().split('\n')
+    if (position.lineNumber < lines.length + 1 && position.column === 1) {
+      this.editor.trigger('keyboard', 'type', { text: '\n' })
+      return
+    }
+
     let lineValue = lines[lineNumber - 1]
     let trimmedLineValue = lineValue.trim()
     const model = this.editor.getModel()
@@ -231,22 +266,21 @@ export default class EditorScreen extends CharGridScreen {
       //this.displayError({ error: 'Line Too Long, Truncated', location: maximumLineLength, endLocation: lineValue.length }, lineNumber)
     }
     if (lineValue !== '') {
-      const result = this.lexifier.lexifyLine(lineValue, true)
-      if (result.error) {
-        this.displayError(result, lineNumber)
+      const { cleanTokens, lineNumber: codeLineNumber } = this.lexifier.identifyCleanTokens(lineValue)
+      if (codeLineNumber) {
+        lineNumber = this.insertCodeLine(codeLineNumber, this.lexifier.cleanCodeLine(lineValue, cleanTokens), lineNumber)
       } else {
-        let edits = []
-        for (const cleanToken of this.lexifier.identifyCleanTokens(lineValue)) {
-          edits.push({
-            range: new monaco.Range(lineNumber, cleanToken.start + 1, lineNumber, cleanToken.end + 1),
-            text: cleanToken.replace
-          })
-        }
-        this.editor.executeEdits("", edits)
+        this.editor.executeEdits("", [{
+          range: new monaco.Range(lineNumber, 1, lineNumber+1, 1),
+          text: ''
+        }])
+        this.machine.activateMode('LIVE')
+        this.machine.passCode(lineValue)
+        return
       }
     }
     if (lineNumber === lines.length || position.column === 1) {
-      if (position.column > 1) { this.editor.setPosition({ column: lineValue.length + 1, lineNumber }) }
+      this.editor.setPosition({ column: lineValue.length + 1, lineNumber })
       this.editor.trigger('keyboard', 'type', { text: '\n' })
     } else {
       this.editor.setPosition({ column: 1, lineNumber: lineNumber + 1 })
@@ -302,6 +336,30 @@ export default class EditorScreen extends CharGridScreen {
     this.displayStringAt([ 1, 1 ], message)
   }
 
+  pastedCode(e) {
+    const pastedRange = e.range
+    if (pastedRange.endLineNumber === pastedRange.startLineNumber) return // no new lines added
+    // copy all of the code lines that were affected by the paste
+    const model = this.editor.getModel()
+    let changedLines = []
+    for (let lineNumber = pastedRange.startLineNumber; lineNumber < pastedRange.endLineNumber; lineNumber++) {
+      const lineRange = new monaco.Range(lineNumber, 1, lineNumber + 1, 1)
+      changedLines.push(model.getValueInRange(lineRange).trim())
+    }
+    // now cut all those lines
+    this.editor.executeEdits("", [{
+      range: new monaco.Range(pastedRange.startLineNumber, 1, pastedRange.endLineNumber, 1),
+      text: ''
+    }])
+    // now insert back all the lines
+    let finalInsertedLine = pastedRange.startLineNumber
+    for (const changeLine of changedLines) {
+      const { cleanTokens, lineNumber: codeLineNumber } = this.lexifier.identifyCleanTokens(changeLine)
+      finalInsertedLine = this.insertCodeLine(codeLineNumber, this.lexifier.cleanCodeLine(changeLine, cleanTokens))
+    }
+    this.editor.setPosition({ lineNumber: finalInsertedLine + 1, column: 1 })
+  }
+
   displayError(error, lineNumber) {
     this.displayMessage(error.error)
     if (lineNumber) {
@@ -326,10 +384,53 @@ export default class EditorScreen extends CharGridScreen {
     this.displayMessage(defaultMessage)
   }
 
-  async handleCommand(input) {
+  async handleCommand(input, passed) {
+    if (passed) {
+      this.setMode('edit')
+      const { cleanTokens, lineNumber } = this.lexifier.identifyCleanTokens(input)
+      const lineIndex = this.insertCodeLine(lineNumber, this.lexifier.cleanCodeLine(input, cleanTokens))
+      this.editor.setPosition({ lineNumber: lineIndex + 1, column: 1 })
+      return
+    }
     const result = await this.machine.runLiveCode(input, allowedEditCommands)
     if (result.error) { this.displayError(result) }
     this.commandInput.reset()
-    this.machine.io.setActiveListener(this.commandInput)
+    if (this.currentMode !== 'command') {
+      this.commandInput.activate(false)
+      this.machine.io.setActiveListener(this.commandInput)
+    }
+    if (result.newMode) {
+      this.machine.activateMode(result.newMode)
+      if (result.prepNewMode) { result.prepNewMode() }
+    }
+  }
+
+  insertCodeLine(lineNumber, codeLine, screenLine = -1) {
+    lineNumber = parseInt(lineNumber.token)
+    const result = this.machine.execution.addCodeLine(this.machine.runCodespace, -1, codeLine) // -1 means read the line number
+    if (result.error) {
+      this.displayError(result, screenLine)
+      return screenLine
+    }
+    if (screenLine >= 0 && screenLine === result.lineNumberIndex + 1) {
+      // replace existing line, move cursor to start of next line
+      this.editor.executeEdits("", [{
+        range: new monaco.Range(screenLine, 1, screenLine,codeLine.length + 1),
+        text: codeLine
+      }])
+      return screenLine
+    } else if (screenLine >= 0) { // yank this line so we can reposition it
+      this.editor.executeEdits("",[{
+        range: new monaco.Range(screenLine, 1, screenLine + 1, 1),
+        text: ''
+      }])
+    }
+    const endRow = result.lineNumberIndex + (result.inserted ? 1 : 2)
+    this.editor.executeEdits("", [{
+      range: new monaco.Range(result.lineNumberIndex + 1, 1, endRow, 1),
+      text: codeLine + '\n'
+    }])
+    this.editor.revealLine(result.lineNumberIndex + 1)
+    return result.lineNumberIndex + 1
   }
 }

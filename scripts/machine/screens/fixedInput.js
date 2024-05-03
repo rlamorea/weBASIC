@@ -116,6 +116,7 @@ export default class FixedInput {
     this.cursorLocation = [ ...this.cursorStart ]
     this.cursorEnd = [ ...this.cursorLocation ]
     this.active = active
+    this.screen.moveTo(this.cursorLocation)
     this.cursor(true)
   }
 

@@ -61,18 +61,24 @@ export default class Execution {
 
   addCodeLine(codespace, lineNumber, codeLine, allowedList) {
     if (codespace.running) { debugger }
-    const statements = this.interpreter.prepLine(codeLine, lineNumber >= 0, allowedList)
+    const statements = this.interpreter.prepLine(codeLine, lineNumber < 0, allowedList)
     if (statements.error) { return statements }
 
-    const lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
+    if (lineNumber < 0) {
+      lineNumber = parseInt(statements.lineNumber.token)
+    }
+    let lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
+    let inserted = false
     if (lineNumberIndex < 0) {
       codespace.lineNumbers.push(lineNumber)
-      codespace.lineNumbers = codespace.lineNumbers.sort()
+      codespace.lineNumbers = codespace.lineNumbers.sort((a,b) => { return a-b })
+      lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
+      inserted = true
     } else {
       delete codespace.codeLines[lineNumber] // clean up
     }
     codespace.codeLines[lineNumber] = statements.lineStatements
-    return { done: true }
+    return { done: true, lineNumberIndex, inserted }
   }
 
   async runLoop(carryThrough = {}) {
@@ -81,7 +87,11 @@ export default class Execution {
       this.skipExecution('eol')
       codespace.lineNumberIndex += 1
       if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
-        const result = { done: true, preserveListener: carryThrough.preserveListener }
+        const result = {
+          done: true,
+          newMode: carryThrough.newMode,
+          prepNewMode: carryThrough.prepNewMode
+        }
         codespace.resolve(result)
         return result
       }
@@ -110,12 +120,26 @@ export default class Execution {
         codespace.resolve(result)
         return result
       }
-      carryThrough.preserveListener ||= result.preserveListener
+      carryThrough.newMode ||= result.newMode
+      carryThrough.prepNewMode ||= result.prepNewMode
     }
     codespace.currentStatementIndex += 1
     setTimeout( () => { this.runLoop(carryThrough) }, this.loopDelay)
 
     return codespace.promise
+  }
+
+  indexForLineNumber(codespace, lineNumber, nearest = null) { // -1 for first line
+    if (codespace.lineNumbers.length === 0) { return -2 } // no lines
+    if (lineNumber < 0) { return 0 }
+    const exactMatchIndex = codespace.lineNumbers.indexOf(lineNumber)
+    if (exactMatchIndex > 0) { return exactMatchIndex }
+    if (!nearest) { return -1 } // line not found
+    // find nearest before or after lineNumber
+    let nearestIdx = 0
+    const max = codespace.lineNumbers.length
+    while (codespace.lineNumbers[nearestIdx] < lineNumber && nearestIdx < max) { nearestIdx++ }
+    return (nearest === 'before') ? Math.max(0, nearestIdx - 1) : Math.min(nearestIdx, max - 1)
   }
 
   async runCode(codespace, lineNumber = -1) {
@@ -149,7 +173,7 @@ export default class Execution {
     // reset IO
     this.machine.io.enableCapture(false)
     this.machine.io.enableBreak(false)
-    if (!result.preserveListener) { this.machine.io.setActiveListener() }
+    this.machine.io.setActiveListener()
     this.resetCodespaceAfterRun(codespace)
     return result
   }

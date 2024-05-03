@@ -17,25 +17,56 @@ export default class LiveScreen extends CharGridScreen {
   initialized() {
     this.div.style.display = 'block' // show it
 
-    this.displayString(startupMessage)
-    this.newline()
-    this.displayString(prompt)
-
-    this.commandInput = new FixedInput(this, { inputHandler: (input) => { this.handleCommand(input) }, singleLine: true  })
     this.machine.activateMode('LIVE')
+
+    this.displayString(startupMessage)
+    this.newPrompt()
+  }
+
+  newPrompt(showPrompt = true, inputOptions = {}) {
+    if (this.commandInput) {
+      this.commandInput.activate(false)
+      delete this.commandInput
+    }
+    const options = {
+      inputHandler: (input) => { this.handleCommand(input) },
+      ...inputOptions
+    }
+    if (showPrompt) {
+      this.newline()
+      this.displayString(prompt)
+    }
+    this.commandInput = new FixedInput(this, options)
+    this.commandInput.activate()
     this.machine.io.setActiveListener(this.commandInput)
   }
 
   activated(active) {
-    this.machine.io.setActiveListener(active ? this.commandInput : null)
-    this.commandInput.activate(active)
+    if (!this.commandInput) return
+    if (active) {
+      this.machine.io.setActiveListener(this.commandInput)
+      this.commandInput.activate()
+    } else if (this.commandInput) {
+      this.commandInput.activate(false)
+      this.machine.io.setActiveListener()
+    }
   }
 
-  async handleCommand(input) {
-    this.machine.io.setActiveListener()
-    this.newline()
+  async handleCommand(input, passed) {
+    if (passed) {
+      this.displayString(input)
+    } else {
+      //this.newline()
+    }
     const result = await this.machine.runLiveCode(input)
-    let options = { inputHandler: (input) => { this.handleCommand(input) } }
+    if (result.error && result.error === 'unexpected-line-number') {
+      this.commandInput.reset()
+      this.commandInput.activate(false)
+      this.machine.activateMode('EDIT')
+      this.machine.passCode(input)
+      return
+    }
+    let options = {}
     if (result.error) {
       this.displayString(errorString(result))
       if (!result.sourceText) {
@@ -45,10 +76,13 @@ export default class LiveScreen extends CharGridScreen {
       }
     }
 
-    this.newline()
-    this.displayString(prompt)
-    delete this.commandInput
-    this.commandInput = new FixedInput(this, options)
-    this.machine.io.setActiveListener(this.commandInput)
+    this.newPrompt(true, options)
+
+    if (result.newMode) {
+      this.machine.activateMode(result.newMode)
+      if (result.prepNewMode) { result.prepNewMode() }
+    }
+    return result
+
   }
 }

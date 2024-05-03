@@ -23,16 +23,27 @@ export default class Machine {
     this.execution = new Execution(this)
 
     this.liveCodespace = this.execution.createCodespace('LIVE')
+    this.runCodespace = this.execution.createCodespace('RUN')
   }
 
   activateMode(mode) {
     this.currentMode = mode
     this.currentScreen = this.screens[this.currentMode]
-    this.io.setActiveListener() // clear any active listener from old mode
+    let activatedScreen = null
     for (const screen in this.screens) {
-      this.screens[screen].div.style.display = (screen === this.currentMode) ? 'block' : 'none'
-      this.screens[screen].activated(screen === this.currentMode)
+      if (screen === this.currentMode) {
+        activatedScreen = this.screens[screen]
+        continue
+      }
+      this.screens[screen].div.style.display = 'none'
+      this.screens[screen].activated(false)
     }
+    activatedScreen.div.style.display = 'block'
+    activatedScreen.activated(true)
+  }
+
+  passCode(code) {
+    this.currentScreen.handleCommand(code, true)
   }
 
   async runLiveCode(codeLine, acceptedList) {

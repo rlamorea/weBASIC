@@ -10,6 +10,7 @@ import { default as MachineX } from '../scripts/machine/machine.js'
 
 import Variables from '../scripts/machine/variables.js'
 import CharGridScreen from '../scripts/machine/screens/charGridScreen.js'
+//import EditorScreen from '../scripts/machine/screens/editorScreen.js'
 import Execution from '../scripts/machine/execution.js'
 
 class mockClassList {
@@ -67,8 +68,11 @@ export default class Machine extends MachineX {
         querySelectorAll: (x) => { return self.screenCells }
       }
 
-      this.screen = new CharGridScreen('fixed-test', this.div, this, { refCell });
-      this.currentScreen = this.screen
+      this.screens = {
+        'LIVE': new CharGridScreen('fixed-test', this.div, this, {refCell})
+      }
+      this.currentScreen = this.screens['LIVE']
+      this.screen = this.screens['LIVE']
     }
   }
 }

@@ -59,10 +59,21 @@ export default class Execution {
     codespace.forStack = []
   }
 
+  deleteCodeLine(codespace, lineNumber, lineIndex = -1) {
+    if (lineIndex < 0) {
+      ;({ lineIndex } = this.indexForLineNumber(codespace, lineNumber))
+    }
+    if (lineIndex >= 0) {
+      codespace.lineNumbers.splice(lineIndex, 1)
+      delete codespace.codeLines[lineNumber]
+    }
+    return lineIndex
+  }
+
   addCodeLine(codespace, lineNumber, codeLine, allowedList) {
     if (codespace.running) { debugger }
     const statements = this.interpreter.prepLine(codeLine, lineNumber < 0, allowedList)
-    if (statements.error) { return statements }
+    if (statements.error && !statements.lineNumber ) { return statements }
 
     if (lineNumber < 0) {
       lineNumber = parseInt(statements.lineNumber.token)
@@ -77,8 +88,16 @@ export default class Execution {
     } else {
       delete codespace.codeLines[lineNumber] // clean up
     }
-    codespace.codeLines[lineNumber] = statements.lineStatements
-    return { done: true, lineNumberIndex, inserted }
+    let codeInsert = { text: codeLine }
+    if (statements.error) {
+      codeInsert.error = { error: statements.error, location: statements.location, endLocation: statements.endLocation }
+    } else {
+      codeInsert.statements = statements.lineStatements
+    }
+    codespace.codeLines[lineNumber] = codeInsert
+    let returnVal = { done: true, lineNumberIndex, inserted }
+    if (statements.error) { returnVal = { ...returnVal, ...statements } }
+    return returnVal
   }
 
   async runLoop(carryThrough = {}) {
@@ -99,7 +118,7 @@ export default class Execution {
       codespace.codeLine = null
     }
     if (!codespace.codeLine) {
-      codespace.codeLine = codespace.codeLines[codespace.currentLineNumber]
+      codespace.codeLine = codespace.codeLines[codespace.currentLineNumber].statements
       if (!codespace.codeLine) {
         const err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
         codespace.resolve(err)
@@ -133,13 +152,18 @@ export default class Execution {
     if (codespace.lineNumbers.length === 0) { return -2 } // no lines
     if (lineNumber < 0) { return 0 }
     const exactMatchIndex = codespace.lineNumbers.indexOf(lineNumber)
-    if (exactMatchIndex > 0) { return exactMatchIndex }
+    if (exactMatchIndex >= 0) { return { lineIndex: exactMatchIndex, existing: true, lineNumber: lineNumber } }
     if (!nearest) { return -1 } // line not found
     // find nearest before or after lineNumber
     let nearestIdx = 0
     const max = codespace.lineNumbers.length
     while (codespace.lineNumbers[nearestIdx] < lineNumber && nearestIdx < max) { nearestIdx++ }
-    return (nearest === 'before') ? Math.max(0, nearestIdx - 1) : Math.min(nearestIdx, max - 1)
+    nearestIdx = (nearest === 'before') ? Math.max(0, nearestIdx - 1) : Math.min(nearestIdx, max - 1)
+    return {
+      lineIndex: nearestIdx,
+      existing: false,
+      lineNumber: codespace.lineNumbers[nearestIdx]
+    }
   }
 
   async runCode(codespace, lineNumber = -1) {

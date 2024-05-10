@@ -23,13 +23,14 @@ export default class Lexifier {
     let tokenStart = 0
     let cleanTokens = []
     let lineNumber = null
+    let nonLineNumberTokens = 0
     while (1 === 1) {
       const tokenDef = nextToken(codeLine, tokenStart)
-      if (tokenDef.restOfLine === null) {
-        break
-      }
+      if (tokenDef.restOfLine === null) { break }
       if (tokenDef.coding === 'line-number') {
         lineNumber = tokenDef
+      } else {
+        nonLineNumberTokens += 1
       }
       if (keywordCodings.includes(tokenDef.coding)) {
         cleanTokens.push({
@@ -41,7 +42,7 @@ export default class Lexifier {
       tokenStart = tokenDef.tokenEnd
       codeLine = tokenDef.restOfLine
     }
-    return { cleanTokens, lineNumber }
+    return { cleanTokens, lineNumber, emptyLine: (nonLineNumberTokens === 0) }
   }
 
   cleanCodeLine(code, cleanTokens) {
@@ -61,21 +62,31 @@ export default class Lexifier {
     let commandLine = null
     let lineNumber = null
     let acceptedCommand = false
+    let errorEncountered = null
     while (1 === 1) {
       let tokenDef = nextToken(codeLine, tokenStart)
-      if (tokenDef.error) { return tokenDef }
+      if (tokenDef.error) {
+        errorEncountered = tokenDef
+        break
+      }
       if (allowLineNumbers && tokenStart === 0 && tokenDef.coding === 'line-number') {
         lineNumber = tokenDef
       } else if (tokenDef.coding === 'line-number') {
-        return error('unexpected-line-number', tokenDef.tokenStart, tokenDef.tokenEnd)
+        errorEncountered = error('unexpected-line-number', tokenDef.tokenStart, tokenDef.tokenEnd)
+        break
       } else if (tokenDef.coding === 'command' && (lineNumber || tokenStart !== 0)) {
-        return error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
+        errorEncountered = error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
+        break
       } else if (tokenDef.coding === 'end-of-statement') {
         if (commandLine && lineStatements.length > 0) {
-          return error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
+          errorEncountered = error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
+          break
         }
         const result = this.lexifyStatement(statementTokens)
-        if (result.error) { return result }
+        if (result.error) {
+          errorEncountered = result
+          break
+        }
         lineStatements.push(result)
         statementTokens = []
         acceptedCommand = false
@@ -84,19 +95,21 @@ export default class Lexifier {
           let tokenIdx = acceptedList.indexOf(`${tokenDef.coding}|${tokenDef.token}`)
           if (tokenIdx < 0) { tokenIdx = acceptedList.indexOf(`${tokenDef.coding}|*`) }
           if (tokenIdx < 0) {
-            return error(ErrorCodes.NOT_ALLOWED, tokenDef.tokenStart, tokenDef.tokenEnd)
+            errorEncountered = error(ErrorCodes.NOT_ALLOWED, tokenDef.tokenStart, tokenDef.tokenEnd)
+            break
           }
           acceptedCommand = true
         }
         statementTokens.push(tokenDef)
       }
       if (tokenDef.coding === 'command') { commandLine = tokenDef }
-      if (tokenDef.restOfLine === null) {
-        return { lineStatements, lineNumber }
-      }
+      if (tokenDef.restOfLine === null) { break }
       codeLine = tokenDef.restOfLine
       tokenStart = tokenDef.tokenEnd
     }
+    let result = { lineStatements, lineNumber }
+    if (errorEncountered) { result = { ...result, ...errorEncountered } }
+    return result
   }
 
   lexifyStatement(statementTokens) {

@@ -107,7 +107,7 @@ export default class FixedInput {
   reset(active = true) {
     this.cursor(false)
     const eraseLen = this.singleLine ? this.singleLineViewLength : this.inputText.length
-    const erase = ' '.repeat(eraseLen - 1)
+    const erase = eraseLen > 1 ? ' '.repeat(eraseLen - 1) : ' '
     this.screen.displayStringAt(this.cursorStart, erase, false)
     this.screen.displayCharAt(this.screen.viewportCursorLocation, ' ')
     this.inputText = ''

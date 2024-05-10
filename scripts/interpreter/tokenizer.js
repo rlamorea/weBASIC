@@ -223,6 +223,7 @@ export default function nextToken(restOfLine, tokenStart, skipLineNumber) {
 
   if (!skipLineNumber && startOfLine && "0123456789".indexOf(restOfLine[0]) >= 0) {
     tokenEnd = restOfLine.search(/\D+/)
+    tokenEnd = (tokenEnd < 0) ? restOfLine.length : tokenEnd
     return { token: restOfLine.substring(0, tokenEnd), coding: 'line-number', restOfLine: restOfLine.substring(tokenEnd), tokenStart, tokenEnd }
   }
 

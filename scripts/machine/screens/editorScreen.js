@@ -425,6 +425,13 @@ export default class EditorScreen extends CharGridScreen {
       this.cleanAndDisplayLine(input)
       return
     }
+    const { lineNumber } = this.lexifier.identifyCleanTokens(input)
+    if (lineNumber) {
+      this.commandInput.reset()
+      this.setMode('edit')
+      this.cleanAndDisplayLine(input)
+      return
+    }
     const result = await this.machine.runLiveCode(input, allowedEditCommands)
     if (result.error) { this.displayError(result) }
     this.commandInput.reset()

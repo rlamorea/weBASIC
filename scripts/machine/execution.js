@@ -48,7 +48,12 @@ export default class Execution {
     }
   }
 
-  resetCodespaceAfterRun(codespace) {
+  resetCodespaceAfterRun(codespace, resetAll = true) {
+    codespace.running = false
+    // preserve the rest in case we restart
+  }
+
+  prepCodespaceForRun(codespace) {
     codespace.running = false
     codespace.codeLine = null
     codespace.lineNumberIndex = 0
@@ -100,52 +105,18 @@ export default class Execution {
     return returnVal
   }
 
-  async runLoop(carryThrough = {}) {
-    let codespace = this.currentCodespace
-    if (codespace.codeLine && codespace.currentStatementIndex >= codespace.codeLine.length) {
-      this.skipExecution('eol')
-      codespace.lineNumberIndex += 1
-      if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
-        const result = {
-          done: true,
-          newMode: carryThrough.newMode,
-          prepNewMode: carryThrough.prepNewMode
-        }
-        codespace.resolve(result)
-        return result
-      }
-      codespace.currentLineNumber = codespace.lineNumbers[lineNumberIndex]
-      codespace.codeLine = null
-    }
-    if (!codespace.codeLine) {
-      codespace.codeLine = codespace.codeLines[codespace.currentLineNumber].statements
-      if (!codespace.codeLine) {
-        const err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
-        codespace.resolve(err)
-        return err
-      }
-      codespace.currentStatementIndex = 0
-    }
-    const statement = codespace.codeLine[codespace.currentStatementIndex]
-    if (this.gotBreak) {
+  stopExecution(codespace, method, statement, newMode, prepNewMode) {
+    if (method === 'break') {
       let err = errorat(ErrorCodes.BREAK, `in line ${codespace.currentLineNumber}`, statement.tokenStart, statement.tokenEnd, ' ')
       if (codespace.mode === 'LIVE') { err = error(ErrorCodes.BREAK, -1, null, ' ') }
+      err.newMode = 'LIVE'
       codespace.resolve(err)
       return err
+    } else { // end
+      const result = { done: true, newMode, prepNewMode }
+      codespace.resolve(result)
+      return result
     }
-    if (!this.skipExecution(statement)) {
-      const result = await this.interpreter.interpretStatement(statement)
-      if (result.error) {
-        codespace.resolve(result)
-        return result
-      }
-      carryThrough.newMode ||= result.newMode
-      carryThrough.prepNewMode ||= result.prepNewMode
-    }
-    codespace.currentStatementIndex += 1
-    setTimeout( () => { this.runLoop(carryThrough) }, this.loopDelay)
-
-    return codespace.promise
   }
 
   indexForLineNumber(codespace, lineNumber, nearest = null) { // -1 for first line
@@ -164,6 +135,63 @@ export default class Execution {
       existing: false,
       lineNumber: codespace.lineNumbers[nearestIdx]
     }
+  }
+
+  async runLoop(carryThrough = {}) {
+    let codespace = this.currentCodespace
+    if (codespace.codeLine && codespace.currentStatementIndex >= codespace.codeLine.length) {
+      this.skipExecution('eol')
+      codespace.lineNumberIndex += 1
+      if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
+        return this.stopExecution(codespace, 'end', null, carryThrough.newMode, carryThrough.prepNewMode)
+      }
+      codespace.currentLineNumber = codespace.lineNumbers[codespace.lineNumberIndex]
+      codespace.codeLine = null
+    }
+    if (!codespace.codeLine) {
+      codespace.codeLine = codespace.codeLines[codespace.currentLineNumber].statements
+      if (!codespace.codeLine) {
+        const err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
+        codespace.resolve(err)
+        return err
+      }
+      codespace.currentStatementIndex = 0
+    }
+    const statement = codespace.codeLine[codespace.currentStatementIndex]
+    if (this.gotBreak) {
+      return this.stopExecution(codespace, 'break', statement, 'LIVE')
+    }
+    if (!this.skipExecution(statement)) {
+      const result = await this.interpreter.interpretStatement(statement)
+      if (result.error) {
+        codespace.resolve(result)
+        return result
+      }
+      carryThrough.newMode ||= result.newMode
+      carryThrough.prepNewMode ||= result.prepNewMode
+      if (result.stopExecution) {
+        return this.stopExecution(codespace, result.stopExecution, statement, result.newMode, result.prepNewMode)
+      } else if (result.redirectLine) {
+        codespace.currentLineNumber = parseInt(result.redirectLine.token)
+        if (isNaN(codespace.currentLineNumber) || !isFinite(codespace.currentLineNumber)) {
+          const err = errorat(ErrorCodes.UNKNOWN_LINE, result.redirectLine.token)
+          codespace.resolve(err)
+          return err
+        }
+        codespace.codeLine = null
+        const lineIndex = this.indexForLineNumber(codespace, codespace.currentLineNumber)
+        if (!lineIndex.existing) {
+          const err = errorat(ErrorCodes.UNKNOWN_LINE, codespace.currentLineNumber)
+          codespace.resolve(err)
+          return err
+        }
+        codespace.lineNumberIndex = lineIndex.lineIndex
+      }
+    }
+    codespace.currentStatementIndex += 1
+    setTimeout( () => { this.runLoop(carryThrough) }, this.loopDelay)
+
+    return codespace.promise
   }
 
   async runCode(codespace, lineNumber = -1) {

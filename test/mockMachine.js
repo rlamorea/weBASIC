@@ -69,7 +69,8 @@ export default class Machine extends MachineX {
       }
 
       this.screens = {
-        'LIVE': new CharGridScreen('fixed-test', this.div, this, {refCell})
+        'LIVE': new CharGridScreen('fixed-test', this.div, this, {refCell}),
+        'RUN': new CharGridScreen('run-test', this.div, this, {refCell}),
       }
       this.currentScreen = this.screens['LIVE']
       this.screen = this.screens['LIVE']

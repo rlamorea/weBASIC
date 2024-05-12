@@ -6,6 +6,7 @@ import IfThen from './ifThen.js'
 import DefFn from './defFn.js'
 import ForNext from './forNext.js'
 import ModeSwaps from './modeSwaps.js'
+import ExecStatements from './execStatements.js'
 
 const assignment = new Assignment()
 const mathFunctions = new MathFunctions()
@@ -15,6 +16,7 @@ const ifThen = new IfThen()
 const defFn = new DefFn()
 const forNext = new ForNext()
 const modeSwaps = new ModeSwaps()
+const execStatements = new ExecStatements()
 
 export {
   assignment,
@@ -25,4 +27,5 @@ export {
   defFn,
   forNext,
   modeSwaps,
+  execStatements,
 }

@@ -17,6 +17,9 @@ export default class Machine {
       import('./screens/editorScreen.js').then( (module) => {
         self.screens.EDIT = new module.default(self)
       })
+      import('./screens/runScreen.js').then( (module) => {
+        self.screens.RUN = new module.default(self)
+      })
     }
 
     this.variables = new Variables(this)
@@ -49,6 +52,7 @@ export default class Machine {
   async runLiveCode(codeLine, acceptedList) {
     const result = this.execution.addCodeLine(this.liveCodespace, 0, codeLine, acceptedList)
     if (result.error) { return result }
+    this.execution.prepCodespaceForRun(this.liveCodespace)
     return await this.execution.runCode(this.liveCodespace)
   }
 

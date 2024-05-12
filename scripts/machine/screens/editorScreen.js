@@ -466,7 +466,7 @@ export default class EditorScreen extends CharGridScreen {
     }
     if (result.newMode) {
       this.machine.activateMode(result.newMode)
-      if (result.prepNewMode) { result.prepNewMode() }
+      if (result.prepNewMode) { await result.prepNewMode() }
     }
   }
 }

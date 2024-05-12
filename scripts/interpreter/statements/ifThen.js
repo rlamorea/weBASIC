@@ -56,10 +56,10 @@ export default class IfThen extends Statement {
       machine.execution.setExecutionSkip('eol') // when the time comes, 'statement|ELSE'
       return { done: true }
     } else if (statement.conditionalGotoLine) {
-      return error(ErrorCodes.UNSUPPORTED, statement.conditionalGotoLine.tokenStart, statement.conditionalGotoLine.tokenEnd)
+      return { done: true, redirectLine: statement.conditionalGotoLine }
     } else if (statement.conditionalStatement) {
       const result = await interpreter.interpretStatement(statement.conditionalStatement)
-      if (result.error) { return result.error }
+      if (result.error) { return result }
     }
 
     return { done: true }

@@ -951,4 +951,89 @@ test('syntax error line added last', () => {
   assert.is(machine.runCodespace.codeLines[20].error.error, ErrorCodes.SYNTAX)
 })
 
+test('insert existing line from outside editor', () => {
+  const result = processTest('17 GOTO 14', -1, null, false)
+
+  assert.is(result.actions.length, 3)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '17 GOTO 14\n')
+  assert.is(result.editorLines[4], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[5], '19 GOTO 10\n')
+  assert.is(result.editorLines[6], '20 syntax error\n')
+  assert.is(result.cursorLine, 5)
+  assert.is(result.editorLines.length, 7)
+  assert.is(machine.runCodespace.lineNumbers.length , 7)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 7)
+})
+
+test('paste case cut middle lines and paste them back', () => {
+  const cutIdxIn = 31
+  const cutIdxOut = 60
+  globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + globalEditorContents.substring(cutIdxOut)
+  let result = processTest('14 PRINT "midcut"', -1, null, false)
+  result = processTest('17 GOTO 14', -1, null, false)
+
+  assert.is(result.actions.length, 3)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '17 GOTO 14\n')
+  assert.is(result.editorLines[4], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[5], '19 GOTO 10\n')
+  assert.is(result.editorLines[6], '20 syntax error\n')
+  assert.is(result.cursorLine, 5)
+  assert.is(result.editorLines.length, 7)
+  assert.is(machine.runCodespace.lineNumbers.length , 7)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 7)
+})
+
+test('add a line in a big gap where it belongs, keep the gap', () => {
+  const cutIdxIn = 50
+  globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '15 PRINT "newline"\n\n\n\n\n' + globalEditorContents.substring(cutIdxIn)
+  const result = processTest('15 PRINT "newline"', 4, null, false)
+
+  assert.is(result.actions.length, 3)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[4], '\n')
+  assert.is(result.editorLines[5], '\n')
+  assert.is(result.editorLines[6], '\n')
+  assert.is(result.editorLines[7], '\n')
+  assert.is(result.editorLines[8], '17 GOTO 14\n')
+  assert.is(result.editorLines[9], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[10], '19 GOTO 10\n')
+  assert.is(result.editorLines[11], '20 syntax error\n')
+  assert.is(result.cursorLine, 5)
+  assert.is(result.editorLines.length, 12)
+  assert.is(machine.runCodespace.lineNumbers.length , 8)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 8)
+})
+
+test('add an existing line in a big gap where it belongs with blank above, keep the gap', () => {
+  const cutIdxIn = 70
+  globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '16 PRINT "newnew"' + globalEditorContents.substring(cutIdxIn)
+  const result = processTest('16 PRINT "newnew"', 6, null, false)
+
+  assert.is(result.actions.length, 4)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[4], '16 PRINT "newnew"\n')
+  assert.is(result.editorLines[5], '\n')
+  assert.is(result.editorLines[6], '\n')
+  assert.is(result.editorLines[7], '17 GOTO 14\n')
+  assert.is(result.editorLines[8], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[9], '19 GOTO 10\n')
+  assert.is(result.editorLines[10], '20 syntax error\n')
+  assert.is(result.cursorLine, 6)
+  assert.is(result.editorLines.length, 11)
+  assert.is(machine.runCodespace.lineNumbers.length , 9)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 9)
+})
+
 test.run()

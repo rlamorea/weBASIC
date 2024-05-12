@@ -271,7 +271,7 @@ export default class EditorScreen extends CharGridScreen {
     this.cleanAndDisplayLine(lineValue, screenLine)
   }
 
-  cleanAndDisplayLine(lineValue, screenLine = -1) {
+  cleanAndDisplayLine(lineValue, screenLine = -1, stayInEdit = false) {
     // trim the line
     lineValue = lineValue.trim()
     // force to maximum line length
@@ -288,17 +288,19 @@ export default class EditorScreen extends CharGridScreen {
 
     let { cleanTokens, lineNumber: codeLineNumber, emptyLine } = this.lexifier.identifyCleanTokens(lineValue)
     if (!codeLineNumber) {
+      if (stayInEdit) { return true }
       this.editor.executeEdits("", [{
         range: new monaco.Range(screenLine, 1, screenLine + 1, 1),
         text: ''
       }])
       this.machine.activateMode('LIVE')
       this.machine.passCode(lineValue)
-      return
+      return true
     }
 
     const actions = processLineActions(lineValue, screenLine, this.machine, this.editor.getValue(), codeLineNumber, cleanTokens)
     let cursorLine = screenLine
+    let noError = true
     for (const action of actions) {
       switch (action.action) {
         case 'clearLine':
@@ -312,7 +314,10 @@ export default class EditorScreen extends CharGridScreen {
             range: new monaco.Range(action.screenLine, 1, action.screenLine, 1),
             text: action.value + '\n'
           }])
-          if (action.error) { this.displayError(action.error, action.screenLine) }
+          if (action.error) {
+            this.displayError(action.error, action.screenLine)
+            noError = false
+          }
           break
         case 'setLine':
           cursorLine = action.screenLine
@@ -321,11 +326,16 @@ export default class EditorScreen extends CharGridScreen {
     }
     this.editor.revealLine(cursorLine + 1)
     this.editor.setPosition({ column: 1, lineNumber: cursorLine })
+    return noError
   }
 
   keyDown(key) {
     if (key.code === 'KeyI' && key.ctrlKey) {
       this.updateInsertOverwrite('toggle')
+      return
+    }
+    if (key.code === 'KeyQ' && key.ctrlKey) {
+      this.resetEditor()
       return
     }
     const model = this.editor.getModel()
@@ -389,10 +399,25 @@ export default class EditorScreen extends CharGridScreen {
     }])
     // now insert back all the lines
     let finalInsertedLine = pastedRange.startLineNumber
+    let errorCount = 0
     for (const changeLine of changedLines) {
-      this.cleanAndDisplayLine(changeLine)
+      if (!this.cleanAndDisplayLine(changeLine, -1, true)) {
+        errorCount += 1
+      }
     }
     this.editor.setPosition({ lineNumber: finalInsertedLine + 1, column: 1 })
+    if (errorCount > 1) {
+      this.displayError({ error: 'Multiple Errors' })
+    }
+  }
+
+  resetEditor() {
+    let program = ''
+    for (const lineNumber of this.machine.runCodespace.lineNumbers) {
+      program += this.machine.runCodespace.codeLines[lineNumber].text + '\n'
+    }
+    this.editor.setValue(program)
+    this.editor.setPosition({ lineNumber: this.machine.runCodespace.lineNumbers.length + 2, column: 1 })
   }
 
   displayError(error, lineNumber) {

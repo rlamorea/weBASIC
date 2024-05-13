@@ -27,11 +27,17 @@ export default class IfThen extends Statement {
         if (condition.error) { return condition }
         statement.condition = condition
         if (tokens.length > 0) {
+          // TODO: eventually need to deal with labels
           if (tokens[0].coding === 'number-literal') {
-            statement.conditionalGotoLine = tokens.shift()
+            const goLine = tokens.shift()
             if (tokens.length > 0) {
               return error(ErrorCodes.SYNTAX, tokens[0].tokenStart, tokens.slice(-1)[0].tokenEnd)
             }
+            const goLineNumber = parseInt(goLine.token)
+            if (isNaN(goLineNumber) || !isFinite(goLineNumber)) {
+              return error(ErrorCodes.UNKNOWN_LINE, goLine.tokenStart, goLine.tokenEnd)
+            }
+            statement.conditionalGotoLine = goLineNumber
           } else {
             const conditionalStatement = lexifier.lexifyStatement(tokens)
             if (conditionalStatement.error) { return conditionalStatement }

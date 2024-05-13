@@ -42,6 +42,7 @@ export default class Execution {
       skipTo: null,
       executionStack: [],
       forStack: [],
+      gosubStack: [],
       promise: null,
       resolve: null,
       reject: null
@@ -63,6 +64,7 @@ export default class Execution {
     codespace.skipTo = null
     codespace.executionStack = []
     codespace.forStack = []
+    codespace.gosubStack = []
     this.gotBreak = false
   }
 
@@ -175,13 +177,8 @@ export default class Execution {
       carryThrough.prepNewMode ||= result.prepNewMode
       if (result.stopExecution) {
         return this.stopExecution(codespace, result.stopExecution, statement, result.newMode, result.prepNewMode)
-      } else if (result.redirectLine) {
-        codespace.currentLineNumber = parseInt(result.redirectLine.token)
-        if (isNaN(codespace.currentLineNumber) || !isFinite(codespace.currentLineNumber)) {
-          const err = errorat(ErrorCodes.UNKNOWN_LINE, result.redirectLine.token)
-          codespace.resolve(err)
-          return err
-        }
+      } else if (result.redirectLine !== undefined) {
+        codespace.currentLineNumber = result.redirectLine
         codespace.codeLine = null
         const lineIndex = this.indexForLineNumber(codespace, codespace.currentLineNumber)
         if (!lineIndex.existing) {

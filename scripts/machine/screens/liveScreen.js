@@ -24,10 +24,8 @@ export default class LiveScreen extends CharGridScreen {
   }
 
   newPrompt(showPrompt = true, inputOptions = {}) {
-    if (this.commandInput) {
-      this.commandInput.activate(false)
-      delete this.commandInput
-    }
+    this.activated(false)
+    if (this.commandInput) { delete this.commandInput }
     const options = {
       inputHandler: (input) => { this.handleCommand(input) },
       ...inputOptions
@@ -50,6 +48,15 @@ export default class LiveScreen extends CharGridScreen {
       this.commandInput.activate(false)
       this.machine.io.setActiveListener()
     }
+  }
+
+  displayError(error) {
+    this.activated(false) // shut down current command input
+    if (this.commandInput) { delete this.commandInput }
+    this.moveBy(0, -1) // move up one to overwrite prompt
+    error = error.padEnd(this.viewportSize[0], ' ')
+    this.displayString(error, false)
+    this.newPrompt(true)
   }
 
   async handleCommand(input, passed) {
@@ -83,6 +90,5 @@ export default class LiveScreen extends CharGridScreen {
       if (result.prepNewMode) { await result.prepNewMode() }
     }
     return result
-
   }
 }

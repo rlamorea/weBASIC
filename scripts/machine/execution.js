@@ -50,6 +50,7 @@ export default class Execution {
 
   resetCodespaceAfterRun(codespace, resetAll = true) {
     codespace.running = false
+    this.gotBreak = false
     // preserve the rest in case we restart
   }
 
@@ -62,6 +63,7 @@ export default class Execution {
     codespace.skipTo = null
     codespace.executionStack = []
     codespace.forStack = []
+    this.gotBreak = false
   }
 
   deleteCodeLine(codespace, lineNumber, lineIndex = -1) {
@@ -159,10 +161,12 @@ export default class Execution {
     }
     const statement = codespace.codeLine[codespace.currentStatementIndex]
     if (this.gotBreak) {
+      this.gotBreak = false
       return this.stopExecution(codespace, 'break', statement, 'LIVE')
     }
     if (!this.skipExecution(statement)) {
       const result = await this.interpreter.interpretStatement(statement)
+      this.runStatementCount += 1
       if (result.error) {
         codespace.resolve(result)
         return result
@@ -198,12 +202,14 @@ export default class Execution {
     if (this.currentCodespace) { debugger } // shouldn't happen, so stop now
     if (codespace.lineNumbers.length === 0) { return { done: true } } // nothing to do!
 
-    if (lineNumber < 0) { lineNumber = codespace.lineNumbers[0] } // start from beginning
-    codespace.lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
-    if (codespace.lineNumberIndex < 0) { return errorat(ErrorCodes.UNKNOWN_LINE, `${lineNumber}`) }
+    if (lineNumber >= 0 || codespace.currentLineNumber < 0) {
+      if (lineNumber < 0) { lineNumber = codespace.lineNumbers[0] } // start from beginning
+      codespace.lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
+      if (codespace.lineNumberIndex < 0) { return errorat(ErrorCodes.UNKNOWN_LINE, `${lineNumber}`) }
 
-    codespace.currentLineNumber = lineNumber
-    codespace.currentStatementIndex = 0
+      codespace.currentLineNumber = lineNumber
+      codespace.currentStatementIndex = 0
+    }
 
     this.currentCodespace = codespace
     this.machine.io.enableBreak()
@@ -215,6 +221,8 @@ export default class Execution {
       codespace.reject = reject
     })
 
+    this.runStatementCount = 0
+    const startTime = Date.now()
     let result = { done: true }
     try {
       result = await this.runLoop()
@@ -222,6 +230,9 @@ export default class Execution {
       result = error(e)
     }
     this.currentCodespace = null
+    const elapsedTime = (Date.now() - startTime) / 1000
+    console.log(`Run: ${this.runStatementCount} statements in ${elapsedTime}s`)
+
     // reset IO
     this.machine.io.enableCapture(false)
     this.machine.io.enableBreak(false)

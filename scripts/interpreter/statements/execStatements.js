@@ -1,5 +1,5 @@
 import Statement from './statement.js'
-import { ErrorCodes, error } from '../errors.js'
+import { ErrorCodes, error, errorat } from '../errors.js'
 
 async function goRunCont(machine, statement, startMode) {
   const method = statement.token
@@ -9,20 +9,17 @@ async function goRunCont(machine, statement, startMode) {
     machine.currentScreen.clearViewport()
   }
   machine.runCodespace.startMode = startMode
-  const result = await machine.execution.runCode(machine.runCodespace)
+  const runLine = statement.startLine === undefined ? -1 : statement.startLine
+  if (runLine >= 0 && method === 'CONT') {
+    machine.runCodespace.currentStatementIndex = 0
+  }
+  const result = await machine.execution.runCode(machine.runCodespace, runLine)
   if (!result.newMode) {
     result.newMode = (result.error) ? 'LIVE' : startMode
   }
   machine.activateMode(result.newMode)
   if (result.prepNewMode) { await result.prepNewMode() }
-}
-
-function goEnd(machine, statement, endMode) {
-  /* do nothing for now */
-}
-
-function goStop(machine) {
-  /* do nothing for now */
+  if (result.error) { machine.currentScreen.displayError(result.error) }
 }
 
 export default class ExecStatements extends Statement {
@@ -30,6 +27,7 @@ export default class ExecStatements extends Statement {
     super()
     this.lexicalHandlers = {
       'command|RUN': this.parseRunCont,
+      'command|CONT': this.parseRunCont,
       'statement|END': this.parseEndStop,
       'statement|STOP': this.parseEndStop,
     }
@@ -78,8 +76,7 @@ export default class ExecStatements extends Statement {
     return {
       done: true,
       stopExecution: 'end',
-      newMode: machine.runCodespace.startMode,
-      prepNewMode: async () => { await goEnd(machine, statement, machine.runCodespace.startMode) }
+      newMode: machine.runCodespace.startMode
     }
   }
 
@@ -87,6 +84,13 @@ export default class ExecStatements extends Statement {
     if (machine.currentMode !== 'RUN') {
       return error(ErrorCodes.NOT_ALLOWED, statement.tokenStart, statement.tokenEnd)
     }
-    return { done: true, stopExecution: 'break', newMode: 'lIVE', prepNewMode: () => { goStop(machine) } }
+    const errorMessage = `${ErrorCodes.BREAK} in line ${machine.runCodespace.currentLineNumber}`
+    machine.runCodespace.codeLine = null
+    machine.runCodespace.currentStatementIndex += 1 // step past the STOP statement
+    return {
+      done: true,
+      stopExecution: 'break',
+      newMode: 'LIVE'
+    }
   }
 }

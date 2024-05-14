@@ -87,6 +87,7 @@ export default class Lexifier {
           errorEncountered = result
           break
         }
+        result.lineNumber = lineNumber
         lineStatements.push(result)
         statementTokens = []
         acceptedCommand = false
@@ -223,27 +224,35 @@ export default class Lexifier {
     return result
   }
 
-  parseIntoParameters(tokens, tokenStart) {
+  parseIntoParameters(tokens, tokenStart, noExpression = false) {
     let paramTokens = []
     let params = []
     let tokenEnd = tokenStart
     while (1 === 1) {
       if (tokens.length === 0) {
         if (paramTokens.length > 0) {
-          const expression = this.parseExpression(paramTokens, paramTokens[0].tokenStart)
-          if (expression.error) { return expression }
-          params.push(expression)
+          if (noExpression) {
+            params.push(paramTokens)
+          } else {
+            const expression = this.parseExpression(paramTokens, paramTokens[0].tokenStart)
+            if (expression.error) { return expression }
+            params.push(expression)
+          }
         }
         return { parameters: params, restOfTokens: tokens, tokenEnd }
       }
       const token = tokens.shift()
       if (token.coding === 'comma') {
-        if (paramTokens.length === 0) {
-          return error(ErrorCodes.ILLEGAL_VALUE, token.tokenStart, token.tokenEnd)
+        if (noExpression) {
+          params.push(paramTokens)
+        } else {
+          if (paramTokens.length === 0) {
+            return error(ErrorCodes.ILLEGAL_VALUE, token.tokenStart, token.tokenEnd)
+          }
+          const expression = this.parseExpression(paramTokens, paramTokens[0].tokenStart)
+          if (expression.error) { return expression }
+          params.push(expression)
         }
-        const expression = this.parseExpression(paramTokens, paramTokens[0].tokenStart)
-        if (expression.error) { return expression }
-        params.push(expression)
         tokenStart = token.tokenStart
         paramTokens = []
       } else if (token.coding === 'open-paren') {

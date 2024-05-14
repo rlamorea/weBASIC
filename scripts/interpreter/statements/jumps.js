@@ -1,27 +1,6 @@
 import Statement from './statement.js'
 import { ErrorCodes, error, errorat } from '../errors.js'
 
-async function goRunCont(machine, statement, startMode) {
-  const method = statement.token
-  if (method === 'RUN') {
-    machine.variables.clearAll()
-    machine.execution.prepCodespaceForRun(machine.runCodespace)
-    machine.currentScreen.clearViewport()
-  }
-  machine.runCodespace.startMode = startMode
-  const runLine = statement.startLine === undefined ? -1 : statement.startLine
-  if (runLine >= 0 && method === 'CONT') {
-    machine.runCodespace.currentStatementIndex = 0
-  }
-  const result = await machine.execution.runCode(machine.runCodespace, runLine)
-  if (!result.newMode) {
-    result.newMode = (result.error) ? 'LIVE' : startMode
-  }
-  machine.activateMode(result.newMode)
-  if (result.prepNewMode) { await result.prepNewMode() }
-  if (result.error) { machine.currentScreen.displayError(result.error) }
-}
-
 export default class Jumps extends Statement {
   constructor() {
     super()

@@ -80,23 +80,9 @@ export default class Data extends Statement {
   }
 
   parseRead(statement, tokens, lexifier) {
-    if (tokens.length === 0) {
+    const variables = Statement.parseVariableList(tokens, lexifier)
+    if (variables.length === 0) {
       return error(ErrorCodes.SYNTAX, statement.tokenStart, statement.tokenEnd)
-    }
-    let variables = []
-    while (1 === 1) {
-      if (tokens.length === 0) { break }
-      const token = tokens.shift()
-      if (!token.coding.startsWith('variable-')) {
-        return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
-      }
-      variables.push(token)
-      if (tokens.length > 0) {
-        const comma = tokens.shift()
-        if (comma.coding !== 'comma') {
-          return error(ErrorCodes.SYNTAX, comma.tokenStart, comma.tokenEnd)
-        }
-      }
     }
     statement.readVariables = variables
     return statement

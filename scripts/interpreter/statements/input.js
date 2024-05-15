@@ -71,7 +71,6 @@ export default class Input extends Statement {
   parseInput(statement, tokens, lexifier) {
     let prompt = ''
     let showQuestion = true
-    let inputVariables = []
     let tokenEnd = statement.tokenEnd
     if (tokens.length > 0 && tokens[0].coding === 'string-literal') {
       prompt = tokens.shift()
@@ -84,27 +83,7 @@ export default class Input extends Statement {
         showQuestion = true
       }
     }
-    while (tokens.length > 0) {
-      let token = tokens.shift()
-      tokenEnd = token.tokenEnd
-      if (!token.coding.startsWith('variable-')) {
-        return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
-      }
-      inputVariables.push(token)
-      if (tokens.length > 0 && tokens[0].coding === 'open-paren') {
-        const parenToken = tokens.shift()
-        const result = lexifier.parseVariableDimensions(token, parenToken, tokens)
-        if (result.error) { return result }
-        tokens = result.restOfTokens
-      }
-      if (tokens.length > 0) {
-        token = tokens.shift()
-        tokenEnd = token.tokenEnd
-        if (token.coding !== 'comma') {
-          return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
-        }
-      }
-    }
+    const inputVariables = Statement.parseVariableList(tokens, lexifier)
     if (inputVariables.length === 0) {
       return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
     }

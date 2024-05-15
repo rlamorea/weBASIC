@@ -43,4 +43,13 @@ function sendKey(machine, key, after = 0) {
   }
 }
 
-export { tokens, precision, assertFloat, sendToInput, sendKey }
+async function runProgram(machine, codeLines) {
+  machine.execution.resetCodespaceToNew(machine.runCodespace)
+  machine.variables.clearAll()
+  for (const codeLine of codeLines) {
+    machine.execution.addCodeLine(machine.runCodespace,-1, codeLine)
+  }
+  return await machine.execution.runCode(machine.runCodespace)
+}
+
+export { tokens, precision, assertFloat, sendToInput, sendKey, runProgram }

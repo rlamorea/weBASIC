@@ -1,21 +1,13 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 import { ErrorCodes } from '../scripts/interpreter/errors.js'
+import { runProgram } from "./testHelpers.js";
 
 import MockMachine from './mockMachine.js'
 import Lexifier from '../scripts/interpreter/lexifier.js'
 
 const machine = new MockMachine({ addScreen: true })
 const lexifier = new Lexifier()
-
-async function runProgram(codeLines) {
-  machine.execution.resetCodespaceToNew(machine.runCodespace)
-  machine.variables.clearAll()
-  for (const codeLine of codeLines) {
-    machine.execution.addCodeLine(machine.runCodespace,-1, codeLine)
-  }
-  return await machine.execution.runCode(machine.runCodespace)
-}
 
 test('parsing DATA with one number', () => {
   const result = lexifier.lexifyLine('10 DATA 5', true)
@@ -227,7 +219,7 @@ test('parsing RESTORE with more than line number', () => {
 })
 
 test('single DATA value into dataset', async () => {
-  const result = await runProgram([ '10 DATA 5' ])
+  const result = await runProgram(machine ,[ '10 DATA 5' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.runCodespace.dataLines.length, 1)
@@ -238,7 +230,7 @@ test('single DATA value into dataset', async () => {
 })
 
 test('multiple DATA values into dataset', async () => {
-  const result = await runProgram([ '10 DATA 5, "hello", foo + bar' ])
+  const result = await runProgram(machine ,[ '10 DATA 5, "hello", foo + bar' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.runCodespace.dataLines.length, 1)
@@ -253,7 +245,7 @@ test('multiple DATA values into dataset', async () => {
 })
 
 test('multiple DATA lines into dataset', async () => {
-  const result = await runProgram([ '10 DATA 5', '20 DATA hello' ])
+  const result = await runProgram(machine ,[ '10 DATA 5', '20 DATA hello' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.runCodespace.dataLines.length, 2)
@@ -268,7 +260,7 @@ test('multiple DATA lines into dataset', async () => {
 })
 
 test('multiple DATA statements in one line into dataset', async () => {
-  const result = await runProgram([ '10 DATA 5:DATA "hello"' ])
+  const result = await runProgram(machine ,[ '10 DATA 5:DATA "hello"' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.runCodespace.dataLines.length, 1)
@@ -281,7 +273,7 @@ test('multiple DATA statements in one line into dataset', async () => {
 })
 
 test('READ one number', async () => {
-  const result = await runProgram([ '10 DATA 5', '20 READ a' ])
+  const result = await runProgram(machine ,[ '10 DATA 5', '20 READ a' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a'].valueType, 'number')
@@ -289,13 +281,13 @@ test('READ one number', async () => {
 })
 
 test('READ one number from string - error', async () => {
-  const result = await runProgram([ '10 DATA hello', '20 READ a' ])
+  const result = await runProgram(machine ,[ '10 DATA hello', '20 READ a' ])
 
   assert.is(result.error, ErrorCodes.TYPE_MISMATCH)
 })
 
 test('READ one integer', async () => {
-  const result = await runProgram([ '10 DATA 5.5', '20 READ a%' ])
+  const result = await runProgram(machine ,[ '10 DATA 5.5', '20 READ a%' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a%'].valueType, 'number')
@@ -303,7 +295,7 @@ test('READ one integer', async () => {
 })
 
 test('READ one string', async () => {
-  const result = await runProgram([ '10 DATA hello', '20 READ a$' ])
+  const result = await runProgram(machine ,[ '10 DATA hello', '20 READ a$' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a$'].valueType, 'string')
@@ -311,7 +303,7 @@ test('READ one string', async () => {
 })
 
 test('READ one string from number', async () => {
-  const result = await runProgram([ '10 DATA 5.5', '20 READ a$' ])
+  const result = await runProgram(machine ,[ '10 DATA 5.5', '20 READ a$' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a$'].valueType, 'string')
@@ -319,13 +311,13 @@ test('READ one string from number', async () => {
 })
 
 test('READ one number no data - error', async () => {
-  const result = await runProgram([ '20 READ a%' ])
+  const result = await runProgram(machine ,[ '20 READ a%' ])
 
   assert.is(result.error, ErrorCodes.OUT_OF_DATA)
 })
 
 test('READ two numbers', async () => {
-  const result = await runProgram([ '10 DATA 5, 10', '20 READ a, b' ])
+  const result = await runProgram(machine ,[ '10 DATA 5, 10', '20 READ a, b' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a'].valueType, 'number')
@@ -335,7 +327,7 @@ test('READ two numbers', async () => {
 })
 
 test('READ a number and a string', async () => {
-  const result = await runProgram([ '10 DATA 5, hello', '20 READ a, b$' ])
+  const result = await runProgram(machine ,[ '10 DATA 5, hello', '20 READ a, b$' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a'].valueType, 'number')
@@ -345,7 +337,7 @@ test('READ a number and a string', async () => {
 })
 
 test('READ two numbers from two lines', async () => {
-  const result = await runProgram([ '10 READ a, b', '20 DATA 5', '30 DATA 10' ])
+  const result = await runProgram(machine ,[ '10 READ a, b', '20 DATA 5', '30 DATA 10' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a'].valueType, 'number')
@@ -355,19 +347,19 @@ test('READ two numbers from two lines', async () => {
 })
 
 test('READ two numbers one value - error', async () => {
-  const result = await runProgram([ '10 READ a, b', '20 DATA 5' ])
+  const result = await runProgram(machine ,[ '10 READ a, b', '20 DATA 5' ])
 
   assert.is(result.error, ErrorCodes.OUT_OF_DATA)
 })
 
 test('READ three numbers from two lines - error', async () => {
-  const result = await runProgram([ '10 READ a, b, c', '20 DATA 5', '30 DATA 10' ])
+  const result = await runProgram(machine ,[ '10 READ a, b, c', '20 DATA 5', '30 DATA 10' ])
 
   assert.is(result.error, ErrorCodes.OUT_OF_DATA)
 })
 
 test ('READ in loop', async () => {
-  const result = await runProgram([
+  const result = await runProgram(machine ,[
     '10 FOR i = 1 TO 5:READ a$:PRINT a$:NEXT',
     '20 DATA h, e, l, l, o'
   ])
@@ -382,7 +374,7 @@ test ('READ in loop', async () => {
 })
 
 test('READ, RESTORE, READ one value', async () => {
-  const result = await runProgram([ '10 READ a:RESTORE:READ b', '20 DATA 5' ])
+  const result = await runProgram(machine ,[ '10 READ a:RESTORE:READ b', '20 DATA 5' ])
 
   assert.is(result.error, undefined)
   assert.is(machine.variables.variableLookup['a'].valueType, 'number')
@@ -392,13 +384,13 @@ test('READ, RESTORE, READ one value', async () => {
 })
 
 test('RESTORE invalid line - error', async () => {
-  const result = await runProgram([ '10 READ a:RESTORE 30:READ b', '20 DATA 5' ])
+  const result = await runProgram(machine ,[ '10 READ a:RESTORE 30:READ b', '20 DATA 5' ])
 
   assert.is(result.error, ErrorCodes.UNKNOWN_LINE)
 })
 
 test('READ, READ, RESTORE line, READ', async () => {
-  const result = await runProgram([
+  const result = await runProgram(machine ,[
     '10 READ a: READ b:RESTORE 30:READ c',
     '20 DATA 5',
     '30 DATA 10'

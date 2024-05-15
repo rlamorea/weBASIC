@@ -86,13 +86,16 @@ export default class Lexifier {
           errorEncountered = error(ErrorCodes.ILLEGAL_COMMAND, tokenDef.tokenStart, tokenDef.tokenEnd)
           break
         }
-        const result = this.lexifyStatement(statementTokens)
+        const result = this.lexifyStatement(statementTokens, lineNumber)
         if (result.error) {
           errorEncountered = result
           break
         }
         result.lineNumber = lineNumber
         lineStatements.push(result)
+        if (result.ignoreRestOfLine) {
+          break
+        }
         statementTokens = []
         acceptedCommand = false
       } else {
@@ -117,14 +120,15 @@ export default class Lexifier {
     return result
   }
 
-  lexifyStatement(statementTokens) {
+  lexifyStatement(statementTokens, lineNumber) {
     if (statementTokens.length === 0) return { coding: 'emtpy' }
     const firstToken = statementTokens.shift()
+    firstToken.lineNumber = lineNumber
     // there are two types of execution statements:
     if (firstToken.coding.startsWith('variable-')) { // assignments
       return this.lexifyAssignment(firstToken, statementTokens)
-    } else if (firstToken.coding === 'command' || firstToken.coding === 'statement') {
-      return this.lexifyCommandOrStatement(firstToken, statementTokens)
+    } else if (firstToken.coding === 'command' || firstToken.coding === 'statement' || firstToken.coding === 'remark') {
+      return this.lexifyCommandOrStatement(firstToken, statementTokens, lineNumber)
     } else {
       return error(ErrorCodes.SYNTAX, firstToken.tokenStart, firstToken.tokenEnd)
     }
@@ -159,7 +163,10 @@ export default class Lexifier {
   }
 
   lexifyCommandOrStatement(statement, tokens) {
-    const handler = this.specialHandlers[`${statement.coding}|${statement.token}`]
+    let handler = this.specialHandlers[`${statement.coding}|${statement.token}`]
+    if (!handler) {
+      handler = this.specialHandlers[`${statement.coding}*`]
+    }
     if (handler) {
       return handler(statement, tokens, this)
     } else {

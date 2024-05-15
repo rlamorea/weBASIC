@@ -9,6 +9,7 @@ import ModeSwaps from './modeSwaps.js'
 import ExecStatements from './execStatements.js'
 import Jumps from './jumps.js'
 import Data from './data.js'
+import Rem from './rem.js'
 
 const assignment = new Assignment()
 const mathFunctions = new MathFunctions()
@@ -21,6 +22,7 @@ const modeSwaps = new ModeSwaps()
 const execStatements = new ExecStatements()
 const jumps = new Jumps()
 const data = new Data()
+const rem = new Rem()
 
 export {
   assignment,
@@ -34,4 +36,5 @@ export {
   execStatements,
   jumps,
   data,
+  rem,
 }

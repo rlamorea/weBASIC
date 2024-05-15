@@ -54,6 +54,30 @@ export default class Statement {
     return { value, valueType: 'number' }
   }
 
+  static parseVariableList(tokens, lexifier) {
+    let variables = []
+    while (tokens.length > 0) {
+      let token = tokens.shift()
+      if (!token.coding.startsWith('variable-')) {
+        return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
+      }
+      variables.push(token)
+      if (tokens.length > 0 && tokens[0].coding === 'open-paren') {
+        const parenToken = tokens.shift()
+        const result = lexifier.parseVariableDimensions(token, parenToken, tokens)
+        if (result.error) { return result }
+        tokens = result.restOfTokens
+      }
+      if (tokens.length > 0) {
+        token = tokens.shift()
+        if (token.coding !== 'comma') {
+          return error(ErrorCodes.SYNTAX, token.tokenStart, token.tokenEnd)
+        }
+      }
+    }
+    return variables
+  }
+
   static isRunning(machine) {
     return (machine.currentMode === 'RUN')
   }

@@ -54,6 +54,7 @@ function addProgram(machine, codeLines) {
 async function runProgram(machine, codeLines, endMode = 'LIVE') {
   addProgram(machine, codeLines)
   machine.activateMode('RUN')
+  machine.currentScreen.clearViewport()
   const result = await machine.execution.runCode(machine.runCodespace)
   if (endMode !== 'RUN') { machine.activateMode(endMode) }
   return result

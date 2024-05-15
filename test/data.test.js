@@ -373,6 +373,21 @@ test ('READ in loop', async () => {
   assert.is(machine.screenCells[200].innerHTML, '')
 })
 
+test('READ into array', async () => {
+  const result = await runProgram(machine ,[
+    '10 DIM a$(5)',
+    '20 FOR i = 1 to 5:READ a$(i):NEXT',
+    '30 DATA h, e, l, l, o'
+  ])
+
+  assert.is(result.error, undefined)
+  assert.is(machine.variables.variableLookup['a$'].value[1], 'h')
+  assert.is(machine.variables.variableLookup['a$'].value[2], 'e')
+  assert.is(machine.variables.variableLookup['a$'].value[3], 'l')
+  assert.is(machine.variables.variableLookup['a$'].value[4], 'l')
+  assert.is(machine.variables.variableLookup['a$'].value[5], 'o')
+})
+
 test('READ, RESTORE, READ one value', async () => {
   const result = await runProgram(machine ,[ '10 READ a:RESTORE:READ b', '20 DATA 5' ])
 

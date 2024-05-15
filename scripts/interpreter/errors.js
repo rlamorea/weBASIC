@@ -18,6 +18,7 @@ const ErrorCodes = {
   UNDEF_FUNCTION: 'Undefined Function',
   UNDIM_ARRAY: 'Undimensioned Array',
   UNEXPECTED_NEXT: 'NEXT without FOR',
+  UNEXPECTED_RETURN: 'RETURN without GOSUB',
   UNKNOWN_LINE: 'Unknown Line',
   UNSUPPORTED: 'Unsupported Operation',
 }

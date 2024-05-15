@@ -207,4 +207,8 @@ export default class Screen {
     if (newline) { position = this.newline() }
     return position
   }
+
+  displayError(error) {
+    /* do nothing at root */
+  }
 }

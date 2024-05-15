@@ -11,6 +11,7 @@ async function goRunCont(machine, statement, startMode) {
   machine.runCodespace.startMode = startMode
   const runLine = statement.startLine === undefined ? -1 : statement.startLine
   if (runLine >= 0 && method === 'CONT') {
+    machine.runCodespace.codeLine = null
     machine.runCodespace.currentStatementIndex = 0
   }
   const result = await machine.execution.runCode(machine.runCodespace, runLine)
@@ -20,6 +21,7 @@ async function goRunCont(machine, statement, startMode) {
   machine.activateMode(result.newMode)
   if (result.prepNewMode) { await result.prepNewMode() }
   if (result.error) { machine.currentScreen.displayError(result.error) }
+  return result
 }
 
 export default class ExecStatements extends Statement {
@@ -35,7 +37,8 @@ export default class ExecStatements extends Statement {
       'command|RUN': this.doRunCont,
       'command|CONT': this.doRunCont,
       'statement|END': this.doEnd,
-      'statement|STOP': this.doStop
+      'statement|STOP': this.doStop,
+      'command|NEW': this.doNew,
     }
   }
 
@@ -62,15 +65,15 @@ export default class ExecStatements extends Statement {
   }
 
   doRunCont(machine, statement, interpreter) {
-    if (machine.currentMode === 'RUN') {
+    if (Statement.isUnexpectedDirectCommand(machine, statement)) {
       return error(ErrorCodes.ILLEGAL_COMMAND, statement.tokenStart, statement.tokenEnd)
     }
     const startMode = machine.currentMode
-    return { done: true, newMode: 'RUN', prepNewMode: () => { goRunCont(machine, statement, startMode) } }
+    return { done: true, newMode: 'RUN', prepNewMode: async () => { return await goRunCont(machine, statement, startMode) } }
   }
 
   async doEnd(machine, statement, interpreter) {
-    if (machine.currentMode !== 'RUN') {
+    if (Statement.isUnexpectedProgramStatement(machine, statement)) {
       return error(ErrorCodes.NOT_ALLOWED, statement.tokenStart, statement.tokenEnd)
     }
     return {
@@ -81,16 +84,23 @@ export default class ExecStatements extends Statement {
   }
 
   doStop(machine, statement, interpreter) {
-    if (machine.currentMode !== 'RUN') {
+    if (Statement.isUnexpectedProgramStatement(machine, statement)) {
       return error(ErrorCodes.NOT_ALLOWED, statement.tokenStart, statement.tokenEnd)
     }
     const errorMessage = `${ErrorCodes.BREAK} in line ${machine.runCodespace.currentLineNumber}`
-    machine.runCodespace.codeLine = null
     machine.runCodespace.currentStatementIndex += 1 // step past the STOP statement
     return {
       done: true,
       stopExecution: 'break',
       newMode: 'LIVE'
     }
+  }
+
+  doNew(machine, statement, interpreter) {
+    if (Statement.isUnexpectedDirectCommand(machine, statement)) {
+      return error(ErrorCodes.NOT_ALLOWED, statement.tokenStart, statement.tokenEnd)
+    }
+    machine.execution.resetCodespaceToNew(machine.runCodespace)
+    return { done: true }
   }
 }

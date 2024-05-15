@@ -53,4 +53,20 @@ export default class Statement {
     }
     return { value, valueType: 'number' }
   }
+
+  static isRunning(machine) {
+    return (machine.currentMode === 'RUN')
+  }
+
+  static isOnNumberedLine(statement) {
+    return (statement.lineNumber !== null && statement.lineNumber >= 0)
+  }
+
+  static isUnexpectedDirectCommand(machine, statement) {
+    return Statement.isRunning(machine) || Statement.isOnNumberedLine(statement)
+  }
+
+  static isUnexpectedProgramStatement(machine, statement) {
+    return !Statement.isRunning(machine) || !Statement.isOnNumberedLine(statement)
+  }
 }

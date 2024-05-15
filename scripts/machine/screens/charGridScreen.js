@@ -430,23 +430,4 @@ export default class CharGridScreen extends Screen {
       }
     }
   }
-
-  // moveCursorDelta(xoffset, yoffset) {
-  //   let cx = this.displayCursor[0] + xoffset
-  //   let cy = this.displayCursor[1] + yoffset
-  //   if (cx < 1) {
-  //     cx = this.columns()
-  //     cy -= 1
-  //   } else if (cx > this.columns()) {
-  //     cx = 1
-  //     cy += 1
-  //   }
-  //   this.displayCursor[0] = cx
-  //   this.displayCursor[1] = cy
-  //   if (cy < 1) {
-  //     this.scrollScreen(0, -cy)
-  //   } else if (cy > this.rows()) {
-  //     this.scrollScreen(0, this.rows() - cy)
-  //   }
-  // }
 }

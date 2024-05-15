@@ -102,14 +102,6 @@ function processLineActions(codeLine, screenLine, machine, editorContents) {
   if (finalAction) { actions.push(finalAction) }
   actions.push({ action: 'setLine', screenLine: finalScreenLine + 1 })
 
-  // finally see if there are extra lines that need to be deleted
-  const editorLineCount = editorLines.length + blankLinesLeft
-  if (editorLineCount > machine.runCodespace.lineNumbers.length) {
-    for (let idx = machine.runCodespace.lineNumbers.length; idx < editorLineCount; idx++) {
-      actions.push({ action: 'clearLine', screenLine: idx + 1 })
-    }
-  }
-
   return actions
 }
 

@@ -256,8 +256,8 @@ export default function nextToken(restOfLine, tokenStart, skipLineNumber) {
     return parseVariableNameOrKeyword(leadChar, restOfLine, tokenStart, tokenEnd)
   }
 
-  // fall through to error case
-  return { token: leadChar, coding: 'char', restOfLine, tokenStart, tokenEnd: tokenEnd + 1, error: `Unexpected ${leadChar}` }
+  // fall through to character case
+  return { token: leadChar, coding: 'char', restOfLine, tokenStart, tokenEnd: tokenEnd + 1 }
 }
 
 function parseStringLiteral(restOfLine, tokenStart, tokenEnd) {

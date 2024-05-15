@@ -43,6 +43,9 @@ export default class Execution {
       executionStack: [],
       forStack: [],
       gosubStack: [],
+      dataLines: [],
+      dataStatements: {},
+      dataIndex: { lineIndex: -1, valueIndex: -1 },
       promise: null,
       resolve: null,
       reject: null
@@ -55,6 +58,12 @@ export default class Execution {
     // preserve the rest in case we restart
   }
 
+  resetCodespaceToNew(codespace) {
+    this.prepCodespaceForRun(codespace)
+    codespace.lineNumbers = []
+    codespace.codeLines = {}
+  }
+
   prepCodespaceForRun(codespace) {
     codespace.running = false
     codespace.codeLine = null
@@ -65,6 +74,10 @@ export default class Execution {
     codespace.executionStack = []
     codespace.forStack = []
     codespace.gosubStack = []
+    codespace.dataLines = []
+    codespace.dataStatements = {}
+    codespace.dataIndex.lineIndex = -1
+    codespace.dataIndex.valueIndex = -1
     this.gotBreak = false
   }
 
@@ -85,7 +98,7 @@ export default class Execution {
     if (statements.error && !statements.lineNumber ) { return statements }
 
     if (lineNumber < 0) {
-      lineNumber = parseInt(statements.lineNumber.token)
+      lineNumber = parseInt(statements.lineNumber)
     }
     let lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
     let inserted = false
@@ -99,7 +112,9 @@ export default class Execution {
     }
     let codeInsert = { text: codeLine }
     if (statements.error) {
-      codeInsert.error = { error: statements.error, location: statements.location, endLocation: statements.endLocation }
+      codeInsert.error = {
+        error: statements.error, location: statements.location, endLocation: statements.endLocation, lineNumber: lineNumber
+      }
     } else {
       codeInsert.statements = statements.lineStatements
     }

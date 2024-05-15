@@ -43,13 +43,32 @@ function sendKey(machine, key, after = 0) {
   }
 }
 
-async function runProgram(machine, codeLines) {
+function addProgram(machine, codeLines) {
   machine.execution.resetCodespaceToNew(machine.runCodespace)
   machine.variables.clearAll()
   for (const codeLine of codeLines) {
     machine.execution.addCodeLine(machine.runCodespace,-1, codeLine)
   }
-  return await machine.execution.runCode(machine.runCodespace)
 }
 
-export { tokens, precision, assertFloat, sendToInput, sendKey, runProgram }
+async function runProgram(machine, codeLines, endMode = 'LIVE') {
+  addProgram(machine, codeLines)
+  machine.activateMode('RUN')
+  const result = await machine.execution.runCode(machine.runCodespace)
+  if (endMode !== 'RUN') { machine.activateMode(endMode) }
+  return result
+}
+
+async function runLiveCommand(machine, commandLine) {
+  machine.activateMode('LIVE')
+  let result = await machine.runLiveCode(commandLine)
+  if (result.newMode) {
+    machine.activateMode(result.newMode)
+  }
+  if (result.prepNewMode) {
+    result = await result.prepNewMode()
+  }
+  return result
+}
+
+export { tokens, precision, assertFloat, sendToInput, sendKey, addProgram, runProgram, runLiveCommand }

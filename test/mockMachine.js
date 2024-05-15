@@ -8,11 +8,7 @@ global.window = {
 
 import { default as MachineX } from '../scripts/machine/machine.js'
 
-import Variables from '../scripts/machine/variables.js'
 import CharGridScreen from '../scripts/machine/screens/charGridScreen.js'
-import LiveScreen from '../scripts/machine/screens/liveScreen.js'
-//import EditorScreen from '../scripts/machine/screens/editorScreen.js'
-import Execution from '../scripts/machine/execution.js'
 
 class mockClassList {
   constructor() { this.classes = {} }

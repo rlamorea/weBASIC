@@ -8,6 +8,7 @@ import ForNext from './forNext.js'
 import ModeSwaps from './modeSwaps.js'
 import ExecStatements from './execStatements.js'
 import Jumps from './jumps.js'
+import Data from './data.js'
 
 const assignment = new Assignment()
 const mathFunctions = new MathFunctions()
@@ -19,6 +20,7 @@ const forNext = new ForNext()
 const modeSwaps = new ModeSwaps()
 const execStatements = new ExecStatements()
 const jumps = new Jumps()
+const data = new Data()
 
 export {
   assignment,
@@ -31,4 +33,5 @@ export {
   modeSwaps,
   execStatements,
   jumps,
+  data,
 }

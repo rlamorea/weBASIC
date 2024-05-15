@@ -70,7 +70,11 @@ export default class Lexifier {
         break
       }
       if (allowLineNumbers && tokenStart === 0 && tokenDef.coding === 'line-number') {
-        lineNumber = tokenDef
+        lineNumber = parseInt(tokenDef.token)
+        if (isNaN(lineNumber) || !isFinite(lineNumber)) {
+          errorEncountered = error(ErrorCodes.ILLEGAL_LINE, tokenDef.tokenStart, tokenDef.tokenEnd)
+          break
+        }
       } else if (tokenDef.coding === 'line-number') {
         errorEncountered = error('unexpected-line-number', tokenDef.tokenStart, tokenDef.tokenEnd)
         break

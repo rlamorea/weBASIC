@@ -58,6 +58,12 @@ export default class Execution {
     // preserve the rest in case we restart
   }
 
+  resetCodespaceToNew(codespace) {
+    this.prepCodespaceForRun(codespace)
+    codespace.lineNumbers = []
+    codespace.codeLines = {}
+  }
+
   prepCodespaceForRun(codespace) {
     codespace.running = false
     codespace.codeLine = null
@@ -92,7 +98,7 @@ export default class Execution {
     if (statements.error && !statements.lineNumber ) { return statements }
 
     if (lineNumber < 0) {
-      lineNumber = parseInt(statements.lineNumber.token)
+      lineNumber = parseInt(statements.lineNumber)
     }
     let lineNumberIndex = codespace.lineNumbers.indexOf(lineNumber)
     let inserted = false

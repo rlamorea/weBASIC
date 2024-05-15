@@ -4,6 +4,7 @@ const ErrorCodes = {
   CORRUPTED_SYSTEM: 'System Corruption. Execution Halted.',
   ILLEGAL_COMMAND: 'Illegal Command',
   ILLEGAL_INDEX: 'Illegal Index',
+  ILLEGAL_LINE: 'Illegal Line Number',
   ILLEGAL_VALUE: 'Illegal Value',
   ILLEGAL_REASSIGN: 'Illegal Reassignment',
   INDEX_OUT_OF_BOUNDS: 'Index Out of Bounds',

@@ -1,6 +1,33 @@
 import Statement from './statement.js'
 import { ErrorCodes, error, errorat } from '../errors.js'
 
+function parseDataStatements(machine) {
+  // scan the code for data statements and capture all of the data
+  let dataLines = []
+  for (const lineNumber of machine.runCodespace.lineNumbers) {
+    const line = machine.runCodespace.codeLines[lineNumber]
+    if (line.error) { return line.error }
+    let lineData = []
+    for (const statement of line.statements) {
+      if (statement.coding === 'statement' && statement.token === 'DATA' && statement.dataValues.length > 0) {
+        lineData = [ ...lineData, ...statement.dataValues ]
+      }
+    }
+    if (lineData.length > 0) {
+      dataLines.push(lineNumber)
+      machine.runCodespace.dataStatements[lineNumber] = lineData
+    }
+  }
+  if (dataLines.length === 0) {
+    // insert an invalid line to mark that we parsed the code
+    machine.runCodespace.dataStatements[-1] = []
+  }
+  machine.runCodespace.dataLines = dataLines
+  machine.runCodespace.dataIndex.lineIndex = dataLines.length > 0 ? 0 : -1
+  machine.runCodespace.dataIndex.valueIndex = -1
+  return { done: true }
+}
+
 export default class Data extends Statement {
   constructor() {
     super()
@@ -25,24 +52,27 @@ export default class Data extends Statement {
       const params = lexifier.parseIntoParameters(tokens, tokens[0].tokenStart, true)
       if (params.error) { return params }
       for (const paramTokens of params.parameters) {
-        let dataValue = { value: '', type: 'string' }
-        if (paramTokens.length === 1 && paramTokens.coding === 'number-literal') {
-          dataValue = { value: parseFloat(paramTokens[0].token), type: 'number' }
+        let dataValue = { value: '', valueType: 'string' }
+        if (paramTokens.length === 1 && paramTokens[0].coding === 'number-literal') {
+          dataValue.value = parseFloat(paramTokens[0].token)
+          dataValue.valueType = 'number'
           if (isNaN(dataValue.value) || !isFinite(dataValue.value)) {
             dataValue.value = paramTokens[0].token
-            dataValue.type = 'string'
-          } else if (paramTokens.length === 1 && paramTokens.coding === 'string-literal') {
-            dataValue.value = paramTokens[0].token
-          } else if (paramTokens.length > 0) {
-            const commaIdx = paramTokens[0].restOfString.indexOf(',')
-            if (commaIdx) {
-              dataValue.value = paramTokens[0].restOfString.substring(0, commaIdx)
-            } else {
-              dataValue.value = paramTokens[0].restOfString
-            }
+            dataValue.valueType = 'string'
           }
-          dataValues.push(dataValue)
+        } else if (paramTokens.length === 1 && paramTokens[0].coding === 'string-literal') {
+          dataValue.value = paramTokens[0].token
+        } else if (paramTokens.length > 0) {
+          dataValue.value = paramTokens[0].token
+          const commaIdx = paramTokens[0].restOfLine.indexOf(',')
+          if (commaIdx >= 0) {
+            dataValue.value += paramTokens[0].restOfLine.substring(0, commaIdx)
+          } else {
+            dataValue.value += paramTokens[0].restOfLine
+          }
+          dataValue.value = dataValue.value.trim()
         }
+        dataValues.push(dataValue)
       }
     }
     statement.dataValues = dataValues
@@ -83,7 +113,7 @@ export default class Data extends Statement {
       if (isNaN(lineNumber) || !isFinite(lineNumber)) {
         return error(ErrorCodes.UNKNOWN_LINE, lineNumberToken.tokenStart, lineNumberToken.tokenEnd)
       }
-      statement.lineNumber = lineNumber
+      statement.restoreLineNumber = lineNumber
     }
     if (tokens.length > 0) {
       return error(ErrorCodes.SYNTAX, tokens[0].tokenStart, tokens.slice(-1)[0].tokenEnd)
@@ -93,7 +123,7 @@ export default class Data extends Statement {
 
   doData(machine, statement, interpreter) {
     if (Object.keys(machine.runCodespace.dataStatements).length === 0) {
-      const result = this.parseDataStatements(machine)
+      const result = parseDataStatements(machine)
       if (result.error) { return result }
     }
     return { done: true } // data does nothing during execution
@@ -101,7 +131,7 @@ export default class Data extends Statement {
 
   doRead(machine, statement, interpreter) {
     if (Object.keys(machine.runCodespace.dataStatements).length === 0) {
-      const result = this.parseDataStatements(machine)
+      const result = parseDataStatements(machine)
       if (result.error) { return result }
     }
     if (machine.runCodespace.dataIndex.lineIndex < 0) {
@@ -111,20 +141,20 @@ export default class Data extends Statement {
     const dataStatements = machine.runCodespace.dataStatements
     const dataLines = machine.runCodespace.dataLines
     let lineData = dataStatements[dataLines[index.lineIndex]]
-    for (const variable of statement.variables) {
+    for (const variable of statement.readVariables) {
       index.valueIndex += 1
       if (index.valueIndex >= lineData.length) {
         index.lineIndex += 1
         index.valueIndex = 0
-        if (index.lineIndex >= lineData.length) {
+        if (index.lineIndex >= dataLines.length) {
           return error(ErrorCodes.OUT_OF_DATA, variable.tokenStart, variable.tokenEnd)
         }
         lineData = dataStatements[dataLines[index.lineIndex]]
       }
-      let dataValue = dataLine[index.valueIndex]
-      if (variable.type === 'string') {
-        dataValue = { value: dataValue.value.toString(), type: 'string' }
-      } else if (variable.type === 'number' && dataValue.type === 'string') {
+      let dataValue = lineData[index.valueIndex]
+      if (variable.valueType === 'string' && dataValue.valueType === 'number') {
+        dataValue = { value: dataValue.value.toString(), valueType: 'string' }
+      } else if (variable.valueType === 'number' && dataValue.valueType === 'string') {
         return error(ErrorCodes.TYPE_MISMATCH, variable.tokenStart, variable.tokenEnd)
       }
       const result = machine.variables.setValue(variable, dataValue, interpreter)
@@ -136,14 +166,14 @@ export default class Data extends Statement {
 
   doRestore(machine, statement, interpreter) {
     if (Object.keys(machine.runCodespace.dataStatements).length === 0) {
-      const result = this.parseDataStatements(machine)
+      const result = parseDataStatements(machine)
       if (result.error) { return result }
     }
     // NOTE: RESTORE ignored if no DATA statements
     if (machine.runCodespace.dataIndex.lineIndex >= 0) {
       let lineIndex = 0
-      if (statement.lineNumber) {
-        lineIndex = machine.runCodespace.dataLines.indexOf(statement.lineNumber)
+      if (statement.restoreLineNumber) {
+        lineIndex = machine.runCodespace.dataLines.indexOf(statement.restoreLineNumber)
         if (lineIndex < 0) {
           return error(ErrorCodes.UNKNOWN_LINE, statement.tokenStart, statement.tokenEnd)
         }
@@ -151,33 +181,6 @@ export default class Data extends Statement {
       machine.runCodespace.dataIndex.lineIndex = lineIndex
       machine.runCodespace.dataIndex.valueIndex = -1
     }
-    return { done: true }
-  }
-
-  parseDataStatements(machine) {
-    // scan the code for data statements and capture all of the data
-    let dataLines = []
-    for (const lineNumber of machine.runCodespace.lineNumbers) {
-      const line = machine.runCodespace.codeLines[lineNumber]
-      if (line.error) { return line.error }
-      let lineData = []
-      for (const statement of line.statements) {
-        if (statement.coding === 'statement' && statement.token === 'DATA' && statement.dataValues.length > 0) {
-          lineData = [ ...lineData, ...statement.dataValues ]
-        }
-      }
-      if (lineData.length > 0) {
-        dataLines.push(lineNumber)
-        machine.runCodespace.dataStatements[lineNumber] = lineData
-      }
-    }
-    if (dataLines.length === 0) {
-      // insert an invalid line to mark that we parsed the code
-      machine.runCodespace.dataStaetments[-1] = []
-    }
-    machine.runCodespace.dataLines = dataLines
-    machine.runCodespace.dataIndex.lineIndex = dataLines.length > 0 ? 0 : -1
-    machine.runCodespace.dataIndex.valueIndex = -1
     return { done: true }
   }
 }

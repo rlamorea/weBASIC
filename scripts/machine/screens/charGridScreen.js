@@ -273,46 +273,54 @@ export default class CharGridScreen extends Screen {
   scrollBy(xoffset, yoffset) {
     if (this.scrolling) {
       super.scrollBy(xoffset, yoffset)
-      // TODO: if viewport moves off screen, then do a shift
+      // TODO: if viewport moves off screen, then do a shift per below
       return
     }
 
-    // copy existing contents that need to be moved
-    let existingContent = []
-    let offsetRowStart = -yoffset + 1
-    let offsetRowEnd = this.viewportSize[1] - yoffset
-    let offsetColStart = -xoffset + 1
-    let offsetColEnd = this.viewportSize[0] - xoffset
-    let offsetRowStartMax = Math.max(1, offsetRowStart)
-    let offsetRowEndMin = Math.min(this.viewportSize[1], offsetRowEnd)
-    let offsetColStartMax = Math.max(1, offsetColStart)
-    let offsetColEndMin = Math.min(this.viewportSize[0], offsetColEnd)
+    let cells = this.div.querySelectorAll('.cell')
+    const width = this.viewportSize[0]
+    const height = this.viewportSize[1]
 
-    for (let row = offsetRowStartMax; row <= offsetRowEndMin; row++) {
-      for (let column = offsetColStartMax; column <= offsetColEndMin; column++) {
-        const cell = this.getCell([ column, row ])
-        existingContent.push(cell.innerHTML)
+    let ystart = (yoffset <= 0) ? 1 - yoffset : height - yoffset
+    let yend = (yoffset <= 0) ? height + 1 - yoffset : -yoffset
+    let yinc = (ystart < yend) ? 1 : -1
+
+    let xstart = (xoffset <= 0) ? 1 - xoffset : width - xoffset
+    let xend = (xoffset <= 0) ? width + 1 - xoffset : -xoffset
+    let xinc = (xstart < xend) ? 1 : -1
+
+    for (let y = ystart; y !== yend; y += yinc) {
+      const ty = y + yoffset
+      const yo = (y - 1) * width
+      const yto = (ty - 1) * width
+      let ysubo = null
+      if (y < 1 || y > height) {
+        ysubo = yto
+      } else if (ty < 1 || ty > height) {
+        ysubo = yo
       }
-    }
-
-    // clear screen contents
-    for (let row = 1; row <= this.viewportSize[1]; row++) {
-      for (let column = 1; column <= this.viewportSize[0]; column++) {
-        const cell = this.getCell([ column, row ])
-        cell.innerHTML = ''
-      }
-    }
-
-    // insert existing contents back starting at new origin]
-    offsetRowStartMax = Math.max(1, offsetRowStartMax + yoffset)
-    offsetRowEndMin = Math.min(this.viewportSize[1], offsetRowEndMin + yoffset)
-    offsetColStartMax = Math.max(1, offsetColStartMax + xoffset)
-    offsetColEndMin = Math.min(this.viewportSize[0], offsetColEndMin + xoffset)
-    for (let row = offsetRowStartMax; row <= offsetRowEndMin; row++) {
-      for (let column = offsetColStartMax; column <= offsetColEndMin; column++) {
-        //console.log(column, row)
-        const cell = this.getCell([ column, row ])
-        cell.innerHTML = existingContent.shift()
+      for (let x = xstart; x !== xend; x += xinc) {
+        const tx = x + xoffset
+        const xo = x - 1
+        const xto = tx - 1
+        let xsubo = null
+        if (x < 1 || x > width) {
+          xsubo = xto
+        } else if (tx < 1 || tx > width) {
+          xsubo = xo
+        }
+        if (ysubo !== null || xsubo !== null) {
+          ysubo = (ysubo === null) ? yto : ysubo
+          xsubo = (xsubo === null) ? xto : xsubo
+          let cell = cells[ysubo + xsubo]
+          cell.innerHTML = ''
+          cell.classList.className = 'cell' // clear all other classes
+        } else {
+          let tcell = cells[yto + xto]
+          let cell = cells[yo + xo]
+          tcell.innerHTML = cell.innerHTML
+          tcell.className = cell.className
+        }
       }
     }
 

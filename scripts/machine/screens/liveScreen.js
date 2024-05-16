@@ -1,8 +1,9 @@
 import CharGridScreen from "./charGridScreen.js";
 import FixedInput from "./fixedInput.js";
 import { errorString } from '../../interpreter/errors.js'
+import { version } from '../../config.js'
 
-const startupMessage = 'weBASIC v0.1'
+const startupMessage = `weBASIC v${version}`
 const prompt = 'READY.'
 
 export default class LiveScreen extends CharGridScreen {

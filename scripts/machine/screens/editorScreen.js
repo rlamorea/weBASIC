@@ -1,6 +1,7 @@
 import CharGridScreen from "./charGridScreen.js";
 import FixedInput from "./fixedInput.js";
 import { errorString } from '../../interpreter/errors.js'
+import { version } from '../../config.js'
 // import * as monaco from 'monaco-editor'
 // or import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // if shipping only a subset of the features & languages is desired
@@ -8,7 +9,7 @@ import { errorString } from '../../interpreter/errors.js'
 import Lexifier from '../../interpreter/lexifier.js'
 import { processLineActions } from "./editorLogic.js"
 
-const defaultMessage = 'weBASIC 0.1 EDIT mode'
+const defaultMessage = `weBASIC v${version} EDIT mode`
 const maximumLineLength = 160
 const warnLineLength = 150
 

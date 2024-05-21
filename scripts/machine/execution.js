@@ -143,7 +143,7 @@ export default class Execution {
     if (lineNumber < 0) { return 0 }
     const exactMatchIndex = codespace.lineNumbers.indexOf(lineNumber)
     if (exactMatchIndex >= 0) { return { lineIndex: exactMatchIndex, existing: true, lineNumber: lineNumber } }
-    if (!nearest) { return -1 } // line not found
+    if (!nearest) { return { lineIndex: -1, existing: false } } // line not found
     // find nearest before or after lineNumber
     let nearestIdx = 0
     const max = codespace.lineNumbers.length

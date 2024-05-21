@@ -28,11 +28,16 @@ function processTest(codeLine, screenLine, editorContents = null, typed = true) 
   for (const action of actions) {
     switch (action.action) {
       case 'clearLine':
-        editorLines.splice(action.screenLine - 1, 1)
+        const linesToDelete = ((action.endScreenLine || action.screenLine) - action.screenLine + 1)
+        editorLines.splice(action.screenLine - 1, linesToDelete)
         break
       case 'insertLine':
-        if (editorLines.length === 0) { editorLines.push(action.value + '\n') } else
-        { editorLines.splice(action.screenLine - 1, 0, action.value + '\n') }
+        const valuesToInsert = action.value.split('\n').map((x) => x+'\n')
+        if (editorLines.length === 0) { editorLines.push(...valuesToInsert) } else
+        { editorLines.splice(action.screenLine - 1, 0, ...valuesToInsert) }
+        break
+      case 'replaceLine':
+        editorLines.splice( action.screenLine - 1, 1, action.value + '\n' )
         break
       case 'setLine':
         cursorLine = action.screenLine
@@ -43,6 +48,64 @@ function processTest(codeLine, screenLine, editorContents = null, typed = true) 
   if (globalContents) { globalEditorContents = editorContents }
   return { actions, editorLines, cursorLine, editorContents }
 }
+
+// function sortTest(seditorLines) {
+//   const editorContent = seditorLines.join('\n')
+//   let actions = []
+//
+//   const editorLines = editorContent.split('\n')
+//   if (editorLines[editorLines.length - 1] === '') { editorLines.pop() }
+//
+//   let screenLine = 1
+//   let allLines = []
+//   let lineNumbers = []
+//   // pass 1 - get the lines, line numbers, and screen lines
+//   for (const line of editorLines) {
+//     let lineNumber = parseInt(line.trim().match(/^(\d+)/)[1])
+//     let info = { line, lineNumber, screenLine }
+//     allLines.push(info)
+//     lineNumbers.push(lineNumber)
+//     screenLine += 1
+//   }
+//
+//   lineNumbers.sort((a, b) => a - b)
+//
+//   // pass 2 -- identify out-of-order segment
+//   let feditorLines = editorContent.split('\n').map((x) => x+'\n')
+//   if (feditorLines[feditorLines.length - 1] === '\n') { feditorLines.pop() }
+//   for (const action of actions) {
+//     switch (action.action) {
+//       case 'clearLine':
+//         const linesToDelete = ((action.endScreenLine || action.screenLine) - action.screenLine + 1)
+//         feditorLines.splice(action.screenLine - 1, linesToDelete)
+//         break
+//       case 'insertLine':
+//         if (feditorLines.length === 0) { feditorLines.push(action.value + '\n') } else
+//         { feditorLines.splice(action.screenLine - 1, 0, action.value + '\n') }
+//         break
+//       case 'replaceLine':
+//         feditorLines.splice( action.screenLine - 1, 1, action.value + '\n' )
+//         break
+//       case 'setLine':
+//         break
+//     }
+//   }
+//   return { editorLines: feditorLines, actions }
+// }
+//
+// test('temp test', () => {
+//   const result = sortTest([
+//     '3 GOTO 8',
+//     '5 GOTO 15',
+//     '8 GOTO 10',
+//     '15 GOTO 20',
+//     '10 PRINT "hello world"',
+//     '20 GOTO 10',
+//     '30 GOTO 20',
+//   ])
+//
+//   assert.is(result.editorLines.length, 7)
+// })
 
 function editLine(screenLine, newLine, editorContents) {
   let globalContents = false
@@ -73,7 +136,7 @@ test('insert cold line to empty editor', () => {
 test('insert last line as last line', () => {
   const result = processTest('20 goto 10', 2)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '10 PRINT "hello"\n')
   assert.is(result.editorLines[1], '20 GOTO 10\n')
   assert.is(result.cursorLine, 3)
@@ -85,7 +148,7 @@ test('insert last line as last line', () => {
 test('insert middle line as last line', () => {
   const result = processTest('15 print "mid"', 3)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 4)
   assert.is(result.editorLines[0], '10 PRINT "hello"\n')
   assert.is(result.editorLines[1], '15 PRINT "mid"\n')
   assert.is(result.editorLines[2], '20 GOTO 10\n')
@@ -99,7 +162,7 @@ test('edit first line', () => {
   editLine(1, '10 PRINT "Hello"')
   const result = processTest('10 PRINT "Hello"', 1, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '10 PRINT "Hello"\n')
   assert.is(result.editorLines[1], '15 PRINT "mid"\n')
   assert.is(result.editorLines[2], '20 GOTO 10\n')
@@ -113,7 +176,7 @@ test('third line renumbered to before third line', () => {
   editLine(3, '17 GOTO 10')
   const result = processTest('17 GOTO 10', 3, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 3)
   assert.is(result.editorLines[0], '10 PRINT "Hello"\n')
   assert.is(result.editorLines[1], '15 PRINT "mid"\n')
   assert.is(result.editorLines[2], '17 GOTO 10\n')
@@ -128,7 +191,7 @@ test('third line renumbered to after third line', () => {
   editLine(3, '19 goto 10')
   const result = processTest('19 goto 10', 3, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 3)
   assert.is(result.editorLines[0], '10 PRINT "Hello"\n')
   assert.is(result.editorLines[1], '15 PRINT "mid"\n')
   assert.is(result.editorLines[2], '17 GOTO 10\n')
@@ -144,7 +207,7 @@ test('insert first line above first line', () => {
   globalEditorContents = '5 print "top"\n' + globalEditorContents
   const result = processTest('5 print "top"', 1, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '5 PRINT "top"\n')
   assert.is(result.editorLines[1], '10 PRINT "Hello"\n')
   assert.is(result.editorLines[2], '15 PRINT "mid"\n')
@@ -161,7 +224,7 @@ test('insert first line by renumbering first line', () => {
   editLine(1, '3 print "top"')
   const result = processTest('3 PRINT "top"', 1, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 3)
   assert.is(result.editorLines[0], '3 PRINT "top"\n')
   assert.is(result.editorLines[1], '5 PRINT "top"\n')
   assert.is(result.editorLines[2], '10 PRINT "Hello"\n')
@@ -179,7 +242,7 @@ test('insert middle line by renumbering first line', () => {
   editLine(1, '12 print "top"')
   const result = processTest('12 PRINT "top"', 1, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '3 PRINT "top"\n')
   assert.is(result.editorLines[1], '5 PRINT "top"\n')
   assert.is(result.editorLines[2], '10 PRINT "Hello"\n')
@@ -198,7 +261,7 @@ test('insert last line from above first line', () => {
   globalEditorContents = '25 print "bottom"\n' + globalEditorContents
   const result = processTest('25 print "bottom"', 1, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 4)
   assert.is(result.editorLines[0], '3 PRINT "top"\n')
   assert.is(result.editorLines[1], '5 PRINT "top"\n')
   assert.is(result.editorLines[2], '10 PRINT "Hello"\n')
@@ -218,7 +281,7 @@ test('insert last line by renumbering first line', () => {
   editLine(1, '28 print "top"')
   const result = processTest('28 PRINT "top"', 1, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '3 PRINT "top"\n')
   assert.is(result.editorLines[1], '5 PRINT "top"\n')
   assert.is(result.editorLines[2], '10 PRINT "Hello"\n')
@@ -240,7 +303,7 @@ test('insert middle line in place', () => {
   globalEditorContents = globalEditorContents.substring(0, insIdx) + '13 print "midins"\n' + globalEditorContents.substring(insIdx)
   const result = processTest('13 print "midins"', 5, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '3 PRINT "top"\n')
   assert.is(result.editorLines[1], '5 PRINT "top"\n')
   assert.is(result.editorLines[2], '10 PRINT "Hello"\n')
@@ -262,7 +325,7 @@ test('insert first line by renumbering middle line', () => {
   editLine(5, '2 PRINT "midins"')
   const result = processTest('2 print "midins"', 5, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '2 PRINT "midins"\n')
   assert.is(result.editorLines[1], '3 PRINT "top"\n')
   assert.is(result.editorLines[2], '5 PRINT "top"\n')
@@ -285,7 +348,7 @@ test('insert last line by renumbering middle line', () => {
   editLine(6, '30 PRINT "midins"')
   const result = processTest('30 print "midins"', 6, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '2 PRINT "midins"\n')
   assert.is(result.editorLines[1], '3 PRINT "top"\n')
   assert.is(result.editorLines[2], '5 PRINT "top"\n')
@@ -309,7 +372,7 @@ test('edit middle line in place', () => {
   editLine(7, '15 PRINT "midedit"')
   const result = processTest('15 PRINT "midedit"', 7, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '2 PRINT "midins"\n')
   assert.is(result.editorLines[1], '3 PRINT "top"\n')
   assert.is(result.editorLines[2], '5 PRINT "top"\n')
@@ -333,7 +396,7 @@ test('edit last line in place', () => {
   editLine(13, '30 PRINT "endit"')
   const result = processTest('30 PRINT "endit"', 13, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '2 PRINT "midins"\n')
   assert.is(result.editorLines[1], '3 PRINT "top"\n')
   assert.is(result.editorLines[2], '5 PRINT "top"\n')
@@ -356,7 +419,7 @@ test('edit last line in place', () => {
 test('insert first line from last screen line', () => {
   const result = processTest('1 PRINT "toptop"', 14)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 4)
   assert.is(result.editorLines[0], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[1], '2 PRINT "midins"\n')
   assert.is(result.editorLines[2], '3 PRINT "top"\n')
@@ -381,7 +444,7 @@ test('insert first line 0 by renumbering last screen line', () => {
   editLine(14, '0 PRINT "tiptop"')
   const result = processTest('0 PRINT "tiptop"', 14, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '0 PRINT "tiptop"\n')
   assert.is(result.editorLines[1], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[2], '2 PRINT "midins"\n')
@@ -407,7 +470,7 @@ test('insert middle line by renumbering last screen line', () => {
   editLine(15, '16 Print "midlast"')
   const result = processTest('16 Print "midlast"', 15, null, false)
 
-  assert.is(result.actions.length, 4)
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '0 PRINT "tiptop"\n')
   assert.is(result.editorLines[1], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[2], '2 PRINT "midins"\n')
@@ -435,7 +498,8 @@ test('cut three middle lines and add a line above', () => {
   const cutIdxOut = 148
   globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '14 print "midcut"\n' + globalEditorContents.substring(cutIdxOut)
   const result = processTest('14 print "midcut"', 7, null, false)
-  assert.is(result.actions.length, 6)
+
+  assert.is(result.actions.length, 5)
   assert.is(result.editorLines[0], '0 PRINT "tiptop"\n')
   assert.is(result.editorLines[1], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[2], '2 PRINT "midins"\n')
@@ -464,7 +528,7 @@ test('cut three top lines and add a line below', () => {
   globalEditorContents = '11 print "topcut"\n' + globalEditorContents.substring(cutIdxOut)
   const result = processTest('11 print "topcut"', 1, null, false)
 
-  assert.is(result.actions.length, 6)
+  assert.is(result.actions.length, 7)
   assert.is(result.editorLines[0], '0 PRINT "tiptop"\n')
   assert.is(result.editorLines[1], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[2], '2 PRINT "midins"\n')
@@ -494,7 +558,7 @@ test('cut three bottom lines and add a line in the middle', () => {
   globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '18 print "bottomcut"'
   const result = processTest('18 print "bottomcut"', 16, null, false)
 
-  assert.is(result.actions.length, 6)
+  assert.is(result.actions.length, 7)
   assert.is(result.editorLines[0], '0 PRINT "tiptop"\n')
   assert.is(result.editorLines[1], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[2], '2 PRINT "midins"\n')
@@ -549,10 +613,10 @@ test('delete last line from last screen line', () => {
 })
 
 test('delete last line in place', () => {
-  editLine(19, '28')
-  const result = processTest('28', 19, null, false)
+  editLine(18, '28')
+  const result = processTest('28', 18, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '0 PRINT "tiptop"\n')
   assert.is(result.editorLines[1], '1 PRINT "toptop"\n')
   assert.is(result.editorLines[2], '2 PRINT "midins"\n')
@@ -936,7 +1000,7 @@ test('delete non-line replacing top line', () => {
 test('syntax error line added last', () => {
   const result = processTest('20 syntax error', 7)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '5 PRINT "top"\n')
   assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
   assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
@@ -954,7 +1018,7 @@ test('syntax error line added last', () => {
 test('insert existing line from outside editor', () => {
   const result = processTest('17 GOTO 14', -1, null, false)
 
-  assert.is(result.actions.length, 3)
+  assert.is(result.actions.length, 2)
   assert.is(result.editorLines[0], '5 PRINT "top"\n')
   assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
   assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
@@ -972,8 +1036,7 @@ test('paste case cut middle lines and paste them back', () => {
   const cutIdxIn = 31
   const cutIdxOut = 60
   globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + globalEditorContents.substring(cutIdxOut)
-  let result = processTest('14 PRINT "midcut"', -1, null, false)
-  result = processTest('17 GOTO 14', -1, null, false)
+  const result= processTest('17 GOTO 14', -1, null, false)
 
   assert.is(result.actions.length, 3)
   assert.is(result.editorLines[0], '5 PRINT "top"\n')
@@ -989,52 +1052,117 @@ test('paste case cut middle lines and paste them back', () => {
   assert.is(Object.keys(machine.runCodespace.codeLines).length, 7)
 })
 
-// DEFER THESE TESTS FOR NOW
-// test('add a line in a big gap where it belongs, keep the gap', () => {
-  // const cutIdxIn = 50
-  // globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '15 PRINT "newline"\n\n\n\n\n' + globalEditorContents.substring(cutIdxIn)
-  // const result = processTest('15 PRINT "newline"', 4, null, false)
-  //
-  // assert.is(result.actions.length, 3)
-  // assert.is(result.editorLines[0], '5 PRINT "top"\n')
-  // assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
-  // assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
-  // assert.is(result.editorLines[3], '15 PRINT "newline"\n')
-  // assert.is(result.editorLines[4], '\n')
-  // assert.is(result.editorLines[5], '\n')
-  // assert.is(result.editorLines[6], '\n')
-  // assert.is(result.editorLines[7], '\n')
-  // assert.is(result.editorLines[8], '17 GOTO 14\n')
-  // assert.is(result.editorLines[9], '18 PRINT "bottomcut"\n')
-  // assert.is(result.editorLines[10], '19 GOTO 10\n')
-  // assert.is(result.editorLines[11], '20 syntax error\n')
-  // assert.is(result.cursorLine, 5)
-  // assert.is(result.editorLines.length, 12)
-  // assert.is(machine.runCodespace.lineNumbers.length , 8)
-  // assert.is(Object.keys(machine.runCodespace.codeLines).length, 8)
-// })
-//
-// test('add an existing line in a big gap where it belongs with blank above, keep the gap', () => {
-//   const cutIdxIn = 70
-//   globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '16 PRINT "newnew"' + globalEditorContents.substring(cutIdxIn)
-//   const result = processTest('16 PRINT "newnew"', 6, null, false)
-//
-//   assert.is(result.actions.length, 4)
-//   assert.is(result.editorLines[0], '5 PRINT "top"\n')
-//   assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
-//   assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
-//   assert.is(result.editorLines[3], '15 PRINT "newline"\n')
-//   assert.is(result.editorLines[4], '16 PRINT "newnew"\n')
-//   assert.is(result.editorLines[5], '\n')
-//   assert.is(result.editorLines[6], '\n')
-//   assert.is(result.editorLines[7], '17 GOTO 14\n')
-//   assert.is(result.editorLines[8], '18 PRINT "bottomcut"\n')
-//   assert.is(result.editorLines[9], '19 GOTO 10\n')
-//   assert.is(result.editorLines[10], '20 syntax error\n')
-//   assert.is(result.cursorLine, 6)
-//   assert.is(result.editorLines.length, 11)
-//   assert.is(machine.runCodespace.lineNumbers.length , 9)
-//   assert.is(Object.keys(machine.runCodespace.codeLines).length, 9)
-// })
+test('add a line in a big gap where it belongs, keep the gap', () => {
+  const cutIdxIn = 50
+  globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '15 PRINT "newline"\n\n\n\n\n' + globalEditorContents.substring(cutIdxIn)
+  const result = processTest('15 PRINT "newline"', 4, null, false)
+
+  assert.is(result.actions.length, 4)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[4], '\n')
+  assert.is(result.editorLines[5], '\n')
+  assert.is(result.editorLines[6], '\n')
+  assert.is(result.editorLines[7], '\n')
+  assert.is(result.editorLines[8], '17 GOTO 14\n')
+  assert.is(result.editorLines[9], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[10], '19 GOTO 10\n')
+  assert.is(result.editorLines[11], '20 syntax error\n')
+  assert.is(result.cursorLine, 5)
+  assert.is(result.editorLines.length, 12)
+  assert.is(machine.runCodespace.lineNumbers.length , 8)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 8)
+})
+
+test('add an existing line in a big gap where it belongs with blank above, keep the gap', () => {
+  const cutIdxIn = 70
+  globalEditorContents = globalEditorContents.substring(0, cutIdxIn) + '16 PRINT "newnew"' + globalEditorContents.substring(cutIdxIn)
+  const result = processTest('16 PRINT "newnew"', 6, null, false)
+
+  assert.is(result.actions.length, 5)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[4], '16 PRINT "newnew"\n')
+  assert.is(result.editorLines[5], '\n')
+  assert.is(result.editorLines[6], '\n')
+  assert.is(result.editorLines[7], '17 GOTO 14\n')
+  assert.is(result.editorLines[8], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[9], '19 GOTO 10\n')
+  assert.is(result.editorLines[10], '20 syntax error\n')
+  assert.is(result.cursorLine, 6)
+  assert.is(result.editorLines.length, 11)
+  assert.is(machine.runCodespace.lineNumbers.length , 9)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 9)
+})
+
+test('add an exec line', () => {
+  const result = processTest('print "exec"', 12)
+
+  assert.is(result.actions.length, 4)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[4], '16 PRINT "newnew"\n')
+  assert.is(result.editorLines[5], '17 GOTO 14\n')
+  assert.is(result.editorLines[6], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[7], '19 GOTO 10\n')
+  assert.is(result.editorLines[8], '20 syntax error\n')
+  assert.is(result.editorLines[9], 'PRINT "exec"\n')
+  assert.is(result.cursorLine, 11)
+  assert.is(result.editorLines.length, 10)
+  assert.is(machine.runCodespace.lineNumbers.length , 9)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 9)
+})
+
+test('insert an exec line', () => {
+  const result = processTest('print "exec2"', -1, null, false)
+
+  assert.is(result.actions.length, 4)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[3], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[4], '16 PRINT "newnew"\n')
+  assert.is(result.editorLines[5], '17 GOTO 14\n')
+  assert.is(result.editorLines[6], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[7], '19 GOTO 10\n')
+  assert.is(result.editorLines[8], '20 syntax error\n')
+  assert.is(result.editorLines[9], 'PRINT "exec"\n')
+  assert.is(result.editorLines[10], 'PRINT "exec2"\n')
+  assert.is(result.cursorLine, 12)
+  assert.is(result.editorLines.length, 11)
+  assert.is(machine.runCodespace.lineNumbers.length , 9)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 9)
+})
+
+test('paste test - insert an exec line and another line', () => {
+  const result = processTest([ 'print "exec3"', '12 print "foo"' ], -1, null, false)
+
+  assert.is(result.actions.length, 7)
+  assert.is(result.editorLines[0], '5 PRINT "top"\n')
+  assert.is(result.editorLines[1], '11 PRINT "topcut"\n')
+  assert.is(result.editorLines[2], '12 PRINT "foo"\n')
+  assert.is(result.editorLines[3], '14 PRINT "midcut"\n')
+  assert.is(result.editorLines[4], '15 PRINT "newline"\n')
+  assert.is(result.editorLines[5], '16 PRINT "newnew"\n')
+  assert.is(result.editorLines[6], '17 GOTO 14\n')
+  assert.is(result.editorLines[7], '18 PRINT "bottomcut"\n')
+  assert.is(result.editorLines[8], '19 GOTO 10\n')
+  assert.is(result.editorLines[9], '20 syntax error\n')
+  assert.is(result.editorLines[10], 'PRINT "exec"\n')
+  assert.is(result.editorLines[11], 'PRINT "exec2"\n')
+  assert.is(result.editorLines[12], 'PRINT "exec3"\n')
+  assert.is(result.cursorLine, 14)
+  assert.is(result.editorLines.length, 13)
+  assert.is(machine.runCodespace.lineNumbers.length , 10)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 10)
+})
+
+
 
 test.run()

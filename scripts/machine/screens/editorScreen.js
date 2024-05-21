@@ -175,7 +175,8 @@ export default class EditorScreen extends CharGridScreen {
 
       this.messageWidth = this.cursorPosDisp.column - 2
       this.displayMessage(defaultMessage)
-      this.currentErrorMarker = null
+      this.errorMarkers = {}
+      this.currentErrorMessageKey = null
       this.cursorStyle = 'underline'
       this.firstActivated = true
       this.currentMode = 'edit'
@@ -258,8 +259,12 @@ export default class EditorScreen extends CharGridScreen {
     this.currentMode = newMode
   }
 
+  getLineKey(lineValue) {
+    const lineNumberCapture = lineValue.match(/^\s*(\d+)/)
+    return lineNumberCapture ? parseInt(lineNumberCapture[1]) : lineValue
+  }
+
   processLine() {
-    this.clearError()
     const position = this.editor.getPosition()
     let screenLine = position.lineNumber
     const lines = this.editor.getValue().split('\n')
@@ -269,7 +274,38 @@ export default class EditorScreen extends CharGridScreen {
     }
 
     let lineValue = lines[screenLine - 1]
+    this.clearError(this.getLineKey(lineValue))
     this.cleanAndDisplayLine(lineValue, screenLine)
+  }
+
+  clearErrorsOnLines(startLine, endLine, captured) {
+    const model = this.editor.getModel()
+    for (let i = startLine; i <= endLine; i++) {
+      const lineValue = model.getLineContent(i)
+      const lineKey = this.getLineKey(lineValue)
+      if (lineKey in this.errorMarkers) {
+        captured[lineKey] = { marker: this.errorMarkers[lineKey], originalLine: lineValue }
+        this.clearError(lineKey)
+      }
+    }
+  }
+
+  restoreErrorMarkers(lines, screenLine, captured) {
+    let restoredCount = 0
+    for (const line of lines) {
+      const lineKey = this.getLineKey(line)
+      let capturedMarker = captured[lineKey]
+      if (capturedMarker && line === capturedMarker.originalLine) {
+        capturedMarker.marker.startLineNumber = screenLine
+        capturedMarker.marker.endLineNumber = screenLine
+        this.errorMarkers[lineKey] = capturedMarker.marker
+        restoredCount += 1
+      }
+    }
+    if (restoredCount > 0) {
+      const model = this.editor.getModel()
+      monaco.editor.setModelMarkers(model, 'eslint', Object.values(this.errorMarkers))
+    }
   }
 
   cleanAndDisplayLine(lineValue, screenLine = -1, stayInEdit = false) {
@@ -288,8 +324,7 @@ export default class EditorScreen extends CharGridScreen {
     }
 
     let { cleanTokens, lineNumber: codeLineNumber, emptyLine } = this.lexifier.identifyCleanTokens(lineValue)
-    if (!codeLineNumber) {
-      if (stayInEdit) { return true }
+    if (!codeLineNumber && !stayInEdit) {
       this.editor.executeEdits("", [{
         range: new monaco.Range(screenLine, 1, screenLine + 1, 1),
         text: ''
@@ -302,11 +337,14 @@ export default class EditorScreen extends CharGridScreen {
     const actions = processLineActions(lineValue, screenLine, this.machine, this.editor.getValue(), codeLineNumber, cleanTokens)
     let cursorLine = screenLine
     let noError = true
+    let capturedErrorMarkers = {}
     for (const action of actions) {
       switch (action.action) {
         case 'clearLine':
+          const endScreenLine = (action.endScreenLine || action.screenLine) + 1
+          this.clearErrorsOnLines(action.screenLine, endScreenLine - 1, capturedErrorMarkers)
           this.editor.executeEdits("", [{
-            range: new monaco.Range(action.screenLine, 1, action.screenLine + 1, 1),
+            range: new monaco.Range(action.screenLine, 1, endScreenLine, 1),
             text: ''
           }])
           break
@@ -316,7 +354,19 @@ export default class EditorScreen extends CharGridScreen {
             text: action.value + '\n'
           }])
           if (action.error) {
-            this.displayError(action.error, action.screenLine)
+            this.displayError(action.error, action.screenLine, this.getLineKey(action.value))
+            noError = false
+          } else {
+            this.restoreErrorMarkers(action.value.split('\n'), action.screenLine, capturedErrorMarkers)
+          }
+          break
+        case 'replaceLine':
+          this.editor.executeEdits("", [{
+            range: new monaco.Range(action.screenLine, 1, action.screenLine + 1, 1),
+            text: action.value + '\n'
+          }])
+          if (action.error) {
+            this.displayError(action.error, action.screenLine, this.getLineKey(action.value))
             noError = false
           }
           break
@@ -343,9 +393,10 @@ export default class EditorScreen extends CharGridScreen {
     const position = this.editor.getPosition()
     const lineValue = model.getLineContent(position.lineNumber)
     let cursorStyle = (lineValue.length >= warnLineLength) ? 'block-outline' : 'underline'
-    if (this.insertMode === 'overwrite') {
-      cursorStyle = 'block'
-      let keyOk = overwriteKeys[key.code]
+
+    let keyOk = false
+    if (!key.altKey && !key.ctrlKey && !key.metaKey) {
+      keyOk = overwriteKeys[key.code]
       if (!keyOk) {
         for (const keyGroup of overwriteKeyGroups) {
           if (key.code.startsWith(keyGroup)) {
@@ -354,6 +405,10 @@ export default class EditorScreen extends CharGridScreen {
           }
         }
       }
+    }
+
+    if (this.insertMode === 'overwrite') {
+      cursorStyle = 'block'
       if (keyOk) {
         this.editor.executeEdits("", [{
           range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column + 1),
@@ -373,9 +428,7 @@ export default class EditorScreen extends CharGridScreen {
       this.editor.updateOptions({ cursorStyle })
       this.cursorStyle = cursorStyle
     }
-    if (!this.currentErrorMarker) return
-    const lineNumber = this.editor.getPosition().lineNumber
-    if (this.currentErrorMarker.startLineNumber === lineNumber) { this.clearError() }
+    if (keyOk) { this.clearError(this.getLineKey(lineValue)) }
   }
 
   displayMessage(message) {
@@ -389,24 +442,30 @@ export default class EditorScreen extends CharGridScreen {
     // copy all of the code lines that were affected by the paste
     const model = this.editor.getModel()
     let changedLines = []
-    for (let lineNumber = pastedRange.startLineNumber; lineNumber < pastedRange.endLineNumber; lineNumber++) {
-      const lineRange = new monaco.Range(lineNumber, 1, lineNumber + 1, 1)
-      changedLines.push(model.getValueInRange(lineRange).trim())
+    let endLineNumber = pastedRange.endLineNumber + 1
+    let endColumn = 1
+    for (let lineNumber = pastedRange.startLineNumber; lineNumber <= pastedRange.endLineNumber; lineNumber++) {
+      if (lineNumber === pastedRange.endLineNumber) {
+        endColumn = pastedRange.endColumn
+        endLineNumber = lineNumber
+      } else {
+        const lineRange = new monaco.Range(lineNumber, 1, lineNumber + 1, endColumn)
+        changedLines.push(model.getValueInRange(lineRange).trim())
+      }
     }
-    // now cut all those lines
+    // now cut all the complete lines
     this.editor.executeEdits("", [{
-      range: new monaco.Range(pastedRange.startLineNumber, 1, pastedRange.endLineNumber, 1),
+      range: new monaco.Range(pastedRange.startLineNumber, 1, pastedRange.startLineNumber + changedLines.length, 1),
       text: ''
     }])
     // now insert back all the lines
-    let finalInsertedLine = pastedRange.startLineNumber
     let errorCount = 0
     for (const changeLine of changedLines) {
       if (!this.cleanAndDisplayLine(changeLine, -1, true)) {
         errorCount += 1
       }
     }
-    this.editor.setPosition({ lineNumber: finalInsertedLine + 1, column: 1 })
+    this.editor.setPosition({ lineNumber: endLineNumber, column: endColumn })
     if (errorCount > 1) {
       this.displayError({ error: 'Multiple Errors' })
     }
@@ -421,10 +480,11 @@ export default class EditorScreen extends CharGridScreen {
     this.editor.setPosition({ lineNumber: this.machine.runCodespace.lineNumbers.length + 2, column: 1 })
   }
 
-  displayError(error, lineNumber) {
+  displayError(error, lineNumber, lineKey, noMessage) {
     this.displayMessage(error.error)
-    if (lineNumber) {
-      this.currentErrorMarker = {
+    this.currentErrorMessageKey = lineKey
+    if (lineKey) {
+      this.errorMarkers[lineKey] = {
         startLineNumber: lineNumber,
         endLineNumber: lineNumber,
         startColumn: error.location + 1,
@@ -434,15 +494,21 @@ export default class EditorScreen extends CharGridScreen {
         source: 'weBASIC'
       }
       const model = this.editor.getModel()
-      monaco.editor.setModelMarkers(model, 'eslint', [this.currentErrorMarker])
+      monaco.editor.setModelMarkers(model, 'eslint', Object.values(this.errorMarkers))
+    } else {
+      this.currentErrorMessageKey = null
     }
   }
 
-  clearError() {
-    this.currentErrorMarker = null
-    const model = this.editor.getModel()
-    monaco.editor.setModelMarkers(model, 'eslint', [ ])
-    this.displayMessage(defaultMessage)
+  clearError(key) {
+    if (key in this.errorMarkers) {
+      delete this.errorMarkers[key]
+      const model = this.editor.getModel()
+      monaco.editor.setModelMarkers(model, 'eslint', Object.values(this.errorMarkers))
+    }
+    if (this.currentErrorMessageKey === key || Object.keys(this.errorMarkers).length === 0) {
+      this.displayMessage(defaultMessage)
+    }
   }
 
   async handleCommand(input, passed) {

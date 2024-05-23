@@ -180,6 +180,10 @@ export default class EditorScreen extends CharGridScreen {
       this.cursorStyle = 'underline'
       this.firstActivated = true
       this.currentMode = 'edit'
+
+      if (this.machine.runCodespace.lineNumbers.length > 0) {
+        this.resetEditor()
+      }
     }
     if (active === 'waiting') {
       if (!monaco) return
@@ -472,6 +476,7 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   resetEditor() {
+    if (!this.editor) return
     let program = ''
     for (const lineNumber of this.machine.runCodespace.lineNumbers) {
       program += this.machine.runCodespace.codeLines[lineNumber].text + '\n'

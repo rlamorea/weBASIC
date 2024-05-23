@@ -10,7 +10,7 @@ import ExecStatements from './execStatements.js'
 import Jumps from './jumps.js'
 import Data from './data.js'
 import Rem from './rem.js'
-import FileSystem from './fileSystem.js'
+import Files from './files.js'
 
 const assignment = new Assignment()
 const mathFunctions = new MathFunctions()
@@ -24,7 +24,7 @@ const execStatements = new ExecStatements()
 const jumps = new Jumps()
 const data = new Data()
 const rem = new Rem()
-const filesystem = new FileSystem()
+const files = new Files()
 
 export {
   assignment,
@@ -39,5 +39,5 @@ export {
   jumps,
   data,
   rem,
-  filesystem,
+  files,
 }

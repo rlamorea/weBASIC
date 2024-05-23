@@ -2,6 +2,7 @@
 const ErrorCodes = {
   BREAK: 'Break',
   CORRUPTED_SYSTEM: 'System Corruption. Execution Halted.',
+  FILE_ERROR: 'File System Error',
   ILLEGAL_COMMAND: 'Illegal Command',
   ILLEGAL_INDEX: 'Illegal Index',
   ILLEGAL_LINE: 'Illegal Line Number',

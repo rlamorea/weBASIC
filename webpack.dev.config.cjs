@@ -36,6 +36,7 @@ module.exports = {
     static: {
       directory: path.resolve(__dirname, 'dist'),
     },
+    server: 'http', // 'https'
     port: 6510,
     host: 'localhost',
     hot: true,

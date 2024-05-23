@@ -1,6 +1,7 @@
 import Variables from "./variables.js"
 import Execution from './execution.js'
 import IO from './io.js'
+import FileSystem from './filesystem.js'
 
 export default class Machine {
   constructor(options = {}) {
@@ -20,6 +21,10 @@ export default class Machine {
       import('./screens/runScreen.js').then( (module) => {
         self.screens.RUN = new module.default(self)
       })
+      // import('./screens/setup.js').then( (module) => {
+      //   self.setupScreen = new module.default(self)
+      //   self.settings = self.setupScreen.getSettings()
+      // })
     }
 
     this.variables = new Variables(this)
@@ -27,6 +32,8 @@ export default class Machine {
 
     this.liveCodespace = this.execution.createCodespace('LIVE')
     this.runCodespace = this.execution.createCodespace('RUN')
+
+    this.fileSystem = new FileSystem(this)
   }
 
   activateMode(mode) {

@@ -60,6 +60,10 @@ export default class LiveScreen extends CharGridScreen {
     this.newPrompt(true)
   }
 
+  displayMessage(message) {
+    this.displayString(message)
+  }
+
   async handleCommand(input, passed) {
     if (passed) {
       this.displayString(input)

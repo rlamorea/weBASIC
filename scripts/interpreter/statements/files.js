@@ -2,6 +2,9 @@ import Statement from './statement.js'
 import { ErrorCodes, error } from '../errors.js'
 import {clear} from "idb-keyval";
 
+const pauseMessage = 'SPACE to continue, ESC to stop'
+const pauseMessageErase = ' '.repeat(pauseMessage.length)
+
 function parseStringParams(tokens, statement, lexifier, maxParams = 1, minParams = 0) {
   let params = lexifier.parseIntoParameters(tokens, statement.tokenEnd, true)
   if (params.error) { return params }
@@ -66,8 +69,12 @@ function clearDirectoryPromise() {
 
 async function paginateDirectory(machine, files, pageNumber) {
   directoryPromise = new Promise((resolve) => { directoryResolve = resolve })
-  let pageLength = machine.currentScreen.viewportSize[1] - 2 - (pageNumber === 1 ? 1 : 0)
+  let pageLength = machine.currentScreen.viewportSize[1] - 1 - (pageNumber === 1 ? 1 : 0)
   let pageFiles = (files.length < pageLength)
+  // check to make sure the final prompt won't cause files to be missed
+  if (files.length < pageLength && files.length > machine.currentScreen.viewportSize[1] - 3) {
+    pageLength = machine.currentScreen.viewportSize[1] - 3
+  }
   if (files.length < pageLength) {
     pageFiles = files
     files = []
@@ -81,11 +88,14 @@ async function paginateDirectory(machine, files, pageNumber) {
     machine.currentScreen.displayString('  ' + file)
   }
   if (files.length > 0) {
-    machine.currentScreen.displayString('SPACE to continue, ESC to stop')
+    machine.currentScreen.displayString(pauseMessage, false)
     const action = await waitOnKeypress(machine)
     clearKeyHandling(machine)
+    machine.currentScreen.moveTo([ 1, machine.currentScreen.viewportCursorLocation[1] ])
+    machine.currentScreen.displayString(pauseMessageErase, false)
+    machine.currentScreen.moveTo([ 1, machine.currentScreen.viewportCursorLocation[1] ])
     if (action === 'continue') {
-      await paginateDirectory(machine, files)
+      await paginateDirectory(machine, files, pageNumber + 1)
     } else {
       directoryResolve(true)
     }
@@ -176,7 +186,7 @@ export default class Files extends Statement {
   async doSetDir(machine, statement, interpreter) {
     const result = await machine.fileSystem.setCurrentDirectory(statement.path)
     if (result.error) { return result }
-    machine.currentScreen.displayMessage(`${result.created ? 'Created' : 'Now in'} ${result.newPath}`)
+    machine.currentScreen.displayMessage(`${result.created ? 'Created' : 'Now in'} ${result.path}`)
     return { done: true }
   }
 }

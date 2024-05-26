@@ -42,6 +42,11 @@ function cleanDirPath(dirPath) {
   return dirPath
 }
 
+function normalizeDirPath(dirPath) {
+  dirPath = path.relative(fileRoot, dirPath) + '/'
+  return dirPath
+}
+
 function getDirectoryEntries(dirPath, prefix = null, suffix = null, recurse = false, recursePath = null) {
   let pathToRead = dirPath
   if (recursePath && !dirPath.endsWith('/')) {
@@ -90,8 +95,7 @@ app.get('/catalog', (req, res) => {
   }
   try {
     const directory = getDirectoryEntries(dirPath, prefix, suffix, recurse)
-    dirPath = dirPath.replace(fileRoot, '/')
-    if (dirPath.startsWith('//')) { dirPath = dirPath.substring(1) }
+    dirPath = normalizeDirPath(dirPath)
     res.send({ path: dirPath, files: directory })
   } catch (e) {
     if (e.code === 'ENOENT') {
@@ -129,9 +133,8 @@ app.post('/setdir', (req, res) => {
     }
   }
   currentDirectory = dirPath
-  let newPath = dirPath.replace(fileRoot, '/')
-  if (newPath.startsWith('//')) { newPath = newPath.substring(1) }
-  res.send({ done: true, newPath, created })
+  dirPath = normalizeDirPath(dirPath)
+  res.send({ done: true, path: dirPath, created })
 })
 
 app.post('/save', (req, res) => {

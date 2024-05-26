@@ -121,7 +121,7 @@ export default class Lexifier {
   }
 
   lexifyStatement(statementTokens, lineNumber) {
-    if (statementTokens.length === 0) return { coding: 'emtpy' }
+    if (statementTokens.length === 0) return { coding: 'empty' }
     const firstToken = statementTokens.shift()
     firstToken.lineNumber = lineNumber
     // there are two types of execution statements:

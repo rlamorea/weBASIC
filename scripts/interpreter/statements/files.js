@@ -1,5 +1,99 @@
 import Statement from './statement.js'
 import { ErrorCodes, error } from '../errors.js'
+import {clear} from "idb-keyval";
+
+function parseStringParams(tokens, statement, lexifier, maxParams = 1, minParams = 0) {
+  let params = lexifier.parseIntoParameters(tokens, statement.tokenEnd, true)
+  if (params.error) { return params }
+  params = params.parameters
+  if (params.length < minParams) {
+    return error(ErrorCodes.SYNTAX, statement.tokenStart, statement.tokenEnd)
+  }
+  const stringParams = []
+  for (let paramIdx = 0; paramIdx < Math.min(params.length, maxParams); paramIdx++) {
+    const paramTokens = params[paramIdx]
+    if (paramTokens > 0) {
+      return error(ErrorCodes.SYNTAX, paramTokens[1].tokenStart, paramTokens[1].tokenEnd)
+    }
+    const param = paramTokens[0]
+    if (param.coding !== 'string-literal') {
+      return error(ErrorCodes.SYNTAX, param.tokenStart, param.tokenEnd)
+    }
+    stringParams.push(param.token)
+  }
+  return stringParams
+}
+
+let directoryPromise = null
+let directoryResolve = null
+let keypressPromise = null
+let keypressResolve = null
+let directoryPage = -1
+
+const continueListener = {
+  handleKey(evt) {
+    if (evt.key === ' ') {
+      keypressResolve('continue')
+    }
+  }
+}
+function breakHandler() {
+  keypressResolve('break')
+}
+
+async function waitOnKeypress(machine) {
+  keypressPromise = new Promise((resolve) => { keypressResolve = resolve })
+  machine.io.setActiveListener(continueListener)
+  machine.io.enableBreak(true, null, breakHandler)
+  if (keypressPromise) {
+    return keypressPromise
+  } else {
+    return 'continue'
+  }
+}
+
+function clearKeyHandling(machine) {
+  machine.io.setActiveListener()
+  machine.io.enableBreak(true) // restore default break handler
+  keypressPromise = null
+  keypressResolve = null
+}
+
+function clearDirectoryPromise() {
+  directoryPromise = null
+  directoryResolve = null
+}
+
+async function paginateDirectory(machine, files, pageNumber) {
+  directoryPromise = new Promise((resolve) => { directoryResolve = resolve })
+  let pageLength = machine.currentScreen.viewportSize[1] - 2 - (pageNumber === 1 ? 1 : 0)
+  let pageFiles = (files.length < pageLength)
+  if (files.length < pageLength) {
+    pageFiles = files
+    files = []
+  } else {
+    pageFiles = files.splice(0, pageLength)
+  }
+  for (let file of pageFiles) {
+    if (file.length > machine.currentScreen.viewportSize[0] - 3) {
+      file = file.substring(0, machine.currentScreen.viewportSize[0] - 6) + '...'
+    }
+    machine.currentScreen.displayString('  ' + file)
+  }
+  if (files.length > 0) {
+    machine.currentScreen.displayString('SPACE to continue, ESC to stop')
+    const action = await waitOnKeypress(machine)
+    clearKeyHandling(machine)
+    if (action === 'continue') {
+      await paginateDirectory(machine, files)
+    } else {
+      directoryResolve(true)
+    }
+  } else {
+    directoryResolve(true)
+  }
+  return directoryPromise
+}
 
 export default class Files extends Statement {
   constructor() {
@@ -17,31 +111,30 @@ export default class Files extends Statement {
   }
 
   parseCatalog(statement, tokens, lexifier) {
-    // for now do nothing
-    // eventually get path?
+    const params = parseStringParams(tokens, statement, lexifier, 3)
+    if (params.error) { return params }
+
+    statement.path = params[0]
+    statement.filePrefix = params[1]
+    statement.fileSuffix = params[2]
+
     return statement
   }
 
   parseLoadSave(statement, tokens, lexifier) {
-    if (tokens.length === 0) {
-      return error(ErrorCodes.SYNTAX, statement.tokenStart, statement.tokenEnd)
-    }
-    const fileName = tokens.shift()
-    if (fileName.coding !== 'string-literal') {
-      return Error(ErrorCodes.SYNTAX, fileName.tokenStart, fileName.tokenEnd)
-    }
-    statement.fileName = fileName.token
+    const params = parseStringParams(tokens, statement, lexifier, 1, 1)
+
+    statement.fileName = params[0]
     return statement
   }
 
   async doCatalog(machine, statement, interpreter) {
-    const catalog = await machine.fileSystem.getCatalog()
-    if (catalog.error) { return error }
+    const catalog = await machine.fileSystem.getCatalog(statement.path, statement.filePrefix, statement.fileSuffix)
+    if (catalog.error) { return catalog }
 
     machine.currentScreen.displayString('Files Available:')
-    for (const file of catalog) {
-      machine.currentScreen.displayString('  ' + file)
-    }
+    await paginateDirectory(machine, catalog.files, 1)
+    clearDirectoryPromise()
     return { done: true }
   }
 

@@ -2,6 +2,17 @@ import { error, ErrorCodes } from "../interpreter/errors.js";
 
 const serverUrl = 'http://localhost:6511'
 
+function buildQuery(url, queryParams) {
+  let query = ''
+  for (const param in queryParams) {
+    const paramVal = (queryParams[param] || '').trim()
+    if (paramVal) {
+      query += `${query.length === 0 ? '?' : '&'}${param}=${encodeURIComponent(paramVal)}`
+    }
+  }
+  return url + query
+}
+
 export default class FileSystem {
   constructor(machine) {
     this.machine = machine
@@ -21,9 +32,10 @@ export default class FileSystem {
     }
   }
 
-  async getCatalog(path) {
+  async getCatalog(path, prefix, suffix) {
     try {
-      const response = await window.fetch(`${serverUrl}/catalog`)
+      const url = buildQuery(`${serverUrl}/catalog`, { path, prefix, suffix })
+      const response = await window.fetch(url)
       return await response.json()
     } catch (e) {
       console.log('file system error getting catalog')

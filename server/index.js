@@ -9,7 +9,7 @@ import { dirname } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-const fileRoot = path.resolve(__dirname, '..') //, 'examples') temporary for now
+const fileRoot = path.resolve(__dirname, '..', 'examples') // temporary for now
 let currentDirectory = fileRoot
 
 const app = express()
@@ -44,7 +44,29 @@ function cleanDirPath(dirPath) {
 
 function normalizeDirPath(dirPath) {
   dirPath = path.relative(fileRoot, dirPath) + '/'
+  if (dirPath.startsWith('..')) { return { error: 'Invalid Path' } }
+  if (dirPath !== '/') { dirPath = '/' + dirPath } // make "absolute" from fileroot
   return dirPath
+}
+
+function createPathIfNeeded(dirPath) {
+  let created = false
+  if (!fs.existsSync(dirPath)) {
+    // start seeing if we can build a new directory
+    let pathSegments = path.relative(fileRoot, dirPath).split(path.sep)
+    let explorePath = fileRoot
+    for (const segment of pathSegments) {
+      explorePath = path.resolve(explorePath, segment)
+      const stats = fs.lstatSync(explorePath, { throwIfNoEntry: false })
+      if (!stats) {
+        fs.mkdirSync(explorePath)
+        created = true
+      } else if (stats.isFile()) {
+        return { error: 'Invalid Directory Path' }
+      }
+    }
+  }
+  return created
 }
 
 function getDirectoryEntries(dirPath, prefix = null, suffix = null, recurse = false, recursePath = null) {
@@ -94,9 +116,13 @@ app.get('/catalog', (req, res) => {
     return
   }
   try {
+    const normalDirPath = normalizeDirPath(dirPath)
+    if (normalDirPath.error) {
+      res.send(normalDirPath)
+      return
+    }
     const directory = getDirectoryEntries(dirPath, prefix, suffix, recurse)
-    dirPath = normalizeDirPath(dirPath)
-    res.send({ path: dirPath, files: directory })
+    res.send({ path: normalDirPath, files: directory })
   } catch (e) {
     if (e.code === 'ENOENT') {
       res.send({ error: 'Invalid Directory' })
@@ -115,37 +141,55 @@ app.post('/setdir', (req, res) => {
     res.send({ error: 'Invalid Directory' })
     return
   }
-  let created = false
-  if (!fs.existsSync(dirPath)) {
-    // start seeing if we can build a new directory
-    let pathSegments = path.relative(fileRoot, dirPath).split(path.sep)
-    let explorePath = fileRoot
-    for (const segment of pathSegments) {
-      explorePath = path.resolve(explorePath, segment)
-      const stats = fs.lstatSync(explorePath, { throwIfNoEntry: false })
-      if (!stats) {
-        fs.mkdirSync(explorePath)
-        created = true
-      } else if (stats.isFile()) {
-        res.send({ error: 'Invalid Directory Path' })
-        return
-      }
-    }
+  let created = createPathIfNeeded(dirPath)
+  if (created.error) {
+    res.send(created)
+    return
+  }
+  const normalDirPath = normalizeDirPath(dirPath)
+  if (normalDirPath.error) {
+    res.send(normalDirPath)
+    return
   }
   currentDirectory = dirPath
-  dirPath = normalizeDirPath(dirPath)
-  res.send({ done: true, path: dirPath, created })
+  res.send({ done: true, path: normalDirPath, created })
 })
 
 app.post('/save', (req, res) => {
   const { filename, fileContents } = req.body
-  fs.writeFileSync(path.resolve(fileRoot, filename), fileContents)
-  res.send({ saved: true })
+  const filepath = filename.startsWith('/') ?
+    path.resolve(fileRoot, filename.substring(1)) :
+    path.resolve(currentDirectory, filename)
+  const pathInfo = path.parse(filepath)
+  const created = createPathIfNeeded(pathInfo.dir)
+  if (created.error) {
+    res.send(created)
+    return
+  }
+  const stats = fs.lstatSync(filepath, { throwIfNoEntry: false })
+  if (stats && stats.isDirectory()) {
+    res.send({ error: 'Invalid Filename' })
+    return
+  }
+  let changeDir = false
+  const fileDir = path.relative(fileRoot, pathInfo.dir)
+  if (fileDir.startsWith('..')) {
+    res.send({ error: 'Invalid Path' })
+    return
+  }
+  fs.writeFileSync(filepath, fileContents)
+  if (fileDir !== path.relative(fileRoot, currentDirectory)) {
+    changeDir = true
+    currentDirectory = path.resolve(fileRoot, fileDir)
+  }
+  res.send({ saved: true, path: fileDir, changeDir, filepath: fileDir + '/' + pathInfo.base })
 })
 
 app.get('/load', (req, res) => {
   const { filename } = req.query
-  const filepath = path.resolve(currentDirectory, filename)
+  const filepath = filename.startsWith('/') ?
+    path.resolve(fileRoot, filename.substring(1)) :
+    path.resolve(currentDirectory, filename)
   const stats = fs.lstatSync(filepath, { throwIfNoEntry: false })
   if (!stats) {
     res.send({ error: 'Unknown File' })
@@ -157,12 +201,16 @@ app.get('/load', (req, res) => {
   const pathInfo = path.parse(filepath)
   let changeDir = false
   const fileDir = path.relative(fileRoot, pathInfo.dir)
+  if (fileDir.startsWith('..')) {
+    res.send({ error: 'Invalid Path' })
+    return
+  }
   if (fileDir !== path.relative(fileRoot, currentDirectory)) {
     changeDir = true
     currentDirectory = path.resolve(fileRoot, fileDir)
   }
   const fileContents = fs.readFileSync(filepath, 'utf8')
-  res.send({ fileContents, fileDir, changeDir })
+  res.send({ fileContents, path: fileDir, changeDir, filepath: fileDir + '/' + pathInfo.base })
 })
 
 app.listen(port, () => {

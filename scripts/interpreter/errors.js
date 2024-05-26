@@ -9,6 +9,7 @@ const ErrorCodes = {
   ILLEGAL_VALUE: 'Illegal Value',
   ILLEGAL_REASSIGN: 'Illegal Reassignment',
   INDEX_OUT_OF_BOUNDS: 'Index Out of Bounds',
+  NO_FILE: 'No Current File',
   NO_PROGRAM: 'No Program',
   NOT_ALLOWED: 'Not Allowed',
   OUT_OF_DATA: 'Out of Data',

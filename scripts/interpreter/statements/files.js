@@ -110,8 +110,8 @@ export default class Files extends Statement {
     super()
     this.lexicalHandlers = {
       'command|CATALOG': this.parseCatalog,
-      'command|SAVE': this.parseLoadSave,
-      'command|LOAD': this.parseLoadSave,
+      'command|SAVE': this.parseSave,
+      'command|LOAD': this.parseLoad,
       'command|SETDIR': this.parseSetDir,
     }
     this.interpreterHandlers = {
@@ -133,7 +133,15 @@ export default class Files extends Statement {
     return statement
   }
 
-  parseLoadSave(statement, tokens, lexifier) {
+  parseSave(statement, tokens, lexifier) {
+    const params = parseStringParams(tokens, statement, lexifier, 1, 0)
+    if (params.error) { return params }
+
+    statement.fileName = params[0]
+    return statement
+  }
+
+  parseLoad(statement, tokens, lexifier) {
     const params = parseStringParams(tokens, statement, lexifier, 1, 1)
     if (params.error) { return params }
 
@@ -163,8 +171,17 @@ export default class Files extends Statement {
     if (machine.runCodespace.lineNumbers.length === 0) {
       return error(ErrorCodes.NO_PROGRAM)
     }
-    const result = await machine.fileSystem.saveProgram(machine.runCodespace, statement.fileName)
+    let filename = statement.fileName
+    if (!filename) {
+      filename = machine.fileSystem.currentFile
+      if (!filename) {
+        return error(ErrorCodes.NO_FILE)
+      }
+    }
+
+    const result = await machine.fileSystem.saveProgram(machine.runCodespace, filename)
     if (result.error) { return result }
+    machine.fileSystem.setCurrentFile(result.filepath)
     machine.currentScreen.displayMessage(`File Saved`)
     return { done: true }
   }
@@ -172,7 +189,7 @@ export default class Files extends Statement {
   async doLoad(machine, statement, interpreter) {
     const result = await machine.fileSystem.loadProgram(statement.fileName)
     if (result.error) { return result }
-    machine.fileSystem.setCurrentFile(statement.fileName)
+    machine.fileSystem.setCurrentFile(result.filepath)
 
     machine.execution.resetCodespaceToNew(machine.runCodespace)
     const lines = result.fileContents.split('\n')

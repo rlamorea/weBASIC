@@ -111,14 +111,27 @@ app.post('/setdir', (req, res) => {
     res.send({ error: 'Invalid Directory' })
     return
   }
+  let created = false
   if (!fs.existsSync(dirPath)) {
-    res.send({ error: 'Invalid Directory'})
-    return
+    // start seeing if we can build a new directory
+    let pathSegments = path.relative(fileRoot, dirPath).split(path.sep)
+    let explorePath = fileRoot
+    for (const segment of pathSegments) {
+      explorePath = path.resolve(explorePath, segment)
+      const stats = fs.lstatSync(explorePath, { throwIfNoEntry: false })
+      if (!stats) {
+        fs.mkdirSync(explorePath)
+        created = true
+      } else if (stats.isFile()) {
+        res.send({ error: 'Invalid Directory Path' })
+        return
+      }
+    }
   }
   currentDirectory = dirPath
   let newPath = dirPath.replace(fileRoot, '/')
   if (newPath.startsWith('//')) { newPath = newPath.substring(1) }
-  res.send({ done: true, newPath })
+  res.send({ done: true, newPath, created })
 })
 
 app.post('/save', (req, res) => {

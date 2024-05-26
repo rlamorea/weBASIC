@@ -176,7 +176,7 @@ export default class Files extends Statement {
   async doSetDir(machine, statement, interpreter) {
     const result = await machine.fileSystem.setCurrentDirectory(statement.path)
     if (result.error) { return result }
-    machine.currentScreen.displayMessage(`Current Directory: ${result.newPath}`)
+    machine.currentScreen.displayMessage(`${result.created ? 'Created' : 'Now in'} ${result.newPath}`)
     return { done: true }
   }
 }

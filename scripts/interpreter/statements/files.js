@@ -164,14 +164,16 @@ export default class Files extends Statement {
       return error(ErrorCodes.NO_PROGRAM)
     }
     const result = await machine.fileSystem.saveProgram(machine.runCodespace, statement.fileName)
-    if (result.error) { return error }
+    if (result.error) { return result }
     machine.currentScreen.displayMessage(`File Saved`)
     return { done: true }
   }
 
   async doLoad(machine, statement, interpreter) {
     const result = await machine.fileSystem.loadProgram(statement.fileName)
-    if (result.error) { return error }
+    if (result.error) { return result }
+    machine.fileSystem.setCurrentFile(statement.fileName)
+
     machine.execution.resetCodespaceToNew(machine.runCodespace)
     const lines = result.fileContents.split('\n')
     if (lines[lines.length - 1].trim() === '') { lines.pop() }

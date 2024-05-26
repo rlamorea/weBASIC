@@ -18,7 +18,6 @@ export default class FileSystem {
     this.machine = machine
 
     this.currentFile = null
-    this.currentDirectory = '/'
   }
 
   async checkServer() {
@@ -78,6 +77,10 @@ export default class FileSystem {
       console.error(e)
       return error(ErrorCodes.FILE_ERROR)
     }
+  }
+
+  setCurrentFile(filename) {
+    this.currentFile = filename
   }
 
   async loadProgram(filename, path = null) {

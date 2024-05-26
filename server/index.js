@@ -145,8 +145,24 @@ app.post('/save', (req, res) => {
 
 app.get('/load', (req, res) => {
   const { filename } = req.query
-  const fileContents = fs.readFileSync(path.resolve(fileRoot, filename), 'utf8')
-  res.send({ fileContents })
+  const filepath = path.resolve(currentDirectory, filename)
+  const stats = fs.lstatSync(filepath, { throwIfNoEntry: false })
+  if (!stats) {
+    res.send({ error: 'Unknown File' })
+    return
+  } else if (stats.isDirectory()) {
+    res.send({ error: 'Invalid Filename' })
+    return
+  }
+  const pathInfo = path.parse(filepath)
+  let changeDir = false
+  const fileDir = path.relative(fileRoot, pathInfo.dir)
+  if (fileDir !== path.relative(fileRoot, currentDirectory)) {
+    changeDir = true
+    currentDirectory = path.resolve(fileRoot, fileDir)
+  }
+  const fileContents = fs.readFileSync(filepath, 'utf8')
+  res.send({ fileContents, fileDir, changeDir })
 })
 
 app.listen(port, () => {

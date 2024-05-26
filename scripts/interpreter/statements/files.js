@@ -143,7 +143,7 @@ export default class Files extends Statement {
     const catalog = await machine.fileSystem.getCatalog(statement.path, statement.filePrefix, statement.fileSuffix)
     if (catalog.error) { return catalog }
 
-    machine.currentScreen.displayString('Files Available:')
+    machine.currentScreen.displayString(`In ${catalog.path}`)
     await paginateDirectory(machine, catalog.files, 1)
     clearDirectoryPromise()
     return { done: true }

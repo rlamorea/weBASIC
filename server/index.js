@@ -25,6 +25,8 @@ function cleanDirPath(dirPath) {
   }
   if (dirPath === '.' || dirPath === '') {
     dirPath = currentDirectory
+  } else if (dirPath === '/') {
+    dirPath = fileRoot
   } else if (dirPath.startsWith('/')) {
     dirPath = `${fileRoot}${dirPath}`
   } else if (dirPath.startsWith('./')) {
@@ -88,7 +90,9 @@ app.get('/catalog', (req, res) => {
   }
   try {
     const directory = getDirectoryEntries(dirPath, prefix, suffix, recurse)
-    res.send({ files: directory })
+    dirPath = dirPath.replace(fileRoot, '/')
+    if (dirPath.startsWith('//')) { dirPath = dirPath.substring(1) }
+    res.send({ path: dirPath, files: directory })
   } catch (e) {
     if (e.code === 'ENOENT') {
       res.send({ error: 'Invalid Directory' })

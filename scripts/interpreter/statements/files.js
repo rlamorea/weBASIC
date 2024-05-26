@@ -102,11 +102,13 @@ export default class Files extends Statement {
       'command|CATALOG': this.parseCatalog,
       'command|SAVE': this.parseLoadSave,
       'command|LOAD': this.parseLoadSave,
+      'command|SETDIR': this.parseSetDir,
     }
     this.interpreterHandlers = {
       'command|CATALOG' : this.doCatalog,
       'command|SAVE': this.doSave,
       'command|LOAD': this.doLoad,
+      'command|SETDIR': this.doSetDir,
     }
   }
 
@@ -123,8 +125,17 @@ export default class Files extends Statement {
 
   parseLoadSave(statement, tokens, lexifier) {
     const params = parseStringParams(tokens, statement, lexifier, 1, 1)
+    if (params.error) { return params }
 
     statement.fileName = params[0]
+    return statement
+  }
+
+  parseSetDir(statement, tokens, lexifier) {
+    const params = parseStringParams(tokens, statement, lexifier, 1, 1)
+    if (params.error) { return params }
+
+    statement.path = params[0]
     return statement
   }
 
@@ -159,6 +170,13 @@ export default class Files extends Statement {
     }
     machine.currentScreen.displayMessage(`${lines.length} BASIC lines loaded`)
     machine.screens['EDIT'].resetEditor()
+    return { done: true }
+  }
+
+  async doSetDir(machine, statement, interpreter) {
+    const result = await machine.fileSystem.setCurrentDirectory(statement.path)
+    if (result.error) { return result }
+    machine.currentScreen.displayMessage(`Current Directory: ${result.newPath}`)
     return { done: true }
   }
 }

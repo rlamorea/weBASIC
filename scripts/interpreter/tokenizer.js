@@ -170,6 +170,7 @@ const keywords = [
   { keyword: 'SCROLLPOS',    coding: 'function',           returns: 'number' },
   { keyword: 'SCROLLTO',     coding: 'statement' },
   { keyword: 'SEQUENCE$',    coding: 'function',           returns: 'string' },
+  { keyword: 'SETDIR',       coding: 'command' },
   { keyword: 'SGN',          coding: 'function',           returns: 'number' },
   { keyword: 'SIN',          coding: 'function',           returns: 'number' },
   { keyword: 'SLEEP',        coding: 'statement' },

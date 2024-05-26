@@ -84,5 +84,20 @@ export default class FileSystem {
     if (!filename.endsWith('.bas')) { filename += '.bas' }
     return await this.loadFile(filename, path)
   }
+
+  async setCurrentDirectory(path) {
+    try {
+      const response = await window.fetch(`${serverUrl}/setdir`, {
+        method: 'POST',
+        body: JSON.stringify({ path }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error getting catalog')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
 }
 

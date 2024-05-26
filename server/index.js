@@ -19,6 +19,27 @@ app.use(cors())
 app.use(express.json())
 
 // helpers
+function cleanDirPath(dirPath) {
+  if (dirPath.length > 1 && dirPath.endsWith('/')) {
+    dirPath = dirPath.substring(0, dirPath.length - 1)
+  }
+  if (dirPath === '.' || dirPath === '') {
+    dirPath = currentDirectory
+  } else if (dirPath.startsWith('/')) {
+    dirPath = `${fileRoot}${dirPath}`
+  } else if (dirPath.startsWith('./')) {
+    dirPath = `${currentDirectory}/${dirPath.substring(2)}`
+  } else if (dirPath === '..' || dirPath.startsWith('../')) {
+    if (currentDirectory === fileRoot || currentDirectory === fileRoot + '/') {
+      return null
+    }
+    dirPath = path.resolve(currentDirectory, '..', dirPath.substring(2))
+  } else {
+    dirPath = `${currentDirectory}/${dirPath}`
+  }
+  return dirPath
+}
+
 function getDirectoryEntries(dirPath, prefix = null, suffix = null, recurse = false, recursePath = null) {
   let pathToRead = dirPath
   if (recursePath && !dirPath.endsWith('/')) {
@@ -60,29 +81,40 @@ app.get('/catalog', (req, res) => {
     dirPath = dirPath.substring(0, dirPath.length - 3)
     recurse = true
   }
-  if (dirPath.endsWith('/')) {
-    dirPath = dirPath.substring(0, dirPath.length - 1)
-  }
-  if (dirPath === '.' || dirPath === '') {
-    dirPath = currentDirectory
-  } else if (dirPath.startsWith('/')) {
-    dirPath = `${fileRoot}${dirPath}`
-  } else if (dirPath.startsWith('./')) {
-    dirPath = `${currentDirectory}/${dirPath.substring(2)}`
-  } else {
-    dirPath = `${currentDirectory}/${dirPath}`
+  dirPath = cleanDirPath(dirPath)
+  if (dirPath === null) {
+    res.send({ error: 'Invalid Directory' })
+    return
   }
   try {
     const directory = getDirectoryEntries(dirPath, prefix, suffix, recurse)
     res.send({ files: directory })
   } catch (e) {
     if (e.code === 'ENOENT') {
-      let message = e.message.substring(8)
-      let commaIdx = message.indexOf(',')
-      if (commaIdx >= 0) { message = message.substring(0, commaIdx) }
-      res.send({ error: message })
+      res.send({ error: 'Invalid Directory' })
+      // let message = e.message.substring(8)
+      // let commaIdx = message.indexOf(',')
+      // if (commaIdx >= 0) { message = message.substring(0, commaIdx) }
+      // res.send({ error: message })
     }
   }
+})
+
+app.post('/setdir', (req, res) => {
+  let { path: dirPath } = req.body
+  dirPath = cleanDirPath(dirPath)
+  if (dirPath === null) {
+    res.send({ error: 'Invalid Directory' })
+    return
+  }
+  if (!fs.existsSync(dirPath)) {
+    res.send({ error: 'Invalid Directory'})
+    return
+  }
+  currentDirectory = dirPath
+  let newPath = dirPath.replace(fileRoot, '/')
+  if (newPath.startsWith('//')) { newPath = newPath.substring(1) }
+  res.send({ done: true, newPath })
 })
 
 app.post('/save', (req, res) => {

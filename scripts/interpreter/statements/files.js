@@ -113,12 +113,14 @@ export default class Files extends Statement {
       'command|SAVE': this.parseSave,
       'command|LOAD': this.parseLoad,
       'command|SETDIR': this.parseSetDir,
+      'command|SCRATCH': this.parseScratch,
     }
     this.interpreterHandlers = {
       'command|CATALOG' : this.doCatalog,
       'command|SAVE': this.doSave,
       'command|LOAD': this.doLoad,
       'command|SETDIR': this.doSetDir,
+      'command|SCRATCH': this.doScratch,
     }
   }
 
@@ -154,6 +156,14 @@ export default class Files extends Statement {
     if (params.error) { return params }
 
     statement.path = params[0]
+    return statement
+  }
+
+  parseScratch(statement, tokens, lexifier) {
+    const params = parseStringParams(tokens, statement, lexifier, 1, 1)
+    if (params.error) { return params }
+
+    statement.pathToScratch = params[0]
     return statement
   }
 
@@ -206,6 +216,16 @@ export default class Files extends Statement {
     const result = await machine.fileSystem.setCurrentDirectory(statement.path)
     if (result.error) { return result }
     machine.currentScreen.displayMessage(`${result.created ? 'Created' : 'Now in'} ${result.path}`)
+    return { done: true }
+  }
+
+  async doScratch(machine, statement, interpreter) {
+    const result = await machine.fileSystem.scratchFile(statement.pathToScratch)
+    if (result.error) { return result }
+    if (result.filepath === machine.fileSystem.currentFile) {
+      machine.fileSystem.setCurrentFile() // clear current file if we scratched it
+    }
+    machine.currentScreen.displayMessage(`Scratched ${result.filepath}`)
     return { done: true }
   }
 }

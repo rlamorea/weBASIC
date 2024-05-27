@@ -213,6 +213,43 @@ app.get('/load', (req, res) => {
   res.send({ fileContents, path: fileDir, changeDir, filepath: fileDir + '/' + pathInfo.base })
 })
 
+app.post('/scratch', (req, res) => {
+  const { filename } = req.body
+  const filepath = filename.startsWith('/') ?
+    path.resolve(fileRoot, filename.substring(1)) :
+    path.resolve(currentDirectory, filename)
+  const stats = fs.lstatSync(filepath, { throwIfNoEntry: false })
+  if (!stats) {
+    res.send({ error: 'Unknown File' })
+    return
+  } else if (stats.isDirectory()) {
+    // make sure directory is empty
+    const dirContents = fs.readdirSync(filepath, { withFileTypes: true })
+    if (dirContents.length > 0) {
+      res.send({error: 'Directory Not Empty'})
+      return
+    }
+  }
+  if (filepath === currentDirectory) {
+    res.send({ error: 'Cannot Scratch Current Directory' })
+    return
+  }
+  const pathInfo = path.parse(filepath)
+  const fileDir = path.relative(fileRoot, pathInfo.dir)
+  if (fileDir.startsWith('..')) {
+    res.send({ error: 'Invalid Path' })
+    return
+  }
+  let scratchFile = fileDir + '/' + pathInfo.base
+  if (stats.isDirectory()) {
+    fs.rmdirSync(filepath)
+    scratchFile += '/'
+  } else {
+    fs.unlinkSync(filepath)
+  }
+  res.send({ scratched: true, filepath: scratchFile })
+})
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`)
 })

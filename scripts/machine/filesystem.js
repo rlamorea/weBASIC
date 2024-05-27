@@ -102,5 +102,20 @@ export default class FileSystem {
       return error(ErrorCodes.FILE_ERROR)
     }
   }
+
+  async scratchFile(filename) {
+    try {
+      const response = await window.fetch(`${serverUrl}/scratch`, {
+        method: 'POST',
+        body: JSON.stringify({ filename }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error scratching file')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
 }
 

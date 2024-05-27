@@ -2,12 +2,22 @@ import { error, ErrorCodes } from "../interpreter/errors.js";
 
 const serverUrl = 'http://localhost:6511'
 
+function buildQuery(url, queryParams) {
+  let query = ''
+  for (const param in queryParams) {
+    const paramVal = (queryParams[param] || '').trim()
+    if (paramVal) {
+      query += `${query.length === 0 ? '?' : '&'}${param}=${encodeURIComponent(paramVal)}`
+    }
+  }
+  return url + query
+}
+
 export default class FileSystem {
   constructor(machine) {
     this.machine = machine
 
     this.currentFile = null
-    this.currentDirectory = '/'
   }
 
   async checkServer() {
@@ -21,9 +31,10 @@ export default class FileSystem {
     }
   }
 
-  async getCatalog(path) {
+  async getCatalog(path, prefix, suffix) {
     try {
-      const response = await window.fetch(`${serverUrl}/catalog`)
+      const url = buildQuery(`${serverUrl}/catalog`, { path, prefix, suffix })
+      const response = await window.fetch(url)
       return await response.json()
     } catch (e) {
       console.log('file system error getting catalog')
@@ -48,7 +59,7 @@ export default class FileSystem {
   }
 
   async saveProgram(codespace, filename, path = null) {
-    if (!filename.endsWith('.bas')) { filename += '.bas' }
+    if (!filename.toLowerCase().endsWith('.bas')) { filename += '.bas' }
     let fileLines = []
     for (const lineNumber of codespace.lineNumbers) {
       fileLines.push(codespace.codeLines[lineNumber].text)
@@ -68,9 +79,73 @@ export default class FileSystem {
     }
   }
 
+  setCurrentFile(filename) {
+    this.currentFile = filename
+  }
+
   async loadProgram(filename, path = null) {
-    if (!filename.endsWith('.bas')) { filename += '.bas' }
+    if (!filename.toLowerCase().endsWith('.bas')) { filename += '.bas' }
     return await this.loadFile(filename, path)
+  }
+
+  async setCurrentDirectory(path) {
+    try {
+      const response = await window.fetch(`${serverUrl}/setdir`, {
+        method: 'POST',
+        body: JSON.stringify({ path }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error getting catalog')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
+
+  async scratchFile(filename) {
+    try {
+      const response = await window.fetch(`${serverUrl}/scratch`, {
+        method: 'POST',
+        body: JSON.stringify({ filename }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error scratching file')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
+
+  async copyFile(filename, newfile) {
+    try {
+      const response = await window.fetch(`${serverUrl}/copy`, {
+        method: 'POST',
+        body: JSON.stringify({ filename, newfile }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error copying file')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
+
+  async renameFile(filename, newfile) {
+    try {
+      const response = await window.fetch(`${serverUrl}/rename`, {
+        method: 'POST',
+        body: JSON.stringify({ filename, newfile }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error renameing file')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
   }
 }
 

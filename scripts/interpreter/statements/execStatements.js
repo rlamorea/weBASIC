@@ -101,6 +101,7 @@ export default class ExecStatements extends Statement {
       return error(ErrorCodes.NOT_ALLOWED, statement.tokenStart, statement.tokenEnd)
     }
     machine.execution.resetCodespaceToNew(machine.runCodespace)
+    machine.fileSystem.setCurrentFile() // clear current file on NEW
     return { done: true }
   }
 }

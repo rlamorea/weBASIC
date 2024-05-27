@@ -118,7 +118,7 @@ export default class IO {
 
   enableBreak(enable = true, breakKey = defaultBreakKey, breakHandler) {
     this.captureBreakKey = enable
-    this.breakKey = breakKey
+    this.breakKey = breakKey || defaultBreakKey
     if (breakHandler) {
       this.oldBreakCallback = this.breakCallback
       this.breakCallback = breakHandler

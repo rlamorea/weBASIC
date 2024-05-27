@@ -114,6 +114,8 @@ export default class Files extends Statement {
       'command|LOAD': this.parseLoad,
       'command|SETDIR': this.parseSetDir,
       'command|SCRATCH': this.parseScratch,
+      'command|COPY': this.parseCopyRename,
+      'command|RENAME': this.parseCopyRename,
     }
     this.interpreterHandlers = {
       'command|CATALOG' : this.doCatalog,
@@ -121,6 +123,8 @@ export default class Files extends Statement {
       'command|LOAD': this.doLoad,
       'command|SETDIR': this.doSetDir,
       'command|SCRATCH': this.doScratch,
+      'command|COPY': this.doCopy,
+      'command|RENAME': this.doRename
     }
   }
 
@@ -164,6 +168,15 @@ export default class Files extends Statement {
     if (params.error) { return params }
 
     statement.pathToScratch = params[0]
+    return statement
+  }
+
+  parseCopyRename(statement, tokens, lexifier) {
+    const params = parseStringParams(tokens, statement, lexifier, 2, 2)
+    if (params.error) { return params }
+
+    statement.sourceFile = params[0]
+    statement.destinationFile = params[1]
     return statement
   }
 
@@ -226,6 +239,23 @@ export default class Files extends Statement {
       machine.fileSystem.setCurrentFile() // clear current file if we scratched it
     }
     machine.currentScreen.displayMessage(`Scratched ${result.filepath}`)
+    return { done: true }
+  }
+
+  async doCopy(machine, statement, interpreter) {
+    const result = await machine.fileSystem.copyFile(statement.sourceFile, statement.destinationFile)
+    if (result.error) { return result }
+    machine.currentScreen.displayMessage(`Copied to ${result.newpath}`)
+    return { done: true }
+  }
+
+  async doRename(machine, statement, interpreter) {
+    const result = await machine.fileSystem.renameFile(statement.sourceFile, statement.destinationFile)
+    if (result.error) { return result }
+    if (result.filepath === machine.fileSystem.currentFile) {
+      machine.fileSystem.setCurrentFile(result.newpath)
+    }
+    machine.currentScreen.displayMessage(`Renamed to ${result.newpath}`)
     return { done: true }
   }
 }

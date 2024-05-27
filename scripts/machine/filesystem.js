@@ -59,7 +59,7 @@ export default class FileSystem {
   }
 
   async saveProgram(codespace, filename, path = null) {
-    if (!filename.endsWith('.bas')) { filename += '.bas' }
+    if (!filename.toLowerCase().endsWith('.bas')) { filename += '.bas' }
     let fileLines = []
     for (const lineNumber of codespace.lineNumbers) {
       fileLines.push(codespace.codeLines[lineNumber].text)
@@ -84,7 +84,7 @@ export default class FileSystem {
   }
 
   async loadProgram(filename, path = null) {
-    if (!filename.endsWith('.bas')) { filename += '.bas' }
+    if (!filename.toLowerCase().endsWith('.bas')) { filename += '.bas' }
     return await this.loadFile(filename, path)
   }
 
@@ -113,6 +113,36 @@ export default class FileSystem {
       return await response.json()
     } catch (e) {
       console.log('file system error scratching file')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
+
+  async copyFile(filename, newfile) {
+    try {
+      const response = await window.fetch(`${serverUrl}/copy`, {
+        method: 'POST',
+        body: JSON.stringify({ filename, newfile }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error copying file')
+      console.error(e)
+      return error(ErrorCodes.FILE_ERROR)
+    }
+  }
+
+  async renameFile(filename, newfile) {
+    try {
+      const response = await window.fetch(`${serverUrl}/rename`, {
+        method: 'POST',
+        body: JSON.stringify({ filename, newfile }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' }
+      })
+      return await response.json()
+    } catch (e) {
+      console.log('file system error renameing file')
       console.error(e)
       return error(ErrorCodes.FILE_ERROR)
     }

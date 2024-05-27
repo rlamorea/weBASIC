@@ -49,6 +49,12 @@ function normalizeDirPath(dirPath) {
   return dirPath
 }
 
+function denormalizeFilename(filename) {
+  return filename.startsWith('/') ?
+    path.resolve(fileRoot, filename.substring(1)) :
+    path.resolve(currentDirectory, filename)
+}
+
 function createPathIfNeeded(dirPath) {
   let created = false
   if (!fs.existsSync(dirPath)) {
@@ -157,9 +163,7 @@ app.post('/setdir', (req, res) => {
 
 app.post('/save', (req, res) => {
   const { filename, fileContents } = req.body
-  const filepath = filename.startsWith('/') ?
-    path.resolve(fileRoot, filename.substring(1)) :
-    path.resolve(currentDirectory, filename)
+  const filepath = denormalizeFilename(filename)
   const pathInfo = path.parse(filepath)
   const created = createPathIfNeeded(pathInfo.dir)
   if (created.error) {
@@ -187,9 +191,7 @@ app.post('/save', (req, res) => {
 
 app.get('/load', (req, res) => {
   const { filename } = req.query
-  const filepath = filename.startsWith('/') ?
-    path.resolve(fileRoot, filename.substring(1)) :
-    path.resolve(currentDirectory, filename)
+  const filepath = denormalizeFilename(filename)
   const stats = fs.lstatSync(filepath, { throwIfNoEntry: false })
   if (!stats) {
     res.send({ error: 'Unknown File' })
@@ -215,9 +217,7 @@ app.get('/load', (req, res) => {
 
 app.post('/scratch', (req, res) => {
   const { filename } = req.body
-  const filepath = filename.startsWith('/') ?
-    path.resolve(fileRoot, filename.substring(1)) :
-    path.resolve(currentDirectory, filename)
+  const filepath = denormalizeFilename(filename)
   const stats = fs.lstatSync(filepath, { throwIfNoEntry: false })
   if (!stats) {
     res.send({ error: 'Unknown File' })
@@ -248,6 +248,71 @@ app.post('/scratch', (req, res) => {
     fs.unlinkSync(filepath)
   }
   res.send({ scratched: true, filepath: scratchFile })
+})
+
+function prepFileCopyMove(req) {
+  const { filename, newfile } = req.body
+  const filepath = denormalizeFilename(filename)
+  let newpath = denormalizeFilename(newfile)
+
+  const fileStats = fs.lstatSync(filepath, { throwIfNoEntry: false })
+  if (!fileStats) {
+    return { error: 'Unknown File' }
+  } else if (fileStats.isDirectory()) {
+    return { error: 'Invalid Filename' }
+  }
+
+  let pathInfo = path.parse(filepath)
+  const fileDir = path.relative(fileRoot, pathInfo.dir)
+  if (fileDir.startsWith('..')) {
+    return { error: 'Invalid Path'}
+  }
+  let sourceFile = fileDir + '/' + pathInfo.base
+
+  const newStats = fs.lstatSync(newpath, { throwIfNoEntry: false })
+  if (!newStats && newfile.endsWith('/')) {
+    const createDir = createPathIfNeeded(newpath)
+    if (createDir.error) {
+      return createDir
+    }
+    newpath = path.resolve(newpath, pathInfo.base)
+  } else if (newStats && newStats.isDirectory()) {
+    newpath = path.resolve(newpath, pathInfo.base)
+  } else if (newStats) {
+    return { error: 'File Exists' }
+  }
+
+  pathInfo = path.parse(newpath)
+  const newDir = path.relative(fileRoot, pathInfo.dir)
+  if (newDir.startsWith('..')) {
+    return { error: 'Invalid Path' }
+  }
+  let destFile = newDir + '/' + pathInfo.base
+
+  return { filepath, newpath, sourceFile, destFile }
+}
+
+app.post('/copy', (req, res) => {
+  const result = prepFileCopyMove(req, res)
+  if (result.error) {
+    res.send(result)
+    return
+  }
+
+  fs.cpSync(result.filepath, result.newpath)
+  res.send({ copied: true, filepath: result.sourceFile, newpath: result.destFile })
+})
+
+app.post('/rename', (req, res) => {
+  const result = prepFileCopyMove(req, res)
+  if (result.error) {
+    res.send(result)
+    return
+  }
+
+  fs.cpSync(result.filepath, result.newpath)
+  fs.unlinkSync(result.filepath)
+  res.send({ copied: true, filepath: result.sourceFile, newpath: result.destFile })
 })
 
 app.listen(port, () => {

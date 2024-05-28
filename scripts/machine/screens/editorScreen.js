@@ -179,7 +179,7 @@ export default class EditorScreen extends CharGridScreen {
       this.currentErrorMessageKey = null
       this.cursorStyle = 'underline'
       this.firstActivated = true
-      this.currentMode = 'edit'
+      this.currentMode = 'startup'
 
       if (this.machine.runCodespace.lineNumbers.length > 0) {
         this.resetEditor()
@@ -247,6 +247,7 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   setMode(newMode) {
+    if (this.currentMode === newMode) return // do nothing
     const commandMode = newMode === 'command'
     this.editor.updateOptions({ readOnly: commandMode })
     this.commandInput.activate(commandMode)
@@ -532,10 +533,9 @@ export default class EditorScreen extends CharGridScreen {
     const result = await this.machine.runLiveCode(input, allowedEditCommands)
     if (result.error) { this.displayError(result) }
     this.commandInput.reset()
-    if (this.currentMode !== 'command') {
-      this.commandInput.activate(false)
-      this.machine.io.setActiveListener(this.commandInput)
-    }
+    let currentMode = this.currentMode
+    this.currentMode = 'reset'
+    this.setMode(currentMode)
     if (result.newMode) {
       this.machine.activateMode(result.newMode)
       if (result.prepNewMode) { await result.prepNewMode() }

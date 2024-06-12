@@ -55,6 +55,7 @@ export default class FixedInput {
       'd': this.doDeleteEOL, 'D': this.doDeleteEOL,
       's': this.doDeleteSOL, 'S': this.doDeleteSOL,
     }
+    this.customKeyHandler = options.customKeyHandler
 
     this.inputHandler = options.inputHandler
     this.active = true
@@ -205,6 +206,10 @@ export default class FixedInput {
 
   handleKey(evt) {
     if (!this.active) return
+    if (this.customKeyHandler) {
+      const result = this.customKeyHandler(evt)
+      if (result) { return } // handled, so skip everything else
+    }
     // stop cursor at current location
     this.cursor(false)
 

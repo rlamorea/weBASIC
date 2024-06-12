@@ -24,13 +24,26 @@ export default class LiveScreen extends CharGridScreen {
     this.newPrompt()
   }
 
+  newVar;
+
   newPrompt(showPrompt = true, inputOptions = {}) {
     this.activated(false)
     if (this.commandInput) { delete this.commandInput }
-    const options = {
-      inputHandler: (input) => { this.handleCommand(input) },
+    const self = this
+    this.newVar = {
+      inputHandler: (input) => {
+        self.handleCommand(input)
+      },
+      customKeyHandler: (evt) => {
+        if (evt.ctrlKey && (evt.key === 'r' || evt.key === 'R')) {
+          self.machine.reviewRunMode('LIVE')
+          return true
+        }
+        return false
+      },
       ...inputOptions
-    }
+    };
+    const options = this.newVar
     if (showPrompt) {
       this.newline()
       this.displayString(prompt)

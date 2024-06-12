@@ -93,9 +93,17 @@ export default class EditorScreen extends CharGridScreen {
       cell.classList.add('inverted')
     }
     this.moveTo( [ 1, 2 ])
+    const self = this
     this.commandInput = new FixedInput(this, {
       singleLine: true,
-      inputHandler: (input) => { this.handleCommand(input) }
+      inputHandler: (input) => { self.handleCommand(input) },
+      customKeyHandler: (evt) => {
+        if (evt.ctrlKey && (evt.key === 'r' || evt.key === 'R')) {
+          self.machine.reviewRunMode('EDIT')
+          return true
+        }
+        return false
+      }
     })
   }
 
@@ -380,6 +388,11 @@ export default class EditorScreen extends CharGridScreen {
     if (key.code === 'Enter' && key.ctrlKey) {
       key.preventDefault()
       key.stopPropagation()
+      return
+    }
+    if (key.code === 'KeyR' && key.ctrlKey) {
+      key.preventDefault()
+      this.machine.reviewRunMode('EDIT')
       return
     }
     if (key.code === 'KeyI' && key.ctrlKey) {

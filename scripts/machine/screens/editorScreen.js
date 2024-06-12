@@ -405,6 +405,21 @@ export default class EditorScreen extends CharGridScreen {
       }])
       return
     }
+    if (key.code === 'KeyS' && key.ctrlKey) {
+      key.preventDefault()
+      key.stopPropagation()
+      // delete sol
+      if (position.column <= 1) { return }
+      let lineNumber = (lineValue.trim().match(/^\d+/) || [])[0]
+      if (lineNumber && lineValue.trim() === lineNumber.trim()) { lineNumber = null }
+      let startCol = (lineNumber ? lineValue.indexOf(lineNumber) + lineNumber.length + 1 : 1)
+      if (startCol >= position.column) { startCol = 1 }
+      this.editor.executeEdits("", [{
+        range: new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column),
+        text: ''
+      }])
+      return
+    }
     let cursorStyle = (lineValue.length >= warnLineLength) ? 'block-outline' : 'underline'
 
     let keyOk = false

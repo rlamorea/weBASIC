@@ -72,4 +72,25 @@ async function runLiveCommand(machine, commandLine) {
   return result
 }
 
-export { tokens, precision, assertFloat, sendToInput, sendKey, addProgram, runProgram, runLiveCommand }
+function testString(length) {
+  const repeats = Math.ceil(length / 36)
+  let str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.repeat(repeats)
+  return str.substring(0, length)
+}
+
+function compareTestString(testValue, screenCells, startLocation = 0, testLength = 0) {
+  let cellIdx = startLocation
+  for (let i = 0; i < testValue.length; i++) {
+    assert.ok(cellIdx < screenCells.length, `Offscreen at ${cellIdx}`)
+    assert.is(screenCells[cellIdx].innerHTML, testValue[i], `Bad value at ${cellIdx}`)
+    cellIdx ++
+  }
+  if (testLength > 0) {
+    for (; cellIdx < (startLocation + testLength); cellIdx++) {
+      assert.ok(cellIdx < screenCells.length, `Offscreen at ${cellIdx}`)
+      assert.is(screenCells[cellIdx].innerHTML, '', `Bad value at ${cellIdx}`)
+    }
+  }
+}
+
+export { tokens, precision, assertFloat, sendToInput, sendKey, addProgram, runProgram, runLiveCommand, testString, compareTestString }

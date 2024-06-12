@@ -1,14 +1,13 @@
 import { test } from 'uvu'
 import * as assert from 'uvu/assert'
+import { testString, compareTestString } from "./testHelpers.js"
 
 import Machine from './mockMachine.js'
 import FixedInput from '../scripts/machine/screens/fixedInput.js'
 
 let machine = new Machine({ addScreen: true })
 
-machine.screen.displayString('Input? ', false)
-
-let input = new FixedInput(machine.currentScreen, { singleLine: true })
+let input = null
 
 function enterKey(char, controls = {}, inp = input) {
   const evt = { key: char, ...controls }
@@ -19,11 +18,318 @@ function enterString(str, inp = input) {
   for (const char of str) { enterKey(char, {}, inp) }
 }
 
-function repeatKey(char, count, inp = input) {
-  for (let i = 0; i < count; i++) { enterKey(char, {}, inp) }
+function repeatKey(char, count, inp = input, controls = {}) {
+  for (let i = 0; i < count; i++) { enterKey(char, controls, inp) }
 }
 
+// test our logic function - showSingleLineViewport
+test('logic - empty string', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([1, 3])
+  const inp = new FixedInput(machine.currentScreen, { singleLine: true })
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 3)
+  assert.is(inp.inputText, '')
+  inp.showSingleLineViewPort('', 0)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 3)
+  assert.is(inp.inputText, '')
+  inp.activate(false)
+})
+
+test('logic - sub-window string', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([1, 10])
+  // insert and cursor eol
+  const inp = new FixedInput(machine.currentScreen, { singleLine: true })
+  inp.showSingleLineViewPort('hello world', 11)
+  assert.is(inp.cursorLocation[0], 12)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, 'hello world')
+  compareTestString('hello world', machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort('hello world', 10)
+  assert.is(inp.cursorLocation[0], 11)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, 'hello world')
+  compareTestString('hello world', machine.screenCells, 360, 40)
+  // sol
+  inp.showSingleLineViewPort('hello world', 0)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, 'hello world')
+  compareTestString('hello world', machine.screenCells, 360, 40)
+  // one right
+  inp.showSingleLineViewPort('hello world', 1)
+  assert.is(inp.cursorLocation[0], 2)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, 'hello world')
+  compareTestString('hello world', machine.screenCells, 360, 40)
+  // delete end
+  inp.showSingleLineViewPort('hello worl', 10)
+  assert.is(inp.cursorLocation[0], 11)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, 'hello worl')
+  compareTestString('hello worl', machine.screenCells, 360, 40)
+  // delete middle
+  inp.showSingleLineViewPort('hell worl', 4)
+  assert.is(inp.cursorLocation[0], 5)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, 'hell worl')
+  compareTestString('hell worl', machine.screenCells, 360, 40)
+  inp.activate(false)
+})
+
+test('logic - at-window string - 1', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([1, 10])
+  let str = testString(39)
+  const inp = new FixedInput(machine.currentScreen, { singleLine: true })
+  // insert and eol
+  inp.showSingleLineViewPort(str, 39)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort(str, 38)
+  assert.is(inp.cursorLocation[0], 39)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // sol
+  inp.showSingleLineViewPort(str, 0)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // one right
+  inp.showSingleLineViewPort(str, 1)
+  assert.is(inp.cursorLocation[0], 2)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // delete end
+  inp.showSingleLineViewPort(str.substring(0, 38), 38)
+  assert.is(inp.cursorLocation[0], 39)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str.substring(0, 38))
+  compareTestString(str.substring(0, 38), machine.screenCells, 360, 40)
+  // delete middle
+  let newStr = str.substring(0, 10) + str.substring(11)
+  inp.showSingleLineViewPort(newStr, 10)
+  assert.is(inp.cursorLocation[0], 11)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, newStr)
+  compareTestString(newStr, machine.screenCells, 360, 40)
+  inp.activate(false)
+})
+
+test('logic - at-window string', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([1, 10])
+  const str = testString(40)
+  const inp = new FixedInput(machine.currentScreen, { singleLine: true })
+  // insert and eol
+  inp.showSingleLineViewPort(str, 40)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(1), machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort(str, 39)
+  assert.is(inp.cursorLocation[0], 39)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(1), machine.screenCells, 360, 40)
+  // sol
+  inp.showSingleLineViewPort(str, 0)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // one right
+  inp.showSingleLineViewPort(str, 1)
+  assert.is(inp.cursorLocation[0], 2)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // width right
+  inp.showSingleLineViewPort(str, 39)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str, machine.screenCells, 360, 40)
+  // one right
+  inp.showSingleLineViewPort(str, 40)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(1), machine.screenCells, 360, 40)
+  // delete end
+  inp.showSingleLineViewPort(str.substring(0, 39), 39)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str.substring(0, 39))
+  compareTestString(str.substring(0, 39), machine.screenCells, 360, 40)
+  // delete middle
+  let newStr = str.substring(0, 10) + str.substring(11)
+  inp.showSingleLineViewPort(newStr, 10)
+  assert.is(inp.cursorLocation[0], 11)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, newStr)
+  compareTestString(newStr, machine.screenCells, 360, 40)
+  inp.activate(false)
+})
+
+test('logic - over-window string', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([1, 10])
+  const str = testString(100)
+  const inp = new FixedInput(machine.currentScreen, { singleLine: true })
+  // insert and eol
+  inp.showSingleLineViewPort(str, 100)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(61), machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort(str, 99)
+  assert.is(inp.cursorLocation[0], 39)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(61), machine.screenCells, 360, 40)
+  // start of window
+  inp.showSingleLineViewPort(str, 61)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(61), machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort(str, 60)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(60), machine.screenCells, 360, 40)
+  // sol
+  inp.showSingleLineViewPort(str, 0)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(0, 40), machine.screenCells, 360, 40)
+  // end of window
+  inp.showSingleLineViewPort(str, 39)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(0, 40), machine.screenCells, 360, 40)
+  // one right
+  inp.showSingleLineViewPort(str, 40)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(1, 41), machine.screenCells, 360, 40)
+  // end of string
+  inp.showSingleLineViewPort(str, 99)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(60, 100), machine.screenCells, 360, 40)
+  // one right to cursor gap
+  inp.showSingleLineViewPort(str, 100)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(61), machine.screenCells, 360, 40)
+  // delete end
+  inp.showSingleLineViewPort(str.substring(0, 99), 99)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str.substring(0, 99))
+  compareTestString(str.substring(60, 99), machine.screenCells, 360, 40)
+  // delete middle
+  let newStr = str.substring(0, 10) + str.substring(11)
+  inp.showSingleLineViewPort(newStr, 10)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, newStr)
+  compareTestString(newStr.substring(10, 50), machine.screenCells, 360, 40)
+  inp.activate(false)
+})
+
+test('logic - at-max string', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([1, 10])
+  const str = testString(160)
+  const inp = new FixedInput(machine.currentScreen, {singleLine: true})
+  // insert and eol
+  inp.showSingleLineViewPort(str, 159)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(120), machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort(str, 158)
+  assert.is(inp.cursorLocation[0], 39)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(120), machine.screenCells, 360, 40)
+  // start of window
+  inp.showSingleLineViewPort(str, 120)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(120), machine.screenCells, 360, 40)
+  // one left
+  inp.showSingleLineViewPort(str, 119)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(119, 159), machine.screenCells, 360, 40)
+  // sol
+  inp.showSingleLineViewPort(str, 0)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(0, 40), machine.screenCells, 360, 40)
+  // back to end of next-to-last window
+  inp.showSingleLineViewPort(str, 119)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(80, 120), machine.screenCells, 360, 40)
+  // one right
+  inp.showSingleLineViewPort(str, 120)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(81, 121), machine.screenCells, 360, 40)
+  // eol
+  inp.showSingleLineViewPort(str, 159)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str)
+  compareTestString(str.substring(120), machine.screenCells, 360, 40)
+  // delete end
+  inp.showSingleLineViewPort(str.substring(0, 159), 159)
+  assert.is(inp.cursorLocation[0], 40)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, str.substring(0, 159))
+  compareTestString(str.substring(120, 159), machine.screenCells, 360, 40)
+  // delete middle
+  let newStr = str.substring(0, 10) + str.substring(11)
+  inp.showSingleLineViewPort(newStr, 10)
+  assert.is(inp.cursorLocation[0], 1)
+  assert.is(inp.cursorLocation[1], 10)
+  assert.is(inp.inputText, newStr)
+  compareTestString(newStr.substring(10, 50), machine.screenCells, 360, 40)
+  inp.activate(false)
+})
+
 test('initialized', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.displayString('Input? ', false)
+  input = new FixedInput(machine.currentScreen, { singleLine: true })
   assert.is(input.cursorLocation[0], 8)
   assert.is(input.cursorLocation[1], 1)
   assert.is(input.singleLineViewLength, 33) // number of cells
@@ -495,6 +801,18 @@ test('newline in input at bottom of screen', () => {
   assert.is(machine.screenCells[364].innerHTML, 'O')
 })
 
+test('backspace in overflowed buffer - bug', () => {
+  machine.screen.clearViewport()
+  machine.screen.moveTo([ 1, 10 ])
+  let testInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  const testStr = testString(44)
+  enterString(testStr, testInput)
+  enterKey('Backspace', {}, testInput)
+  assert.is(testInput.cursorLocation[0], 40)
+  assert.is(testInput.cursorLocation[1], 10)
+  assert.is(testInput.inputText, testStr.substring(0, 43))
+})
+
 test('text overflow width at bottom of screen', () => {
   machine.screen.clearViewport()
   machine.screen.moveTo([ 1, 10 ])
@@ -506,6 +824,26 @@ test('text overflow width at bottom of screen', () => {
   assert.is(testInput.cursorLocation[1], 10)
   assert.is(machine.screenCells[360].innerHTML, 'A')
   assert.is(machine.screenCells[398].innerHTML, 'B')
+})
+
+test('arrow left/right at end of buffer when windowed', () => {
+  machine.screen.moveTo([ 1, 6 ])
+  const inputText = testString(45)
+  let testInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  enterString(inputText, testInput)
+  enterKey('ArrowLeft', {}, testInput)
+  enterKey('ArrowRight', {}, testInput)
+  compareTestString(inputText.substring(6), machine.screenCells, 200, 40)
+})
+
+test('arrow left at start of screen at bottom of screen', () => {
+  machine.screen.moveTo([ 1, 10 ])
+  const inputText = testString(45)
+  let testInput = new FixedInput(machine.currentScreen, { singleLine: true })
+  enterString(inputText, testInput)
+  repeatKey('ArrowLeft', 39, testInput)
+  enterKey('ArrowLeft', {}, testInput)
+  compareTestString(inputText.substring(5, 45), machine.screenCells, 360, 40)
 })
 
 test('prefill', () => {
@@ -556,8 +894,91 @@ test('move input to new line with scroll up because too short', () => {
   assert.is(shiftInput.cursorLocation[0], 1)
   assert.is(shiftInput.cursorLocation[1], 10)
   assert.is(shiftInput.singleLineViewLength, 40)
-  assert.ok(machine.screenCells[399].classList.classes['cursor'])
+  assert.ok(machine.screenCells[360].classList.classes['cursor'])
 })
+
+test('deleteEol - whole line', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefill = 'BUNCH OF TEXT'
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill: prefill })
+  prefillInput.handleKey({ key: 'd', ctrlKey: true })
+  compareTestString('', machine.screenCells, 200, prefill.length)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, '')
+})
+
+test('deleteEol - whole line overflow', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefill = testString(45)
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill })
+  prefillInput.handleKey({ key: 'd', ctrlKey: true })
+  compareTestString('', machine.screenCells, 200, 40)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, '')
+})
+
+test('deleteEol - midstring overflow', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  const prefill = testString(45)
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill })
+  for (let i = 0; i < 12; i++) { prefillInput.handleKey({ key: 'ArrowRight' }) }
+  prefillInput.handleKey({ key: 'D', ctrlKey: true })
+  compareTestString(prefill.substring(0, 12), machine.screenCells, 200, prefill.length)
+  assert.is(prefillInput.cursorLocation[0], 13)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, prefill.substring(0, 12))
+})
+
+test('deleteEol - midstring way overflow', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 10 ])
+  const prefill = testString(60)
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill })
+  repeatKey('ArrowRight', 50, prefillInput)
+  enterKey('d', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.inputText, prefill.substring(0, 50))
+  compareTestString(prefill.substring(11, 50), machine.screenCells, 360, 40)
+  assert.is(prefillInput.cursorLocation[0], 40)
+  assert.is(prefillInput.cursorLocation[1], 10)
+  assert.is(prefillInput.singleLineStartIndex, 11)
+  // test for a bug -- arrow left and then right and it won't go right!
+  enterKey('ArrowLeft', {}, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 39)
+  assert.is(prefillInput.cursorLocation[1], 10)
+  enterKey('ArrowRight', {}, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 40)
+  assert.is(prefillInput.cursorLocation[1], 10)
+})
+
+// test('deleteEol - at eol', () => {
+//   machine.currentScreen.moveTo([ 1, 6 ])
+//   let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'BUNCH OF TEXT' })
+//   for (let i = 0; i < 13; i++) { prefillInput.handleKey({ key: 'ArrowRight' }) }
+//   prefillInput.handleKey({ key: 'd', ctrlKey: true })
+//   assert.is(machine.screenCells[200].innerHTML, 'B')
+//   assert.is(machine.screenCells[204].innerHTML, 'H')
+//   assert.is(machine.screenCells[208].innerHTML, ' ')
+//   assert.is(machine.screenCells[211].innerHTML, 'X')
+//   assert.is(machine.screenCells[212].innerHTML, 'T')
+//   assert.is(prefillInput.cursorLocation[0], 14)
+//   assert.is(prefillInput.cursorLocation[1], 6)
+//   assert.is(prefillInput.inputText, 'BUNCH OF TEXT')
+// })
+//
+// test('deleteEol - wrap over line', () => {
+//   machine.currentScreen.moveTo([ 1, 6 ])
+//   let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'A'.repeat(60) })
+//   assert.is(machine.screenCells[200].innerHTML, 'A')
+//   assert.is(machine.screenCells[259].innerHTML, 'A')
+//   prefillInput.handleKey({ key: 'D', ctrlKey: true })
+//   assert.is(machine.screenCells[200].innerHTML, '')
+//   assert.is(machine.screenCells[259].innerHTML, '')
+//   assert.is(prefillInput.cursorLocation[0], 1)
+//   assert.is(prefillInput.cursorLocation[1], 6)
+//   assert.is(prefillInput.inputText, '')
+// })
 
 // TODO: eventually maybe handle error highlighting
 

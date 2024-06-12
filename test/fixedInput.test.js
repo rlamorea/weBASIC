@@ -421,4 +421,74 @@ test('prefill with error', () => {
   assert.is(prefillInput.cursorEnd[1], 6)
 })
 
+test('deleteEol - whole line', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'BUNCH OF TEXT' })
+  prefillInput.handleKey({ key: 'd', ctrlKey: true })
+  assert.is(machine.screenCells[200].innerHTML, '')
+  assert.is(machine.screenCells[204].innerHTML, '')
+  assert.is(machine.screenCells[208].innerHTML, '')
+  assert.is(machine.screenCells[211].innerHTML, '')
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, '')
+})
+
+test('deleteEol - half line', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'BUNCH OF TEXT' })
+  for (let i = 0; i < 5; i++) { prefillInput.handleKey({ key: 'ArrowRight' }) }
+  prefillInput.handleKey({ key: 'd', ctrlKey: true })
+  assert.is(machine.screenCells[200].innerHTML, 'B')
+  assert.is(machine.screenCells[204].innerHTML, 'H')
+  assert.is(machine.screenCells[208].innerHTML, '')
+  assert.is(machine.screenCells[211].innerHTML, '')
+  assert.is(prefillInput.cursorLocation[0], 6)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, 'BUNCH')
+})
+
+test('deleteEol - last char', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'BUNCH OF TEXT' })
+  for (let i = 0; i < 12; i++) { prefillInput.handleKey({ key: 'ArrowRight' }) }
+  prefillInput.handleKey({ key: 'd', ctrlKey: true })
+  assert.is(machine.screenCells[200].innerHTML, 'B')
+  assert.is(machine.screenCells[204].innerHTML, 'H')
+  assert.is(machine.screenCells[208].innerHTML, ' ')
+  assert.is(machine.screenCells[211].innerHTML, 'X')
+  assert.is(machine.screenCells[212].innerHTML, '')
+  assert.is(prefillInput.cursorLocation[0], 13)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, 'BUNCH OF TEX')
+})
+
+test('deleteEol - at eol', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'BUNCH OF TEXT' })
+  for (let i = 0; i < 13; i++) { prefillInput.handleKey({ key: 'ArrowRight' }) }
+  prefillInput.handleKey({ key: 'd', ctrlKey: true })
+  assert.is(machine.screenCells[200].innerHTML, 'B')
+  assert.is(machine.screenCells[204].innerHTML, 'H')
+  assert.is(machine.screenCells[208].innerHTML, ' ')
+  assert.is(machine.screenCells[211].innerHTML, 'X')
+  assert.is(machine.screenCells[212].innerHTML, 'T')
+  assert.is(prefillInput.cursorLocation[0], 14)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, 'BUNCH OF TEXT')
+})
+
+test('deleteEol - wrap over line', () => {
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'A'.repeat(60) })
+  assert.is(machine.screenCells[200].innerHTML, 'A')
+  assert.is(machine.screenCells[259].innerHTML, 'A')
+  prefillInput.handleKey({ key: 'D', ctrlKey: true })
+  assert.is(machine.screenCells[200].innerHTML, '')
+  assert.is(machine.screenCells[259].innerHTML, '')
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, '')
+})
+
 test.run()

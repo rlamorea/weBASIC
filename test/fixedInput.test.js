@@ -1,5 +1,6 @@
 import { test } from 'uvu'
 import * as assert from 'uvu/assert'
+import { testString, compareTestString } from "./testHelpers.js"
 
 import Machine from './mockMachine.js'
 import FixedInput from '../scripts/machine/screens/fixedInput.js'
@@ -8,17 +9,17 @@ let machine = new Machine({addScreen: true})
 
 let input = new FixedInput(machine.currentScreen)
 
-function enterKey(char, controls = {}) {
+function enterKey(char, controls = {}, inp = input) {
   const evt = { key: char, ...controls }
-  input.handleKey(evt)
+  inp.handleKey(evt)
 }
 
-function enterString(str) {
-  for (const char of str) { enterKey(char) }
+function enterString(str, inp = input) {
+  for (const char of str) { enterKey(char, inp) }
 }
 
-function repeatKey(char, count) {
-  for (let i = 0; i < count; i++) { enterKey(char) }
+function repeatKey(char, count, inp = input, controls = {}) {
+  for (let i = 0; i < count; i++) { enterKey(char, controls, inp) }
 }
 
 test('initialized', () => {
@@ -489,6 +490,70 @@ test('deleteEol - wrap over line', () => {
   assert.is(prefillInput.cursorLocation[0], 1)
   assert.is(prefillInput.cursorLocation[1], 6)
   assert.is(prefillInput.inputText, '')
+})
+
+test('deleteSol - whole line', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let testStr = testString(10)
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: testStr })
+  enterKey('ArrowRight', { metaKey: true }, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, '')
+  compareTestString('', machine.screenCells, 200, 40)
+})
+
+test('deleteSol - half line', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let testStr = testString(10)
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: testStr })
+  repeatKey('ArrowRight', 5, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, testStr.substring(5))
+  compareTestString(testStr.substring(5), machine.screenCells, 200, 40)
+})
+
+test('deleteSol - first char', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let testStr = testString(10)
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: testStr })
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, testStr)
+  compareTestString(testStr, machine.screenCells, 200, 40)
+})
+
+test('deleteSol - wrap over line', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let testStr = testString(75)
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: testStr })
+  repeatKey('ArrowRight', 10, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, testStr.substring(10))
+  compareTestString(testStr.substring(10), machine.screenCells, 200, 80)
+})
+
+test('deleteSol - delete past line wrap', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 6 ])
+  let testStr = testString(75)
+  let prefillInput = new FixedInput(machine.currentScreen, { prefill: testStr })
+  repeatKey('ArrowRight', 50, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 6)
+  assert.is(prefillInput.inputText, testStr.substring(50))
+  compareTestString(testStr.substring(50), machine.screenCells, 200, 80)
 })
 
 test.run()

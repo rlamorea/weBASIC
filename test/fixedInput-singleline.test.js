@@ -952,33 +952,55 @@ test('deleteEol - midstring way overflow', () => {
   assert.is(prefillInput.cursorLocation[1], 10)
 })
 
-// test('deleteEol - at eol', () => {
-//   machine.currentScreen.moveTo([ 1, 6 ])
-//   let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'BUNCH OF TEXT' })
-//   for (let i = 0; i < 13; i++) { prefillInput.handleKey({ key: 'ArrowRight' }) }
-//   prefillInput.handleKey({ key: 'd', ctrlKey: true })
-//   assert.is(machine.screenCells[200].innerHTML, 'B')
-//   assert.is(machine.screenCells[204].innerHTML, 'H')
-//   assert.is(machine.screenCells[208].innerHTML, ' ')
-//   assert.is(machine.screenCells[211].innerHTML, 'X')
-//   assert.is(machine.screenCells[212].innerHTML, 'T')
-//   assert.is(prefillInput.cursorLocation[0], 14)
-//   assert.is(prefillInput.cursorLocation[1], 6)
-//   assert.is(prefillInput.inputText, 'BUNCH OF TEXT')
-// })
-//
-// test('deleteEol - wrap over line', () => {
-//   machine.currentScreen.moveTo([ 1, 6 ])
-//   let prefillInput = new FixedInput(machine.currentScreen, { prefill: 'A'.repeat(60) })
-//   assert.is(machine.screenCells[200].innerHTML, 'A')
-//   assert.is(machine.screenCells[259].innerHTML, 'A')
-//   prefillInput.handleKey({ key: 'D', ctrlKey: true })
-//   assert.is(machine.screenCells[200].innerHTML, '')
-//   assert.is(machine.screenCells[259].innerHTML, '')
-//   assert.is(prefillInput.cursorLocation[0], 1)
-//   assert.is(prefillInput.cursorLocation[1], 6)
-//   assert.is(prefillInput.inputText, '')
-// })
+test('deleteSol - whole line', () => {
+  machine.currentScreen.moveTo([ 1, 10 ])
+  let prefill = 'BUNCH OF TEXT'
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill: prefill })
+  enterKey('ArrowRight', { metaKey: true }, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 10)
+  assert.is(prefillInput.inputText, '')
+  compareTestString('', machine.screenCells, 360, 40)
+})
+
+test('deleteSol - whole line overflow', () => {
+  machine.currentScreen.moveTo([ 1, 10 ])
+  let prefill = testString(45)
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill })
+  enterKey('ArrowRight', { metaKey: true }, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 10)
+  assert.is(prefillInput.inputText, '')
+  compareTestString('', machine.screenCells, 360, 40)
+})
+
+test('deleteSol - midstring overflow', () => {
+  machine.currentScreen.moveTo([ 1, 10 ])
+  const prefill = testString(45)
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill })
+  repeatKey('ArrowRight', 10, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 10)
+  assert.is(prefillInput.inputText, prefill.substring(10))
+  compareTestString(prefill.substring(10), machine.screenCells, 360, 40)
+})
+
+test('deleteSol - midstring way overflow', () => {
+  machine.currentScreen.clearViewport()
+  machine.currentScreen.moveTo([ 1, 10 ])
+  const prefill = testString(60)
+  let prefillInput = new FixedInput(machine.currentScreen, { singleLine: true, prefill })
+  repeatKey('ArrowRight', 10, prefillInput)
+  enterKey('s', { ctrlKey: true }, prefillInput)
+  assert.is(prefillInput.inputText, prefill.substring(10))
+  assert.is(prefillInput.cursorLocation[0], 1)
+  assert.is(prefillInput.cursorLocation[1], 10)
+  assert.is(prefillInput.singleLineStartIndex, 0)
+  compareTestString(prefill.substring(10, 50), machine.screenCells, 360, 40)
+})
 
 // TODO: eventually maybe handle error highlighting
 

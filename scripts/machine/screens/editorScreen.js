@@ -383,15 +383,28 @@ export default class EditorScreen extends CharGridScreen {
   keyDown(key) {
     if (key.code === 'KeyI' && key.ctrlKey) {
       this.updateInsertOverwrite('toggle')
+      key.preventDefault()
       return
     }
     if (key.code === 'KeyQ' && key.ctrlKey) {
       this.resetEditor()
+      key.preventDefault()
       return
     }
     const model = this.editor.getModel()
     const position = this.editor.getPosition()
     const lineValue = model.getLineContent(position.lineNumber)
+    if (key.code === 'KeyD' && key.ctrlKey) {
+      key.preventDefault()
+      key.stopPropagation()
+      // delete eol
+      if (position.column >= lineValue.length) { return } // skip this
+      this.editor.executeEdits("", [{
+        range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, lineValue.length + 1),
+        text: ''
+      }])
+      return
+    }
     let cursorStyle = (lineValue.length >= warnLineLength) ? 'block-outline' : 'underline'
 
     let keyOk = false

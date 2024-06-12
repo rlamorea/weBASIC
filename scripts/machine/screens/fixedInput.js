@@ -53,6 +53,7 @@ export default class FixedInput {
       'ArrowUp': this.doArrow, 'ArrowDown': this.doArrow,
       'i': this.doToggleMode, 'I': this.doToggleMode,
       'd': this.doDeleteEOL, 'D': this.doDeleteEOL,
+      's': this.doDeleteSOL, 'S': this.doDeleteSOL,
     }
 
     this.inputHandler = options.inputHandler
@@ -495,6 +496,37 @@ export default class FixedInput {
       let loc = [...this.cursorLocation]
       this.screen.moveTo(loc)
       for (let idx = this.cursorInputIndex; idx < delEndIdx; idx++) {
+        const cell = this.screen.getCell(loc)
+        cell.innerHTML = ''
+        if (this.singleLine && idx === this.singleLineViewLength - 1) { continue }
+        loc = this.screen.advanceCursorFrom(loc)
+      }
+      this.screen.moveTo(this.cursorLocation)
+      this.inputText = newInputText
+    }
+    return true
+  }
+
+  doDeleteSOL(key, evt) {
+    if (!evt.ctrlKey) { return false }
+    if (this.cursorInputIndex > 0) {
+      const newInputText = this.inputText.substring(this.cursorInputIndex)
+      let delEndIdx = this.inputText.length
+      if (this.singleLine) {
+        this.showSingleLineViewPort(newInputText, 0)
+        if (this.cursorLocation[0] < this.singleLineViewLength) {
+          delEndIdx = this.singleLineStartIndex + this.singleLineViewLength
+        } else {
+          delEndIdx = this.cursorInputIndex // nothing to do
+        }
+      } else {
+        this.screen.moveTo(this.cursorStart)
+        this.screen.displayString(newInputText, false)
+        this.cursorLocation = [ ...this.cursorStart ]
+      }
+      let loc = [ ...this.screen.viewportCursorLocation ]
+      this.screen.moveTo(loc)
+      for (let idx = newInputText.length; idx < delEndIdx; idx++) {
         const cell = this.screen.getCell(loc)
         cell.innerHTML = ''
         if (this.singleLine && idx === this.singleLineViewLength - 1) { continue }

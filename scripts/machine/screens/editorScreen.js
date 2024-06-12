@@ -140,10 +140,6 @@ export default class EditorScreen extends CharGridScreen {
       this.editor.addCommand(monaco.KeyCode.Enter, (accessor) => {
         this.processLine()
       })
-      // this.editor.addCommand(
-      //   monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI,
-      //   (accessor) => { this.updateInsertOverwrite('toggle') }
-      // )
       this.editor.onKeyDown((accessor) => {
         this.keyDown(accessor)
       })
@@ -381,6 +377,11 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   keyDown(key) {
+    if (key.code === 'Enter' && key.ctrlKey) {
+      key.preventDefault()
+      key.stopPropagation()
+      return
+    }
     if (key.code === 'KeyI' && key.ctrlKey) {
       this.updateInsertOverwrite('toggle')
       key.preventDefault()

@@ -64,3 +64,9 @@ body { background: $body-bgnd; color: $body-fgnd; }
 }
 
 @keyframes blinker { 50% { opacity: 0; } }
+
+// overriding monaco hover message to just show error message
+.monaco-hover-content {
+  .marker.hover-contents span:last-child { display: none }
+  .status-bar { display: none }
+}

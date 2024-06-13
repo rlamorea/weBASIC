@@ -1,5 +1,6 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
+import { precision } from "./testHelpers.js"
 
 import Machine from './mockMachine.js'
 const machine = new Machine()
@@ -61,8 +62,35 @@ const testCases = [
   { test: 'SQR(144)', value: 12 },
   { test: 'SQR(-144)', error: 'Illegal Value' },
   { test: 'TAN(0)', value: 0 },
-  { test: `TAN(${pi}/2)`, value: 16331239353195370},
+  { test: `TAN(${pi}/2)`, value: 16331239353195370 },
   { test: 'TAN(-1)', value: -1.5574077246549023 },
+  { test: 'FRAC(0)', value: 0},
+  { test: 'FRAC(0.1)', value: 0.1 },
+  { test: 'FRAC(10.1)', value: 0.1 },
+  { test: 'FRAC(-0.1)', value: -0.1 },
+  { test: 'FRAC(-10.1)', value: -0.1 },
+  { test: 'LOG10(1)', value: 0 },
+  { test: 'LOG10(1000)', value: 3 },
+  { test: 'LOG10(0.001)', value: -3 },
+  { test: 'LOG10(0)', error: 'Illegal Value' },
+  { test: 'PI()', value: Math.PI },
+  { test: 'PI(1)', error: 'Syntax Error' },
+  { test: 'ROUND(0)', value: 0 },
+  { test: 'ROUND(100)', value: 100 },
+  { test: 'ROUND(1.1)', value: 1 },
+  { test: 'ROUND(1.5)', value: 2 },
+  { test: 'ROUND(1.9)', value: 2 },
+  { test: 'ROUND(-1.5)', value: -1 },
+  { test: 'ROUND(-1.51)', value: -2 },
+  { test: 'ROUND(-1.1)', value: -1 },
+  { test: 'ROUND(-1.9)', value: -2 },
+  { test: 'ROUND(125, 1)', value: 130 },
+  { test: 'ROUND(1.21242, -3)', value: 1.212 },
+  { test: 'SGN(0)', value: 0 },
+  { test: 'SGN(10)', value: 1 },
+  { test: 'SGN(0.1)', value: 1 },
+  { test: 'SGN(-0.1)', value: -1 },
+  { test: 'SGN(-10)', value: -1 },
 ]
 
 for (const testCase of testCases) {
@@ -73,7 +101,8 @@ for (const testCase of testCases) {
     assert.is(result.error, testCase.error)
     if (!testCase.error) {
       assert.is(result.valueType, testCase.type || 'number')
-      assert.is(result.value, testCase.value)
+      const prec = testCase.precision || 14
+      assert.is(precision(result.value, prec), precision(testCase.value, prec))
     }
   })
 }

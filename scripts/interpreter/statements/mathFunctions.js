@@ -17,6 +17,11 @@ export default class MathFunctions extends Statement {
       'function|SIN' : this.doSIN,
       'function|SQR' : this.doSQR,
       'function|TAN' : this.doTAN,
+      'function|FRAC' : this.doFRAC,
+      'function|LOG10': this.doLOG10,
+      'function|PI': this.doPI,
+      'function|ROUND': this.doROUND,
+      'function|SGN': this.doSGN,
     }
   }
 
@@ -86,5 +91,38 @@ export default class MathFunctions extends Statement {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.valReturn(statement, Math.tan(paramValues[0].value))
+  }
+
+  doFRAC(machine, statement, paramValues, interpreter) {
+    const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
+    if (confirm.error) { return confirm }
+    return Statement.valReturn(statement, paramValues[0].value - Math.trunc(paramValues[0].value))
+  }
+
+  doLOG10(machine, statement, paramValues, interpreter) {
+    const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
+    if (confirm.error) { return confirm }
+    return Statement.valReturn(statement, Math.log10(paramValues[0].value))
+  }
+
+  doPI(machine, statement, paramValues, interpreter) {
+    const confirm = Statement.confirmParams(statement, paramValues, 0, 0, [ ])
+    if (confirm.error) { return confirm }
+    return Statement.valReturn(statement, Math.PI)
+  }
+
+  doROUND(machine, statement, paramValues, interpreter) {
+    const confirm = Statement.confirmParams(statement, paramValues, 1, 2, [ 'number', 'number' ])
+    if (confirm.error) { return confirm }
+    const factor = 10**(paramValues[1]?.value || 0)
+    const result = Math.round(paramValues[0].value / factor) * factor
+    return Statement.valReturn(statement, result)
+  }
+
+  doSGN(machine, statement, paramValues, interpreter) {
+    const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
+    if (confirm.error) { return confirm }
+    const result = paramValues[0].value === 0 ? 0 : (paramValues[0].value < 0 ?  -1 : 1)
+    return Statement.valReturn(statement, result)
   }
 }

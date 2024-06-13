@@ -25,6 +25,56 @@ body { background: $body-bgnd; color: $body-fgnd; }
   bottom: 0; z-index: 85;
 }
 
+.setup {
+  position: fixed; left: 0; top: 0;
+  text-align: center;
+  font-family: monospace;
+
+  button {
+    width: 40%; height: 32pt;
+    border-radius: 8pt;
+    border: solid 4px white;
+    background: white;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    display: block;
+    margin: 8px auto;
+
+    &:hover { border-color: lightgray; }
+    &.alternate {
+      background: black;
+      border-color: gray;
+      color: lightgray;
+
+      &:hover { border-color: white; color: white; }
+    }
+  }
+}
+
+#setup-screen {
+  width: 60%; height: 60%;
+  padding: 20vh 20vw;
+  background: black;
+  z-index: 1000;
+  display: none;
+
+  h1 {
+    font-weight: normal;
+    font-size: 48pt
+  }
+}
+
+#file-system-action {
+  width: 40%; height: 20%;
+  padding: 40vh 30vw;
+  background: rgba(black, 0.5);
+  z-index: 1001;
+  display: none;
+
+  button: { width: 70%; }
+}
+
 .chargrid {
   .cell {
     display: inline-block; margin: 0; padding: 0;
@@ -64,3 +114,9 @@ body { background: $body-bgnd; color: $body-fgnd; }
 }
 
 @keyframes blinker { 50% { opacity: 0; } }
+
+// overriding monaco hover message to just show error message
+.monaco-hover-content {
+  .marker.hover-contents span:last-child { display: none }
+  .status-bar { display: none }
+}

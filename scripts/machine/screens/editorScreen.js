@@ -93,9 +93,17 @@ export default class EditorScreen extends CharGridScreen {
       cell.classList.add('inverted')
     }
     this.moveTo( [ 1, 2 ])
+    const self = this
     this.commandInput = new FixedInput(this, {
       singleLine: true,
-      inputHandler: (input) => { this.handleCommand(input) }
+      inputHandler: (input) => { self.handleCommand(input) },
+      customKeyHandler: (evt) => {
+        if (evt.ctrlKey && (evt.key === 'r' || evt.key === 'R')) {
+          self.machine.reviewRunMode('EDIT')
+          return true
+        }
+        return false
+      }
     })
   }
 
@@ -140,10 +148,6 @@ export default class EditorScreen extends CharGridScreen {
       this.editor.addCommand(monaco.KeyCode.Enter, (accessor) => {
         this.processLine()
       })
-      // this.editor.addCommand(
-      //   monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI,
-      //   (accessor) => { this.updateInsertOverwrite('toggle') }
-      // )
       this.editor.onKeyDown((accessor) => {
         this.keyDown(accessor)
       })
@@ -179,7 +183,11 @@ export default class EditorScreen extends CharGridScreen {
       this.currentErrorMessageKey = null
       this.cursorStyle = 'underline'
       this.firstActivated = true
-      this.currentMode = 'edit'
+      this.currentMode = 'startup'
+
+      if (this.machine.runCodespace.lineNumbers.length > 0) {
+        this.resetEditor()
+      }
     }
     if (active === 'waiting') {
       if (!monaco) return
@@ -243,6 +251,7 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   setMode(newMode) {
+    if (this.currentMode === newMode) return // do nothing
     const commandMode = newMode === 'command'
     this.editor.updateOptions({ readOnly: commandMode })
     this.commandInput.activate(commandMode)
@@ -381,17 +390,55 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   keyDown(key) {
+    if (key.code === 'Enter' && key.ctrlKey) {
+      key.preventDefault()
+      key.stopPropagation()
+      return
+    }
+    if (key.code === 'KeyR' && key.ctrlKey) {
+      key.preventDefault()
+      this.machine.reviewRunMode('EDIT')
+      return
+    }
     if (key.code === 'KeyI' && key.ctrlKey) {
       this.updateInsertOverwrite('toggle')
+      key.preventDefault()
       return
     }
     if (key.code === 'KeyQ' && key.ctrlKey) {
       this.resetEditor()
+      key.preventDefault()
       return
     }
     const model = this.editor.getModel()
     const position = this.editor.getPosition()
     const lineValue = model.getLineContent(position.lineNumber)
+    if (key.code === 'KeyD' && key.ctrlKey) {
+      key.preventDefault()
+      key.stopPropagation()
+      // delete eol
+      if (position.column >= lineValue.length) { return } // skip this
+      this.editor.executeEdits("", [{
+        range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, lineValue.length + 1),
+        text: ''
+      }])
+      return
+    }
+    if (key.code === 'KeyS' && key.ctrlKey) {
+      key.preventDefault()
+      key.stopPropagation()
+      // delete sol
+      if (position.column <= 1) { return }
+      let lineNumber = (lineValue.trim().match(/^\d+/) || [])[0]
+      if (lineNumber && lineValue.trim() === lineNumber.trim()) { lineNumber = null }
+      let startCol = (lineNumber ? lineValue.indexOf(lineNumber) + lineNumber.length + 1 : 1)
+      if (startCol >= position.column) { startCol = 1 }
+      this.editor.executeEdits("", [{
+        range: new monaco.Range(position.lineNumber, startCol, position.lineNumber, position.column),
+        text: ''
+      }])
+      return
+    }
     let cursorStyle = (lineValue.length >= warnLineLength) ? 'block-outline' : 'underline'
 
     let keyOk = false
@@ -472,6 +519,7 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   resetEditor() {
+    if (!this.editor) return
     let program = ''
     for (const lineNumber of this.machine.runCodespace.lineNumbers) {
       program += this.machine.runCodespace.codeLines[lineNumber].text + '\n'
@@ -527,10 +575,9 @@ export default class EditorScreen extends CharGridScreen {
     const result = await this.machine.runLiveCode(input, allowedEditCommands)
     if (result.error) { this.displayError(result) }
     this.commandInput.reset()
-    if (this.currentMode !== 'command') {
-      this.commandInput.activate(false)
-      this.machine.io.setActiveListener(this.commandInput)
-    }
+    let currentMode = this.currentMode
+    this.currentMode = 'reset'
+    this.setMode(currentMode)
     if (result.newMode) {
       this.machine.activateMode(result.newMode)
       if (result.prepNewMode) { await result.prepNewMode() }

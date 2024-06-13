@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "esm": "^3.2.25",
+    "idb-keyval": "^6.2.1",
     "monaco-editor": "^0.48.0"
   }
 }

@@ -162,6 +162,7 @@ const keywords = [
   { keyword: 'RETURN',       coding: 'statement' },
   { keyword: 'RIGHT$',       coding: 'function',           returns: 'string' },
   { keyword: 'RND',          coding: 'function',           returns: 'number' },
+  { keyword: 'ROUND',        coding: 'function',           returns: 'number' },
   { keyword: 'RPAD$',        coding: 'function',           returns: 'string' },
   { keyword: 'RPT$',         coding: 'function',           returns: 'string' },
   { keyword: 'RUN',          coding: 'command' },

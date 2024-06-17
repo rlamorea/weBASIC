@@ -50,7 +50,18 @@ export default class Screen {
 
   getColor(color) { return screenGlobals.color[color] }
 
-  htmlChar(char) { return specialKeyMap[char] || char }
+  htmlChar(char) {
+    let ch = specialKeyMap[char]
+    if (ch === undefined) {
+      const code = char.charCodeAt(0)
+      if (code <= 128) {
+        ch = char
+      } else {
+        ch = `&#${code}`
+      }
+    }
+    return ch
+  }
 
   initialized() { /* do nothing */ }
 

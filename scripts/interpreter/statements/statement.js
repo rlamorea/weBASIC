@@ -38,7 +38,7 @@ export default class Statement {
     }
     for (let idx = 0; idx < paramTypes.length; idx++) {
       if (idx >= paramValues.length) break
-      if (paramValues[idx].valueType !== paramTypes[idx]) {
+      if (paramTypes[idx] !== 'any' && paramValues[idx].valueType !== paramTypes[idx]) {
         return error(ErrorCodes.TYPE_MISMATCH, statement.parameters[idx].tokenStart, statement.parameters[idx].tokenEnd)
       }
     }
@@ -52,6 +52,10 @@ export default class Statement {
       return error(ErrorCodes.ILLEGAL_VALUE, errorStart, errorEnd)
     }
     return { value, valueType: 'number' }
+  }
+
+  static strReturn(statement, str) {
+    return { value: str, valueType: 'string' }
   }
 
   static parseVariableList(tokens, lexifier) {

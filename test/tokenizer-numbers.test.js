@@ -3,14 +3,15 @@ import * as assert from 'uvu/assert';
 
 import nextToken from '../scripts/interpreter/tokenizer.js'
 
-function testToken(input, coding, token) {
+function testToken(input, coding, expToken) {
   let inputTok = input
+  let token = expToken
   if (typeof input === 'string' || input instanceof String) {
     token = input
     inputTok = nextToken(input)
   }
 
-  assert.is(inputTok.token, token)
+  assert.is(inputTok.token, expToken || token)
   assert.is(inputTok.coding, coding)
 }
 
@@ -36,5 +37,23 @@ const numbers = [
 for (const number of numbers) {
   test(`number - ${number}`, () => { testToken(number, 'number-literal') })
 }
+
+const hexNumbers = {
+  '$0': '0',
+  '$00': '0',
+  '$01': '1',
+  '$a': '10',
+  '$A': '10',
+  '$ff': '255',
+  '$FFFF': '65535'
+}
+
+for (const hexVal in hexNumbers) {
+  test(`hex number - ${hexVal}`, () => { testToken(hexVal, 'number-literal', hexNumbers[hexVal]) })
+}
+
+test('naked $', () => {
+  testToken('$', 'char')
+})
 
 test.run()

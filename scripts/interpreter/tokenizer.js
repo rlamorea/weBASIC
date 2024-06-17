@@ -254,6 +254,10 @@ export default function nextToken(restOfLine, tokenStart, skipLineNumber) {
   if (".0123456789".indexOf(leadChar) >= 0) {
     return parseNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd)
   }
+  // check for hexadecimal number
+  if (leadChar === '$') {
+    return parseHexNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd)
+  }
 
   // check for variable name
   if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(leadChar.toUpperCase())>= 0) {
@@ -326,6 +330,28 @@ function parseNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd) {
     }
   }
   return { token: numStr, coding: 'number-literal', restOfLine, tokenStart, tokenEnd, valueType: 'number' }
+}
+
+function parseHexNumberLiteral(leadChar, restOfLine, tokenStart, tokenEnd) {
+  let numDone = false
+  let hexStr = ''
+  while (!numDone && restOfLine.length > 0) {
+    const nextChar = restOfLine[0]
+    if ("0123456789abcdefABCDEF".indexOf(nextChar) >= 0) {
+      hexStr += nextChar
+      tokenEnd += 1
+      restOfLine = restOfLine.substring(1)
+    } else {
+      numDone = true
+    }
+  }
+  if (hexStr.length === 0) {
+    return { token: leadChar, coding: 'char', restOfLine: tokenStart, tokenEnd: tokenEnd + 1 }
+  }
+  // convert hex string to number
+  const numVal = parseInt(`0x${hexStr}`, 16)
+  if (isNaN(numVal) || !isFinite(numVal)) { debugger } // this shouldn't happen
+  return { token: numVal.toString(), hexValue: hexStr, coding: 'number-literal', restOfLine, tokenStart, tokenEnd, valueType: 'number' }
 }
 
 function parseVariableNameOrKeyword(leadChar, restOfLine, tokenStart, tokenEnd) {

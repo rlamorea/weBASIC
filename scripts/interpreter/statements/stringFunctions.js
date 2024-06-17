@@ -14,6 +14,7 @@ export default class StringFunctions extends Statement {
       'function|MID$': this.doMID,
       'function|ASC': this.doASC,
       'function|CHR$': this.doCHR,
+      'function|VAL': this.doVAL,
     }
   }
 
@@ -85,5 +86,9 @@ export default class StringFunctions extends Statement {
     const confirm = Statement.confirmParams(statement, paramValues, 1, 1, [ 'number' ])
     if (confirm.error) { return confirm }
     return Statement.strReturn(statement, String.fromCharCode(paramValues[0].value))
+  }
+
+  doVAL(machine, statement, paramValues, interpreter) {
+    
   }
 }

@@ -149,4 +149,12 @@ test('z1=2:z2=2:ax(z1, z2)=27:print ax(2, 2)', async () => {
   assert.is(machine.screenCells[1].innerHTML, '7')
 })
 
+test('print chr$(48)', async() => {
+  machine.screen.clearViewport()
+  const result = await inter.interpretLine('print chr$(48)')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.screenCells[0].innerHTML, '0')
+})
+
 test.run()

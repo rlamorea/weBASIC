@@ -1,5 +1,5 @@
 import Statement from './statement.js'
-import {ErrorCodes} from "../errors.js";
+import { error, ErrorCodes } from "../errors.js";
 
 function addParam(params, paramTokens, lexifier) {
   if (paramTokens.length > 0) {
@@ -78,6 +78,7 @@ export default class Print extends Statement {
           if (varVal.error) { return varVal }
           stringToDisplay += varVal.value.toString()
           break
+        case 'function':
         case 'calculation':
           const value = interpreter.interpretExpression(parameter)
           if (value.error) { return value }
@@ -88,7 +89,7 @@ export default class Print extends Statement {
           newline = false
           break
         default:
-          return error(ErrorCodes.SYNTAX_ERROR, parameter.tokenStart, parameter.tokenEnd)
+          return error(ErrorCodes.SYNTAX, parameter.tokenStart, parameter.tokenEnd)
       }
     }
     machine.currentScreen.displayString(stringToDisplay, newline)

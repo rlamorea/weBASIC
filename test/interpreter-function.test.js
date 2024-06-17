@@ -1,6 +1,7 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 import { precision } from "./testHelpers.js"
+import { ErrorCodes } from '../scripts/interpreter/errors.js'
 
 import Machine from './mockMachine.js'
 const machine = new Machine()
@@ -91,6 +92,32 @@ const testCases = [
   { test: 'SGN(0.1)', value: 1 },
   { test: 'SGN(-0.1)', value: -1 },
   { test: 'SGN(-10)', value: -1 },
+  { test: 'LEN("")', value: 0 },
+  { test: 'LEN("hello world")', value: 11 },
+  { test: 'CHARAT$("hello world", 5)', value: 'o', type: 'string' },
+  { test: 'CHARAT$("hello world", 0)', error: ErrorCodes.ILLEGAL_INDEX },
+  { test: 'CHARAT$("hello world", 11)', value: 'd', type: 'string' },
+  { test: 'CHARAT$("hello world", 12)', error: ErrorCodes.ILLEGAL_INDEX },
+  { test: 'CHARAT$("", 1)', error: ErrorCodes.ILLEGAL_INDEX },
+  { test: 'LEFT$("hello world", 5)', value: 'hello', type: 'string' },
+  { test: 'LEFT$("hello world", 15)', value: 'hello world', type: 'string' },
+  { test: 'LEFT$("", 1)', value: '', type: 'string' },
+  { test: 'RIGHT$("hello world", 5)', value: 'world', type: 'string' },
+  { test: 'RIGHT$("hello world", 15)', value: 'hello world', type: 'string' },
+  { test: 'RIGHT$("", 1)', value: '', type: 'string' },
+  { test: 'MID$("hello world", 4, 8)', value: 'lo wo', type: 'string' },
+  { test: 'MID$("hello world", 4, 15)', value: 'lo world', type: 'string' },
+  { test: 'MID$("hello world", 4)', value: 'lo world', type: 'string' },
+  { test: 'MID$("hello world", 14)', value: '', type: 'string' },
+  { test: 'MID$("hello world", 14, 18)', value: '', type: 'string' },
+  { test: 'MID$("", 1, 10)', value: '', type: 'string' },
+  { test: 'ASC("")', value: 0 },
+  { test: 'ASC("0")', value: 48 },
+  { test: 'ASC("ABC")', value: 65 },
+  { test: 'ASC("≤")', value: 8804 },
+  { test: 'CHR$(0)', value: String.fromCharCode(0), type: 'string' },
+  { test: 'CHR$(48)', value: '0', type: 'string' },
+  { test: 'CHR$(8804)', value: '≤', type: 'string' }
 ]
 
 for (const testCase of testCases) {
@@ -101,8 +128,12 @@ for (const testCase of testCases) {
     assert.is(result.error, testCase.error)
     if (!testCase.error) {
       assert.is(result.valueType, testCase.type || 'number')
-      const prec = testCase.precision || 14
-      assert.is(precision(result.value, prec), precision(testCase.value, prec))
+      if (testCase.type === 'string') {
+        assert.is(result.value, testCase.value)
+      } else {
+        const prec = testCase.precision || 14
+        assert.is(precision(result.value, prec), precision(testCase.value, prec))
+      }
     }
   })
 }
@@ -162,3 +193,4 @@ test('RND(-2, 3)', () => {
 })
 
 test.run()
+

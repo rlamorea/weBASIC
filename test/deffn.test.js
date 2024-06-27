@@ -100,4 +100,22 @@ test('def fn a(x)=x+1', async () => {
   assert.is(result.error, ErrorCodes.ILLEGAL_REASSIGN)
 })
 
+test( 'def fn fm1(x,z$)=x+LEN(z$)', async() => {
+  const result = await inter.interpretLine('def fn fm1(x,z$)=x+LEN(z$):a=fn fm1(2,"hello")')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.variables.variableLookup['fm1'].valueType, 'function')
+  assert.is(machine.variables.variableLookup['a'].valueType, 'number')
+  assert.is(machine.variables.variableLookup['a'].value, 7)
+})
+
+test('def fn fm2$(x,z$)=RIGHT$(z$,x)', async() => {
+  const result = await inter.interpretLine('def fn fm2$(x,z$)=RIGHT$(z$,x):zz$=fn fm2$(3,"hello")')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.variables.variableLookup['fm2$'].valueType, 'function')
+  assert.is(machine.variables.variableLookup['zz$'].valueType, 'string')
+  assert.is(machine.variables.variableLookup['zz$'].value, "llo")
+})
+
 test.run()

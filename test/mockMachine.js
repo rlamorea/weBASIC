@@ -120,7 +120,7 @@ export default class Machine extends MachineX {
       this.screens = {
         'LIVE': new CharGridScreen('fixed-test', this.div, this, {refCell}),
         'RUN': new CharGridScreen('run-test', this.div, this, {refCell}),
-        'EDIT': { resetEditor: () => { } }
+        'EDIT': { resetEditor: () => { }, div: this.div, activated: (x) => { } }
       }
       for (const s in this.screens) { const sc = this.screens[s]; sc.displayMessage = (m) => { sc.displayString(m) } }
       this.currentScreen = this.screens['LIVE']

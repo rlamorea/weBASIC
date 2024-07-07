@@ -20,6 +20,7 @@ const ErrorCodes = {
   UNCLOSED_PAREN: 'Unclosed Parentheses',
   UNDEF_FUNCTION: 'Undefined Function',
   UNDIM_ARRAY: 'Undimensioned Array',
+  UNEXPECTED_ELSE: 'ELSE without IF',
   UNEXPECTED_NEXT: 'NEXT without FOR',
   UNEXPECTED_RETURN: 'RETURN without GOSUB',
   UNKNOWN_LINE: 'Unknown Line',

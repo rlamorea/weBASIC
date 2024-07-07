@@ -40,6 +40,7 @@ export default class Execution {
       currentLineNumber: -1,
       currentStatementIndex: 0,
       skipTo: null,
+      activeIfCondition: null,
       executionStack: [],
       forStack: [],
       gosubStack: [],
@@ -71,6 +72,7 @@ export default class Execution {
     codespace.currentLineNumber = -1
     codespace.currentStatementIndex = -1
     codespace.skipTo = null
+    codespace.activeIfCondition = null
     codespace.executionStack = []
     codespace.forStack = []
     codespace.gosubStack = []
@@ -159,7 +161,7 @@ export default class Execution {
   async runLoop(carryThrough = {}) {
     let codespace = this.currentCodespace
     if (codespace.codeLine && codespace.currentStatementIndex >= codespace.codeLine.length) {
-      this.skipExecution('eol')
+      this.skipExecution(codespace,'eol')
       codespace.lineNumberIndex += 1
       if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
         return this.stopExecution(codespace, 'end', null, carryThrough.newMode, carryThrough.prepNewMode)
@@ -181,7 +183,7 @@ export default class Execution {
       this.gotBreak = false
       return this.stopExecution(codespace, 'break', statement, 'LIVE')
     }
-    if (!this.skipExecution(statement)) {
+    if (!this.skipExecution(codespace, statement)) {
       const result = await this.interpreter.interpretStatement(statement)
       this.runStatementCount += 1
       if (result.error) {
@@ -298,20 +300,32 @@ export default class Execution {
     return variableName
   }
 
-  setExecutionSkip(skipTo) {
-    if (!Array.isArray(skipTo)) { skipTo = [ skipTo ] }
-    this.skipTo = skipTo
+  setActiveIfCondition(result) {
+    this.activeIfCondition = result
   }
 
-  skipExecution(statement) {
-    if (!this.skipTo) return false
+  getActiveIfCondition() {
+    // NOTE: getting will automatically clear this
+    const result = this.activeIfCondition
+    this.activeIfCondition = null
+    return result
+  }
+
+  setExecutionSkip(codespace, skipTo) {
+    if (!Array.isArray(skipTo)) { skipTo = [ skipTo ] }
+    codespace.skipTo = skipTo
+  }
+
+  skipExecution(codespace, statement) {
+    if (!codespace.skipTo) return false
     let foundEnd = false
-    if (statement === 'eol' && this.skipTo.indexOf('eol') >= 0) {
+    if (statement === 'eol' && codespace.skipTo.indexOf('eol') >= 0) {
       foundEnd = true
-    } else if (this.skipTo.indexOf(`${statement.coding}|${statement.token}`) >= 0) {
+      this.activeIfCondition = null // this clears on eol (if that is a skip condition)
+    } else if (codespace.skipTo.indexOf(`${statement.coding}|${statement.token}`) >= 0) {
       foundEnd = true
     } // NOTE: this means we can only stop at a specific statement
-    if (foundEnd) { this.skipTo = null }
+    if (foundEnd) { codespace.skipTo = null }
     return !foundEnd
   }
 

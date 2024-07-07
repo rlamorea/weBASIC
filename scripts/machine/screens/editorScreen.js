@@ -251,7 +251,11 @@ export default class EditorScreen extends CharGridScreen {
   }
 
   setMode(newMode) {
-    if (this.currentMode === newMode) return // do nothing
+    if (this.currentMode === newMode) {
+      if (newMode !== 'command' || (this.commandInput && this.machine.io.activeListener === this.commandInput)) {
+        return // do nothing
+      }
+    }
     const commandMode = newMode === 'command'
     this.editor.updateOptions({ readOnly: commandMode })
     this.commandInput.activate(commandMode)

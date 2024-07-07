@@ -1,6 +1,7 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 import { ErrorCodes } from '../scripts/interpreter/errors.js'
+import { runProgram, compareTestString } from './testHelpers.js';
 
 import MockMachine from './mockMachine.js'
 import Interpreter from "../scripts/interpreter/interpreter.js";
@@ -37,5 +38,23 @@ for (const testCase of testCases) {
     }
   })
 }
+
+// testing a bug found when getting ready for else
+test('one line if program', async () => {
+  machine.currentScreen.clearViewport()
+  const result = await runProgram(machine, [ '10 if a=0 then print "hello ";:print "world"' ])
+
+  assert.is(result.error, undefined)
+  compareTestString('hello world', machine.screenCells, 0, 40)
+})
+
+test('one line if program - false case', async () => {
+  machine.currentScreen.clearViewport()
+  const result = await runProgram(machine, [ '10 a=1:if a=0 then print "hello ";:print "world"' ])
+
+  assert.is(result.error, undefined)
+  compareTestString('', machine.screenCells, 0, 40)
+})
+
 
 test.run()

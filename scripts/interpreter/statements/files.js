@@ -15,7 +15,11 @@ function parseStringParams(tokens, statement, lexifier, maxParams = 1, minParams
   const stringParams = []
   for (let paramIdx = 0; paramIdx < Math.min(params.length, maxParams); paramIdx++) {
     const paramTokens = params[paramIdx]
-    if (paramTokens > 0) {
+    if (paramTokens.length === 0) {
+      stringParams.push('')
+      continue
+    }
+    if (paramTokens.length > 1) {
       return error(ErrorCodes.SYNTAX, paramTokens[1].tokenStart, paramTokens[1].tokenEnd)
     }
     const param = paramTokens[0]

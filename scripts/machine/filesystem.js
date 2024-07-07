@@ -43,7 +43,7 @@ export default class FileSystem {
     }
   }
 
-  async saveFile(fileContents, filename, path = null) {
+  async saveFile(fileContents, filename) {
     try {
       const response = await window.fetch(`${serverUrl}/save`, {
         method: 'POST',
@@ -58,17 +58,17 @@ export default class FileSystem {
     }
   }
 
-  async saveProgram(codespace, filename, path = null) {
+  async saveProgram(codespace, filename) {
     if (!filename.toLowerCase().endsWith('.bas')) { filename += '.bas' }
     let fileLines = []
     for (const lineNumber of codespace.lineNumbers) {
       fileLines.push(codespace.codeLines[lineNumber].text)
     }
     this.currentFile = filename // TODO: path handling
-    return await this.saveFile(fileLines.join('\n'), filename, path)
+    return await this.saveFile(fileLines.join('\n'), filename)
   }
 
-  async loadFile(filename, path = null) {
+  async loadFile(filename) {
     try {
       const response = await window.fetch(`${serverUrl}/load?filename=${filename}`)
       return await response.json()
@@ -83,9 +83,9 @@ export default class FileSystem {
     this.currentFile = filename
   }
 
-  async loadProgram(filename, path = null) {
+  async loadProgram(filename) {
     if (!filename.toLowerCase().endsWith('.bas')) { filename += '.bas' }
-    return await this.loadFile(filename, path)
+    return await this.loadFile(filename)
   }
 
   async setCurrentDirectory(path) {

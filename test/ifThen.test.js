@@ -40,21 +40,105 @@ for (const testCase of testCases) {
 }
 
 // testing a bug found when getting ready for else
-test('one line if program', async () => {
-  machine.currentScreen.clearViewport()
-  const result = await runProgram(machine, [ '10 if a=0 then print "hello ";:print "world"' ])
+test('no else, to eol - executed', async () => {
+  const result = await runProgram(machine, [ '10 if a=0 then print "hello ";:print "world"', '20 print"foo"' ])
+
+  assert.is(result.error, undefined)
+  compareTestString('hello world', machine.screenCells, 0, 40)
+  compareTestString('foo', machine.screenCells, 40, 40)
+})
+
+test('no else, to eol - skipped', async () => {
+  const result = await runProgram(machine, [ '10 a=1:if a=0 then print "hello ";:print "world"', '20 print"foo"' ])
+
+  assert.is(result.error, undefined)
+  compareTestString('foo', machine.screenCells, 0, 40)
+})
+
+test('else with statement - skipped', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hello";:else print "hi";',
+    '20 print " world"'
+  ])
 
   assert.is(result.error, undefined)
   compareTestString('hello world', machine.screenCells, 0, 40)
 })
 
-test('one line if program - false case', async () => {
-  machine.currentScreen.clearViewport()
-  const result = await runProgram(machine, [ '10 a=1:if a=0 then print "hello ";:print "world"' ])
+test('else with statement - executed', async () => {
+  const result = await runProgram(machine, [
+    '10 a=1:if a=0 then print "hello";:else print "hi";',
+    '20 print " world"'
+  ])
 
   assert.is(result.error, undefined)
-  compareTestString('', machine.screenCells, 0, 40)
+  compareTestString('hi world', machine.screenCells, 0, 40)
 })
 
+test('else with no statement - skipped', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hello";:else:print "hi";',
+    '20 print " world"'
+  ])
+
+  assert.is(result.error, undefined)
+  compareTestString('hello world', machine.screenCells, 0, 40)
+})
+
+test('else with no statement - executed', async () => {
+  const result = await runProgram(machine, [
+    '10 a=1:if a=0 then print "hello";:else:print "hi";',
+    '20 print " world"'
+  ])
+
+  assert.is(result.error, undefined)
+  compareTestString('hi world', machine.screenCells, 0, 40)
+})
+
+test('if and else multi-statement - if case', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hello";:print " there";:else:print "hi";:print " ya";',
+    '20 print " world"'
+  ])
+
+  assert.is(result.error, undefined)
+  compareTestString('hello there world', machine.screenCells, 0, 40)
+})
+
+test('if and else multi-statement - else case', async () => {
+  const result = await runProgram(machine, [
+    '10 a=1:if a=0 then print "hello";:print " there";:else:print "hi";:print " ya";',
+    '20 print " world"'
+  ])
+
+  assert.is(result.error, undefined)
+  compareTestString('hi ya world', machine.screenCells, 0, 40)
+})
+
+test('unexpected else', async () => {
+  const result = await runProgram(machine, [
+    '10 else print "who"'
+  ])
+
+  assert.is(result.error, ErrorCodes.UNEXPECTED_ELSE)
+})
+
+test('unexpected else after good if/else', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hi":else print "lo"',
+    '20 else print "why"'
+  ])
+
+  assert.is(result.error, ErrorCodes.UNEXPECTED_ELSE)
+})
+
+test('unexpected else on newline after if', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hi"',
+    '20 else print "lo"'
+  ])
+
+  assert.is(result.error, ErrorCodes.UNEXPECTED_ELSE)
+})
 
 test.run()

@@ -282,6 +282,21 @@ export default class Lexifier {
     }
   }
 
+  parseTokensUntil(tokens, stopTokens) {
+    if (!Array.isArray(stopTokens)) { stopTokens = [ stopTokens ] }
+    const parsedTokens = []
+    while (tokens.length > 0) {
+      const token = tokens.shift()
+      const tokenKey = `${token.coding}|${token.token}`
+      if (stopTokens.indexOf(tokenKey) >= 0) {
+        tokens.unshift(token)
+        break
+      }
+      parsedTokens.push(token)
+    }
+    return { parsedTokens, restOfTokens: tokens }
+  }
+
   parseExpression(tokens, tokenStart) {
     let clauseTokens = []
     let tokenEnd = tokenStart

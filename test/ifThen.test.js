@@ -115,4 +115,30 @@ test('if and else multi-statement - else case', async () => {
   compareTestString('hi ya world', machine.screenCells, 0, 40)
 })
 
+test('unexpected else', async () => {
+  const result = await runProgram(machine, [
+    '10 else print "who"'
+  ])
+
+  assert.is(result.error, ErrorCodes.UNEXPECTED_ELSE)
+})
+
+test('unexpected else after good if/else', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hi":else print "lo"',
+    '20 else print "why"'
+  ])
+
+  assert.is(result.error, ErrorCodes.UNEXPECTED_ELSE)
+})
+
+test('unexpected else on newline after if', async () => {
+  const result = await runProgram(machine, [
+    '10 a=0:if a=0 then print "hi"',
+    '20 else print "lo"'
+  ])
+
+  assert.is(result.error, ErrorCodes.UNEXPECTED_ELSE)
+})
+
 test.run()

@@ -162,6 +162,7 @@ export default class Execution {
     let codespace = this.currentCodespace
     if (codespace.codeLine && codespace.currentStatementIndex >= codespace.codeLine.length) {
       this.skipExecution(codespace,'eol')
+      codespace.activeIfCondition = null // this clears on eol (if that is a skip condition)
       codespace.lineNumberIndex += 1
       if (codespace.lineNumberIndex >= codespace.lineNumbers.length) {
         return this.stopExecution(codespace, 'end', null, carryThrough.newMode, carryThrough.prepNewMode)
@@ -300,14 +301,14 @@ export default class Execution {
     return variableName
   }
 
-  setActiveIfCondition(result) {
-    this.activeIfCondition = result
+  setActiveIfCondition(codespace, result) {
+    codespace.activeIfCondition = result
   }
 
-  getActiveIfCondition() {
+  getActiveIfCondition(codespace) {
     // NOTE: getting will automatically clear this
-    const result = this.activeIfCondition
-    this.activeIfCondition = null
+    const result = codespace.activeIfCondition
+    codespace.activeIfCondition = null
     return result
   }
 
@@ -321,7 +322,6 @@ export default class Execution {
     let foundEnd = false
     if (statement === 'eol' && codespace.skipTo.indexOf('eol') >= 0) {
       foundEnd = true
-      this.activeIfCondition = null // this clears on eol (if that is a skip condition)
     } else if (codespace.skipTo.indexOf(`${statement.coding}|${statement.token}`) >= 0) {
       foundEnd = true
     } // NOTE: this means we can only stop at a specific statement

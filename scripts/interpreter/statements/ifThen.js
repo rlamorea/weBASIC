@@ -68,7 +68,7 @@ export default class IfThen extends Statement {
     if (conditionValue.valueType !== 'number') {
       return error(ErrorCodes.TYPE_MISMATCH, statement.condition.tokenStart, statement.condition.tokenEnd)
     }
-    machine.execution.setActiveIfCondition(conditionValue.value !== 0)
+    machine.execution.setActiveIfCondition(machine.execution.currentCodespace, conditionValue.value !== 0)
     if (conditionValue.value === 0) {
       machine.execution.setExecutionSkip(machine.execution.currentCodespace,[ 'eol', 'statement|ELSE' ])
       return { done: true }
@@ -83,7 +83,7 @@ export default class IfThen extends Statement {
   }
 
   async doElse(machine, statement, interpreter) {
-    const activeCondition = machine.execution.getActiveIfCondition()
+    const activeCondition = machine.execution.getActiveIfCondition(machine.execution.currentCodespace)
     if (activeCondition === null) {
       return error(ErrorCodes.UNEXPECTED_ELSE, statement.tokenStart, statement.tokenEnd)
     }

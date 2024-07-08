@@ -1,5 +1,5 @@
 import Statement from './statement.js'
-import {ErrorCodes, error, errorat, ErrorCodes as ErroCodes} from '../errors.js'
+import {ErrorCodes, error } from '../errors.js'
 import {test} from "uvu";
 
 function calculateLine(goLine, interpreter) {
@@ -70,7 +70,7 @@ export default class Jumps extends Statement {
     )
     tokens = restOfTokens
     if (parsedTokens.length === 0) {
-      return error(ErroCodes.SYNTAX, statement.tokenEnd, tokens[0].tokenStart)
+      return error(ErrorCodes.SYNTAX, statement.tokenEnd, tokens[0].tokenStart)
     }
     const test = lexifier.parseExpression(parsedTokens, parsedTokens[0].tokenStart)
     if (test.error) { return test }

@@ -65,7 +65,7 @@ export default class Print extends Statement {
           stringToDisplay += parameter.token
           break
         case 'variable-string':
-          const varString = machine.variables.getValue(parameter)
+          const varString = machine.variables.getValue(parameter, interpreter)
           if (varString.error) { return varString }
           stringToDisplay += varString.value
           break

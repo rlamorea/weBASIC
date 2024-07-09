@@ -114,6 +114,13 @@ test('string index', async () => {
   assert.is(result.error, ErrorCodes.TYPE_MISMATCH)
 })
 
+test('array index', async() => {
+  const testCode = 'b=0:for ar(1)=1 to 7:b=b+1:next'
+  const result = await machine.runLiveCode(testCode)
+
+  assert.is(result.error, ErrorCodes.SYNTAX)
+})
+
 // breakable infinite for loop
 test('break infinite loop', async () => {
   sendKey(machine, 'Escape', 25)

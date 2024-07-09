@@ -8,6 +8,7 @@ import { version } from '../../config.js'
 
 import Lexifier from '../../interpreter/lexifier.js'
 import { processLineActions } from "./editorLogic.js"
+import { weBASICLanguage, weBASICTheme, weBASICConfig } from "./weBASICLanguage.js";
 
 const defaultMessage = `weBASIC v${version} EDIT mode`
 const maximumLineLength = 160
@@ -69,19 +70,8 @@ export default class EditorScreen extends CharGridScreen {
     } else {
       import('monaco-editor').then( (module) => {
         monaco = module
-
-        // NOTE: full list of colors here - https://github.com/microsoft/monaco-editor/issues/1631
-        monaco.editor.defineTheme('weBASIC', {
-          base: 'vs', inherit: true, rules: [],
-          colors: {
-            'editor.background': '#000000',
-            'editor.foreground': '#ffffff',
-            'editorCursor.foreground': '#ffffff',
-          }
-        })
-        // TODO: using model markers owner as "eslint" because it works, but need own this eventually
       })
-      }
+    }
   }
 
   initialized() {
@@ -112,6 +102,11 @@ export default class EditorScreen extends CharGridScreen {
       setTimeout(() => { this.activated('waiting') }, 50)
     } else if (active === true && !this.firstActivated) {
       if (!this.mockEditor) {
+        monaco.languages.register({ id: 'weBASIC' })
+        monaco.languages.setMonarchTokensProvider('weBASIC', weBASICLanguage)
+        monaco.languages.setLanguageConfiguration('weBASIC', weBASICConfig)
+        monaco.editor.defineTheme('weBASIC-theme', weBASICTheme)
+
         this.editorDiv = document.createElement('div')
         this.editorDiv.style.position = 'absolute'
         this.editorDiv.style.top = `-${this.panelSettings.borderOffset.bottom}px`
@@ -139,9 +134,10 @@ export default class EditorScreen extends CharGridScreen {
           scrollBeyondLastLine: false,
           scrollBar: {horizontal: "hidden"},
           wordWrap: 'on',
-          theme: 'weBASIC',
+          theme: 'weBASIC-theme',
           value: '',
-          language: 'weBASIC'
+          language: 'weBASIC',
+          bracketPairColorization: { enabled: false },
         });
       }
 

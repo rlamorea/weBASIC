@@ -213,6 +213,8 @@ const keywords = [
   { keyword: 'WRITELN',      coding: 'statement' }
 ]
 
+export const keywordList = keywords.map((x) => x.keyword)
+
 export default function nextToken(restOfLine, tokenStart, skipLineNumber) {
   tokenStart = (tokenStart === null) ? 0 : tokenStart
   const startOfLine = (tokenStart === 0)

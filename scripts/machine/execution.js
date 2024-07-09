@@ -332,6 +332,8 @@ export default class Execution {
   startForLoop(indexVariable, startValue, endValue, stepValue) {
     if (!this.currentCodespace) { debugger }
     this.currentCodespace.forStack.push({
+      codeLine: this.currentCodespace.codeLine,
+      lineNumberIndex: this.currentCodespace.lineNumberIndex,
       lineNumber: this.currentCodespace.currentLineNumber,
       statementIndex: this.currentCodespace.currentStatementIndex,
       indexVariable, startValue, endValue, stepValue
@@ -358,6 +360,8 @@ export default class Execution {
     if ((stepVal >= 0 && indexValue.value <= forLoop.endValue.value) ||
         (stepVal < 0 && indexValue.value >= forLoop.endValue.value)) {
       this.currentCodespace.forStack.push(forLoop)
+      this.currentCodespace.codeLine = forLoop.codeLine
+      this.currentCodespace.lineNumberIndex = forLoop.lineNumberIndex
       this.currentCodespace.currentLineNumber = forLoop.lineNumber
       this.currentCodespace.currentStatementIndex = forLoop.statementIndex
     }

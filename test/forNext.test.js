@@ -1,7 +1,7 @@
 import { test } from 'uvu';
 import * as assert from 'uvu/assert';
 import { ErrorCodes } from '../scripts/interpreter/errors.js'
-import { assertFloat, sendKey } from './testHelpers.js'
+import {assertFloat, sendKey, runProgram, compareTestString } from './testHelpers.js'
 
 import MockMachine from './mockMachine.js'
 import Interpreter from "../scripts/interpreter/interpreter.js";
@@ -121,6 +121,17 @@ test('break infinite loop', async () => {
   const result = await machine.runLiveCode(testCode)
 
   assert.is(result.error, ErrorCodes.BREAK)
+})
+
+test('multiple line loop', async () => {
+  const result = await runProgram(machine, [
+    '10 FOR x = 1 to 5',
+    '20 PRINT x;',
+    '30 NEXT'
+  ])
+
+  assert.is(result.error, undefined)
+  compareTestString('12345', machine.screenCells, 0, 40)
 })
 
 test.run()

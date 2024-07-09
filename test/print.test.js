@@ -157,4 +157,12 @@ test('print chr$(48)', async() => {
   assert.is(machine.screenCells[0].innerHTML, '0')
 })
 
+test('print ary$(5)', async() => {
+  machine.screen.clearViewport()
+  const result = await inter.interpretLine('ary$(5)="B":print ary$(5)')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.screenCells[0].innerHTML, 'B')
+})
+
 test.run()

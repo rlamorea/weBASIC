@@ -81,14 +81,15 @@ export default class StringFunctions extends Statement {
     if (confirm.error) { return confirm }
     const midStart = paramValues[1].value
     const str = paramValues[0].value
-    const midEnd = paramValues[2]?.value || str.length
+    let midEnd = paramValues[2]?.value || str.length + 1
     if (midStart < 1) { return error(ErrorCodes.ILLEGAL_VALUE, statement.parameters[1].tokenStart, statement.parameters[1].tokenEnd) }
     if (midEnd < 1) { return error(ErrorCodes.ILLEGAL_VALUE, statement.parameters[2].tokenStart, statement.parameters[2].tokenEnd) }
     let result = str
+    if (midEnd < midStart) { midEnd = Math.max(midStart, str.length + 1) }
     if (midStart > str.length) {
       result = ''
     } else {
-      result = str.substring(midStart - 1, midEnd)
+      result = str.substring(midStart - 1, midEnd - 1)
     }
     return Statement.strReturn(statement, result)
   }

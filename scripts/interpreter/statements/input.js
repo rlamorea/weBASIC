@@ -84,6 +84,7 @@ export default class Input extends Statement {
       }
     }
     const inputVariables = Statement.parseVariableList(tokens, lexifier)
+    if (inputVariables.error) { return inputVariables }
     if (inputVariables.length === 0) {
       return error(ErrorCodes.SYNTAX, statement.tokenStart, tokenEnd)
     }

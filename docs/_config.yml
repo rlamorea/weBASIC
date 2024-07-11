@@ -22,14 +22,14 @@ title: weBASIC
 email: rlamorea@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   A BASIC interpreter for the browser that is both retro and modern
-baseurl: "/" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "/weBASIC" # the subpath of your site, e.g. /blog
+url: "https://rlamorea.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  rlamorea
 
 # Build settings
-theme: just-the-docs
 remote_theme: just-the-docs/just-the-docs
 search_enabled: false
+theme: just-the-docs
 
 callouts:
   note:

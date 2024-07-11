@@ -11,7 +11,7 @@ of a retro computer, the entire "computer" it JS code to render to a browser win
 
 This is a supplementary project for the "Rick Says Hello World" YouTube channel.
 
-To learn more, please check out the content there, or read more on the [home page](/)
+To learn more, please check out the content there, or read more on the [home page](index)
 
 ## Why BASIC?
 

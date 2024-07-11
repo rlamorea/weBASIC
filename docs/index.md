@@ -16,7 +16,7 @@ _A BASIC that runs in the browser that is both retro and modern_
 
 weBASIC has been created to provide an introductory programming language to host on a modern computer.
 
-If you really want to learn more, read about the language and the ideas behind it [here](/about).
+If you really want to learn more, read about the language and the ideas behind it [here](about).
 
 ## Where to Start?
 
@@ -27,7 +27,7 @@ There are two forms of weBASIC:
 
 The fastest way to get started is to run the embedded version.
 
-Simply [GO HERE](https://localhost:6510)
+Simply [GO HERE](todo)
 
 You will start out in the *LIVE* mode:
 
@@ -42,10 +42,10 @@ A cursor (blinking underline) shows it is waiting for you to type a command.
 
 At this point, you can choose where to go next:
 
- - [Getting Started with weBASIC](/getting-started)
- - [Your First weBASIC Program](/first-program)
- - [Learn the weBASIC Language](/language)
- - [weBASIC reference](/reference/)
+ - [Getting Started with weBASIC](getting-started)
+ - [Your First weBASIC Program](first-program)
+ - [Learn the weBASIC Language](language)
+ - [weBASIC reference](reference/)
 
 [top](#welcome-to-webasic)
 

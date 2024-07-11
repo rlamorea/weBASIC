@@ -23,7 +23,7 @@ In a world of mouse pointers and touch interface, this might seem a little old f
 
 However, if you are going to write code, you are going to have to type it in.
 Further, dealing with a computer from a "command line" is common and expected for "computer people."
-That's why you're hear right?
+That's why you're here right?
 
 So let's type something in:
 
@@ -231,51 +231,42 @@ READY.
 
 The final answer.
 
-<div class="sidebar">
-<h5>Thinking Like a Computer</h5>
-
-Take a look at the following equation:
-
-<pre>
-PRINT 4--2
-</pre>
-
-That might look like a typo at first. Two minus signs together like that?
-
-But the computer is going to see it by priority of operators. Even though the minus sign (-)
-pulls double duty as both the subtraction operator and the negation operator, the computer
-will figure it out.
-
-<pre class="callout"><i>4</i>--2</pre>
-
-As it scans from left to right, it hits the first minus sign (-). Since it has just
-seen a number (4), it knows this must be an operator: subtraction.
-
-<pre class="callout"><i>4</i><b>-</b>-2</pre>
-
-Now the computer is going to find the operands -- what is on the left and right of this
-operator that needs to be subtracted?  Looking left it sees the 4. Looking right it sees...
-a minus sign (-).
-
-<pre class="callout">4-<b>-</b>2</pre>
-
-But since it is looking for a value (not an operator), it assumes that must be a negation
-operation, which itself looks right to see the 2, so that means the right operand of our
-subtraction is the result of "negate two" (-2).
-
-<pre class="callout"><i>4<b>-</b>-2</i></pre>
-
-From there, the computer steps back to the subtraction operation, which is now 
-"four minus negative two" (4 - -2), and totals it up to get:
-
-<pre>
-PRINT 4--2
-6
-
-READY.
-<cursor>_</cursor>
-</pre>
-</div>
+{: .note-title }
+> Thinking Like a Computer
+> 
+> Take a look at the following equation:
+> 
+> <pre>PRINT 4--2</pre>
+> 
+> That might look like a typo at first. Two minus signs together like that?
+> 
+> But the computer is going to see it by priority of operators. Even though the minus sign (-)
+> pulls double duty as both the subtraction operator and the negation operator, the computer
+> will figure it out.
+> 
+> <pre class="callout"><i>4</i>--2</pre>
+> 
+> As it scans from left to right, it hits the first minus sign (-). Since it has just
+> seen a number (4), it knows this must be an operator: subtraction.
+> 
+> <pre class="callout"><i>4</i><b>-</b>-2</pre>
+>
+> Now the computer is going to find the operands -- what is on the left and right of this
+> operator that needs to be subtracted?  Looking left it sees the 4. Looking right it sees...
+> a minus sign (-).
+> 
+> <pre class="callout">4-<b>-</b>2</pre>
+> 
+> But since it is looking for a value (not an operator), it assumes that must be a negation
+> operation, which itself looks right to see the 2, so that means the right operand of our
+> subtraction is the result of "negate two" (-2).
+> 
+> <pre class="callout"><i>4<b>-</b>-2</i></pre>
+> 
+> From there, the computer steps back to the subtraction operation, which is now 
+> "four minus negative two" (4 - -2), and totals it up to get:
+> 
+> <pre>PRINT 4--2<br/>6<br/>READY.<br/><cursor>_</cursor></pre>
 
 ### What's Your Function?
 
@@ -347,9 +338,9 @@ is useful if you can't keep it and reuse it.
 
 That means it is time to write some programs.
 
-[Why don't you go write one?](first-program.md)
+[Why don't you go write one?](/first-program)
 
-- [Home](index.md)
-- [Your First weBASIC Program](first-program.md)
-- [Learn the weBASIC Language](./language.md)
-- [weBASIC reference](./reference/index.md)
+- [Home](/)
+- [Your First weBASIC Program](/first-program)
+- [Learn the weBASIC Language](/language)
+- [weBASIC reference](/reference/)

@@ -42,10 +42,10 @@ A cursor (blinking underline) shows it is waiting for you to type a command.
 
 At this point, you can choose where to go next:
 
- - [Getting Started with weBASIC](getting-started.md)
- - [Your First weBASIC Program](first-program.md)
- - [Learn the weBASIC Language](./language.md)
- - [weBASIC reference](./reference/index.md)
+ - [Getting Started with weBASIC](/getting-started)
+ - [Your First weBASIC Program](/first-program)
+ - [Learn the weBASIC Language](/language)
+ - [weBASIC reference](/reference/)
 
 [top](#welcome-to-webasic)
 

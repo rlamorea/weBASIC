@@ -338,9 +338,9 @@ is useful if you can't keep it and reuse it.
 
 That means it is time to write some programs.
 
-[Why don't you go write one?](/first-program)
+[Why don't you go write one?](first-program)
 
-- [Home](/)
-- [Your First weBASIC Program](/first-program)
-- [Learn the weBASIC Language](/language)
-- [weBASIC reference](/reference/)
+- [Home](index)
+- [Your First weBASIC Program](first-program)
+- [Learn the weBASIC Language](language)
+- [weBASIC reference](reference/)

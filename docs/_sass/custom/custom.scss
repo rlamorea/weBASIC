@@ -1,0 +1,8 @@
+cursor { animation: blinker 1s steps(1) infinite; }
+@keyframes blinker { 50% { opacity: 0; } }
+
+pre { font-family: monospace; font-size: larger; background: black; color: white; padding: 4px; }
+pre.callout { color: gray; }
+pre.callout b { color: yellow; }
+pre.callout i { color: yellowgreen; font-style: normal; }
+

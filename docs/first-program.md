@@ -1,8 +1,14 @@
+---
+layout: default
+title: Your First Program
+nav_order: 3
+---
+
 # Your First Program
 
 The point of weBASIC is to let you tell your computer to do something.
 
-You may already have tried out [doing this directly](./getting-started.md), but if you want to 
+You may already have tried out [doing this directly](getting-started.md), but if you want to 
 do anything truly interesting, you'll need to write a _program_.
 
 A **PROGRAM** is a set of instructions for the computer to execute in some specific order.
@@ -18,61 +24,61 @@ Let's get started!
 - [**Thrown for a Loop** - looping execution](#thrown-for-a-loop)
 - [Where To Next?](#where-to-next)
 
-## [Taking a Hard Line]
+## Taking a Hard Line
 
 (line numbers, goto)
 
-## [Say Hello]
+## Say Hello
 
 (execution)
 
-## [Save Yourself]
+## Save Yourself
 
 (saving programs)
 
-## [Bring That Back!]
+## Bring That Back!
 
 (new and load)
 
-## [Variable Nature]
+## Variable Nature
 
 (variables)
 
-### [Know Your Numbers]
+### Know Your Numbers
 
 numbers vs integers
 
-### [Stringing ALong]
+### Stringing ALong
 
 strings
 
-## [Critical Condition]
+## Critical Condition
 
 (if/then)
 
-### [True or False?]
+### True or False?
 
 0 vs 1, conditional operators
 
-### [It's Very Logical]
+### It's Very Logical
 
 logical operators
 
-### [Just Go]
+### Just Go
 
 THEN <line>
 
-### [Know Your Limits]
+### Know Your Limits
 
 THEN applies to the end of the line.]
 
-## [Thrown for a Loop]
+## Thrown for a Loop
 
 (for/to/next)
 
-### [Watch Your Step]
+### Watch Your Step
 
 (step)
 
-## [Where To Next?]
+## Where To Next?
 

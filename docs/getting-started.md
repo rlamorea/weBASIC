@@ -1,13 +1,8 @@
-<style>
-cursor { animation: blinker 1s steps(1) infinite; }
-@keyframes blinker { 50% { opacity: 0; } }
-pre { font-family: monospace; font-size: larger; background: black; color: white; padding 4px; }
-pre.callout { color: gray; }
-pre.callout b { color: yellow; }
-pre.callout i { color: yellowgreen; font-style: normal; }
-div.sidebar { border-top: solid 2px black; border-bottom: solid 2px black; padding: 5px 0; font-size: smaller; }
-div.sidebar h5 { text-align: center; margin: 0 0 5px; }
-</style>
+---
+layout: default
+title: Getting Started
+nav_order: 2
+---
 
 # Getting Started with weBASIC
 
@@ -324,7 +319,7 @@ So the sine of pi is 0, but 3.1415926 is not _quite_ pi. The sine of 3.1415926 i
 A very small number, as mentioned above. If you take the sine of pi on, for example, the
 built-in scientific calulator on a mac, you get:
 
-![0.000000053589793](./assets/mac-calc-sine.png)
+![0.000000053589793](assets/mac-calc-sine.png)
 
 weBASIC returns a value of:
 
@@ -341,7 +336,7 @@ So:
 
  - <tt>100 = 1&times;10<sup>2</sup> = 1e2</tt>
  - <tt>0.01 = 1&times;10<sup>-2</sup> = 1e-2</tt>
- - <tt>0.000000053589793 = 5.3589793&times;10<sup>-8 = 5.3589793170057245e-8</sup></tt>
+ - <tt>0.000000053589793 = 5.3589793&times;10<sup>-8</sup> = 5.3589793170057245e-8</tt>
 
 (well, on that last one, the weBASIC answer has more significant digits, but is effectively the same)
 
@@ -352,9 +347,9 @@ is useful if you can't keep it and reuse it.
 
 That means it is time to write some programs.
 
-[Why don't you go write one?](./first-program.md)
+[Why don't you go write one?](first-program.md)
 
-- [Home](./index.md)
-- [Your First weBASIC Program](./first-program.md)
+- [Home](index.md)
+- [Your First weBASIC Program](first-program.md)
 - [Learn the weBASIC Language](./language.md)
 - [weBASIC reference](./reference/index.md)

@@ -1,8 +1,13 @@
-# weBASIC
+# [weBASIC]
 
 _A BASIC that runs in the browser that is both retro and modern_
 
-## Why weBASIC?
+- [Why weBASIC](#why-webasic)
+- [Getting Started](#getting-started)
+- [About the Language](#about-the-language)
+- [Troubleshooting](#troubleshooting)
+
+## [Why weBASIC?]
 
 weBASIC has been created to provide an introductory programming language to host on a modern computer.
 
@@ -45,13 +50,15 @@ One potential reason for this is that there has been a loss of connection betwee
 how software in general works. Not understanding the basics (pun intended) of programming makes modern
 software feel like magic.
 
-weBASIC is an attempt to address this -- but giving a "programming first" environment to a modern computer,
+weBASIC is an attempt to address this -- by giving a "programming first" environment to a modern computer,
 using a proven introductory programming language, and providing access to the features of that computer that
 people enjoy.
 
 Welcome to weBASIC. Your computer is waiting for you. Tell it what you want it to do.
 
-## Getting Started
+[top](#webasic)
+
+## [Getting Started]
 
 There are two forms of weBASIC:
 
@@ -75,7 +82,9 @@ At this point, you can choose where to go next:
  - [Learn the weBASIC Language](./language.md)
  - [weBASIC reference](./reference/index.md)
 
-## About the Language
+[top](#webasic)
+
+## [About the Language]
 
 BASIC was introduced in 1964 as a language for beginners. It steals a command set largely from FORTRAN --
 a contemporary programming language that had a command set that was a nice balance between efficiency and
@@ -103,12 +112,16 @@ computer, explore important computer science concepts, and explore the capabilit
 
 So...go EXPLORE!
 
-## Troubleshooting
+[top](#webasic)
+
+## [Troubleshooting]
 
 As issues arise with weBASIC, look here for information as how to work around them (until, hopefully, they
 are addressed in a subsequent update).
 
-### Mac and the Keyboard
+- [Mac and the Keyboard](#mac-and-the-keyboard)
+
+### [Mac and the Keyboard]
 
 By default the CTRL left/right arrow key sequences are mapped
 to Mission Control. As a result, they never get to the browser.
@@ -121,3 +134,5 @@ problems, you may need to search through keyboard settings
 on the Mac and in your applications to find and disable/remap
 sequences that prevent the proper use of weBASIC inputs and
 editing.
+
+[top](#webasic)

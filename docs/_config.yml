@@ -33,7 +33,7 @@ search_enabled: false
 callouts:
   note:
     title: Note
-    color: grey-lt
+    color: purple
 
 # Exclude from processing.
 # The following items will not be processed, by default.

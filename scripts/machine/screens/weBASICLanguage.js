@@ -2,18 +2,22 @@ import { keywordList } from '../../interpreter/tokenizer.js'
 
 const weBASICLanguage  = {
   keywords: keywordList,
+  ignoreCase: true,
   tokenizer: {
     root: [
       [ /^\d+/, 'linenumber' ],
-      [ /(`|[rR][eE][mM]).*/, 'comment' ],
-      [ /[a-zA-Z][\w$%]*/, {
+      [ /(?<=goto *)\d+/, 'linenumber' ],
+      [ /(?<=gosub *)\d+/, 'linenumber' ],
+      [ /(?<=then *)\d+/, 'linenumber' ],
+      [ /(`|rem).*/i, 'comment' ],
+      [ /[a-z][\w$%]*/, {
         cases: {
           '@keywords': 'keyword',
           '@default': 'variable'
         }
       } ],
       [ /".*?"/, 'string' ],
-      [ /[+-]?\d*\.?\d+([eE]?[+-]?\d+)?/, 'number' ],
+      [ /[+-]?\d*\.?\d+(e?[+-]?\d+)?/, 'number' ],
       [ /[\(\)]/, 'paren' ],
     ]
   }

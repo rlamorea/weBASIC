@@ -34,9 +34,6 @@ PRINT "Hello World"
 You will get something like this:
 
 <pre>
-weBASIC v0.5
-
-READY.
 PRINT "Hello World"
 Hello World
 
@@ -45,6 +42,24 @@ READY.
 </pre>
 
 _Congratulations_! You've made the computer do something for you.
+
+{: .note-title }
+> Keywords and CAPS
+> 
+> In the examples of weBASIC in the documentation you will notice that many of the words will be
+> in ALL CAPS. These are "keywords" -- words that are part of the weBASIC language.
+> 
+> But you don't actually need to type them in that way. weBASIC will recognize keywords and
+> automatically convert them to ALL CAPS. So, for example, you might type:
+> 
+> <pre>print "Hello World"</pre>
+>
+> And when you hit the return (or ENTER) key, you will see this change to:
+> 
+> <pre>PRINT "Hello World"<br/>Hello World<br/>?<br/>READY.<br/><cursor>_</cursor></pre>
+>
+> If weBASIC _doesn't_ convert a word you expect to be converted, that probably means you typed
+> it in a way where it didn't recognize it.
 
 ## A Calculated Tutorial
 

@@ -6,7 +6,19 @@ pre.callout { color: gray; }
 pre.callout b { color: yellow; }
 pre.callout i { color: yellowgreen; font-style: normal; }
 
+error { text-decoration: red wavy underline; }
+
 h4 { font-size: 0.9rem !important; font-weight: bold; }
 blockquote.note-title > p:first-child { color: black; font-size: 0.9rem; }
 
 img { max-width: 70%; }
+
+rev { color: black; background: white; display: block; width: 100%; }
+
+// weBASIC code highlighting
+lno { color: #FAEBD7; }
+keyw { color: #d2691e; text-transform: uppercase; }
+var { color: #00CED1; }
+str { color: #FFD700; }
+cmt { color: #A9A9A9; }
+num { color: #BA55D3; }

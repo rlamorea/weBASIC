@@ -2,9 +2,9 @@ cursor { animation: blinker 1s steps(1) infinite; }
 @keyframes blinker { 50% { opacity: 0; } }
 
 pre, code { font-family: monospace; font-size: larger; background-color: black !important; color: white; padding: 4px; }
-pre.callout { color: gray; }
-pre.callout b { color: yellow; }
-pre.callout i { color: yellowgreen; font-style: normal; }
+
+pre:has( code.language-mermaid ) { background-color: white !important; text-align: center; }
+code.language-mermaid { background-color: white !important; }
 
 error { text-decoration: red wavy underline; }
 

@@ -213,11 +213,15 @@ That happens to be line 20 again.
 And line 20 says to go back to line 10.
 
 ```mermaid
+%%{ init: { 'flowchart': { 'curve': 'stepAfter' } } }%% 
 flowchart TD
-    line1(10 PRINT "Hello World")
+    line1["10 PRINT &quot;Hello World&quot;"]
     line2(20 GOTO 10)
     line1 --> line2
     line2 --> line1
+    
+    style line1 fill:black,color:#d2691e
+    style line2 fill:black,color:#d2691e
 ```
 
 Repeat forever.

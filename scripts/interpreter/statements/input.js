@@ -12,6 +12,7 @@ let rejectPromise = null
 
 function handleInput(machine, statement, interpreter, input) {
   machine.execution.setCurrentInput()
+  machine.currentScreen.newline()
   let values = input.split(',')
   let err = null
   let tokenStart = 0

@@ -70,6 +70,8 @@ test('input "prompt" a', async () => {
   assert.is(machine.screenCells[0].innerHTML, 'p')
   assert.is(machine.screenCells[5].innerHTML, 't')
   assert.is(machine.screenCells[6].innerHTML, '2')
+  assert.is(machine.currentScreen.cursorLocation[0], 1)
+  assert.is(machine.currentScreen.cursorLocation[1], 2)
 
   let varD = { token: 'a', coding: 'variable-number', valueType: 'number' }
   let val = machine.variables.getValue(varD, inter)

@@ -1,7 +1,7 @@
 {
   "name": "WeBASIC",
-  "version": "1.0.0",
-  "description": "A BASIC for a modern WEB",
+  "version": "0.5.0",
+  "description": "A BASIC for a modern web",
   "type": "module",
   "scripts": {
     "test": "npx uvu test",

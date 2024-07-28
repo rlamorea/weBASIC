@@ -251,7 +251,7 @@ It is used to show error messages and things like that.
 
 The very bottom line is the **Command Line**.
 
-To activate it, press the esc (or ESC or ESCAPE) key (which is almost always in the top left corner
+To activate it, press the escape (or esc or ESCAPE) key (which is almost always in the top left corner
 of your keyboard). You should notice that the blinking cursor should vanish in the upper portion
 of the screen (where your program was being edited) and now appear at the bottom of the screen.
 
@@ -304,7 +304,7 @@ want to stop your program.
 
 But your program wasn't written to have any place to actually stop. It is in an infinite loop.
 
-To stop your program at any time, hit the esc (or ESC or ESCAPE) key. This will happen:
+To stop your program at any time, pres the escape key. This will happen:
 
 <pre>
 Break in line 10
@@ -314,7 +314,7 @@ READY.
 </pre>
 
 You're back in LIVE mode, and the program has stopped. You might see "Break in line 20"
-instead. It all depends on the timing of which statement was being executed when you hit 
+instead. It all depends on the timing of which statement was being executed when you pressed 
 the escape key.
 
 ## Save Yourself
@@ -389,7 +389,7 @@ And you're back to viewing your program:
 
 You've saved it, though. So why keep it around? Let's get rid of it so we can move on.
 
-Hit the escape key (esc, ESC, ESCAPE) to get back to the EDIT command line, and then type:
+Press the escape key (esc, ESC, ESCAPE) to get back to the EDIT command line, and then type:
 
 <pre>
 NEW
@@ -486,7 +486,7 @@ Enter the number you want to raise to a power
 ? <cursor>_</cursor>
 </pre>
 
-If you type in `3.5` and hit return (or ENTER), you'll end up back in EDIT mode.
+If you type in `3.5` and press the return (or ENTER) key, you'll end up back in EDIT mode.
 
 Nothing seemed to happen.
 
@@ -569,7 +569,7 @@ If you put a message (in quotes -- just like `PRINT`) before the variable you wa
 user to input, that message will be displayed. The semicolon (;) separates your message
 from the variable you want to fill in.
 
-You can see this by `RUN`ing just this one line. (Be sure to hit the escape key to get
+You can see this by `RUN`ing just this one line. (Be sure to press the escape key to get
 back to the EDIT command line.)
 
 <pre>
@@ -585,7 +585,7 @@ The result will be:
 Enter the power to raise to? <cursor>_</cursor>
 </pre>
 
-You can respond by typing in `7.2` (and hitting return to enter it in).
+You can respond by typing in `7.2` (and pressing the return key to enter it in).
 
 You're back to EDIT mode again. If you want, you could go back to `LIVE` mode and `PRINT power`
 to see the value of that variable as well.
@@ -594,7 +594,7 @@ to see the value of that variable as well.
 
 Now that you know how, it seems like lines 10 and 20 could be collapsed into a single line, right?
 
-You can do this by going to `EDIT` mode. If you are on the command line, hit the escape key
+You can do this by going to `EDIT` mode. If you are on the command line, press the escape key
 to go back to the code editor.
 
 Now, on an empty line you can type:
@@ -713,7 +713,7 @@ nothing will simply move to the next line, leaving a blank line behind.
 
 Next we `INPUT` a variable `pause`. But the fact is that we don't care what the value of
 `pause` is. When we ran our program earlier, when it asked for a value, it waited until we
-hit the return key to continue. So why not use `INPUT` to wait for that return key? In the
+pressed the return key to continue. So why not use `INPUT` to wait for that return key? In the
 meantime, the result is being displayed.
 
 {: .note-title }

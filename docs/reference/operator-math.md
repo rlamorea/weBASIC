@@ -19,9 +19,9 @@ Jump to:
 - [**-** - negate](#--negate)
 - [**( )** - parentheses](#-)
 
-## ^ (power)
+## `^` (power)
 
-## * (multiply)
+## `*` (multiply)
 
 ## / (divide)
 

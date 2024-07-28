@@ -102,6 +102,7 @@ export default class ExecStatements extends Statement {
     }
     machine.execution.resetCodespaceToNew(machine.runCodespace)
     machine.fileSystem.setCurrentFile() // clear current file on NEW
+    machine.screens['EDIT'].resetEditor()
     return { done: true }
   }
 }

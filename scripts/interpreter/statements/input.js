@@ -12,13 +12,15 @@ let rejectPromise = null
 
 function handleInput(machine, statement, interpreter, input) {
   machine.execution.setCurrentInput()
+  machine.currentScreen.newline()
   let values = input.split(',')
   let err = null
   let tokenStart = 0
   let tokenEnd = 1
   let varIdx = 0
   while (values.length > 0) {
-    let value = values.shift()
+    let value = values.shift().trim()
+    if (values.length === 0 && value === '') { continue } // skip empty last value
     tokenEnd += value.length
     const variable = statement.inputVariables[varIdx++]
     if (varIdx >= statement.inputVariables.length && values.length > 0) {
@@ -26,10 +28,12 @@ function handleInput(machine, statement, interpreter, input) {
       break
     }
     if (variable.valueType === 'number') {
-      const numberToken = nextToken(value, 0, true)
-      if (numberToken.error) {
+      let numberToken = nextToken(value, 0, true)
+      if (numberToken.error && value !== '') {
         err = error(numberToken.error, numberToken.location, numberToken.endLocation, input)
         break
+      } else if (value === '') {
+        numberToken = { coding: 'number-literal', token: '0' }
       }
       if (numberToken.coding !== 'number-literal') {
         err = error(ErrorCodes.ILLEGAL_VALUE, tokenStart, tokenEnd, input)

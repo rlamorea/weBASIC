@@ -39,6 +39,7 @@ function processLineActions(codeLines, editedScreenLine, machine, editorContents
   let editorScreenLine = 0
   let editorLinesInScreenOrder = []
   let editorLineNumbers = []
+  let replacedLineNumbers = {}
   // clean up editor lines
 
   // pass 1 - build line array with line number and screen line - store blanks
@@ -101,11 +102,16 @@ function processLineActions(codeLines, editedScreenLine, machine, editorContents
     // see if we've got any duplicates of this line
     const existingLineIndex = editorLineNumbers.indexOf(lineNumber)
     if (existingLineIndex >= 0) {
-      // erase that line
-      actions.push({ action: 'clearLine', screenLine: editorLinesInScreenOrder[existingLineIndex].screenLine })
+      // if inserting a line, delete this line as the duplicate
+      if (replacedLineNumbers[lineNumber]) {
+        actions.push({action: 'clearLine', screenLine: editorScreenLine})
+        continue
+      } else { // erase the prior line
+        actions.push({action: 'clearLine', screenLine: editorLinesInScreenOrder[existingLineIndex].screenLine})
+        editorLinesInScreenOrder.splice(existingLineIndex, 1)
+        editorLineNumbers.splice(existingLineIndex, 1)
+      }
       screenLine -= 1 // account for deletion
-      editorLinesInScreenOrder.splice(existingLineIndex, 1)
-      editorLineNumbers.splice(existingLineIndex, 1)
     }
     // see if we've got a line to replace this one
     if (modLines[lineNumber]) {
@@ -114,6 +120,7 @@ function processLineActions(codeLines, editedScreenLine, machine, editorContents
         value: modLines[lineNumber].codeLine, error: modLines[lineNumber].error
       })
       editorLine = modLines[lineNumber].codeLine
+      replacedLineNumbers[lineNumber] = true
     }
     editorLinesInScreenOrder.push({ line: editorLine, screenLine, lineNumber })
     editorLineNumbers.push(lineNumber)

@@ -5,6 +5,7 @@ import Machine from './mockMachine.js'
 import Lexifier from "../scripts/interpreter/lexifier.js"
 import { processLineActions } from "../scripts/machine/screens/editorLogic.js"
 import { ErrorCodes } from "../scripts/interpreter/errors.js"
+import { addProgram } from "./testHelpers.js";
 
 const machine = new Machine()
 const lexifier = new Lexifier(machine)
@@ -1163,6 +1164,27 @@ test('paste test - insert an exec line and another line', () => {
   assert.is(Object.keys(machine.runCodespace.codeLines).length, 10)
 })
 
+test('issue #110 - messed up order on line insert', async () => {
+  addProgram(machine, [
+    '10 PRINT "something";',
+    '20 INPUT base',
+    '30 INPUT "another thing";power'
+  ])
+  const result = processTest(
+    '10 INPUT "something";base', 4,
+    '10 PRINT "something"\n'+
+    '20 INPUT base\n' +
+    '30 INPUT "another thing";power\n'
+    , true)
 
+  assert.is(result.actions.length, 3)
+  assert.is(result.editorLines[0], '10 INPUT "something";base\n')
+  assert.is(result.editorLines[1], '20 INPUT base\n')
+  assert.is(result.editorLines[2], '30 INPUT "another thing";power\n')
+  assert.is(result.cursorLine, 2)
+  assert.is(result.editorLines.length, 3)
+  assert.is(machine.runCodespace.lineNumbers.length , 3)
+  assert.is(Object.keys(machine.runCodespace.codeLines).length, 3)
+})
 
 test.run()

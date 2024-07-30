@@ -36,6 +36,8 @@ callouts:
   note:
     title: Note
     color: purple
+  highlight:
+    color: yellow
 
 # Exclude from processing.
 # The following items will not be processed, by default.

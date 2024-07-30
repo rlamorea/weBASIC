@@ -15,16 +15,22 @@ A **PROGRAM** is a set of instructions for the computer to execute in some speci
 
 Let's get started!
 
-- [**Mode Operandi** - understanding weBASIC modes](#mode-operandi)
-- [**Taking a Hard Line** - understanding line numbers](#taking-a-hard-line)
-- [**Say Hello** - running your first program](#say-hello)
-- [**Save Yourself** - saving your program for later](#save-yourself)
-- [**Starting Anew** - clearing your program](#starting-anew)
-- [**Bring That Back** - (re)loading your program](#bring-that-back)
-- [**What Did You Say?** - getting user input](#what-did-you-say)
-- [**Remember Me** - using variables](#remember-me)
-- [**A Calculated Move** - your first _useful_ program](#a-calculated-move)
-- [Where To Next?](#where-to-next)
+{: .highlight-title }
+> What's Below?
+> 
+> - [**Mode Operandi** - understanding weBASIC modes](#mode-operandi)
+> - [**Staying LIVE** - LIVE mode](#starting-anew)
+> - [**An EDIT Tutorial** - EDIT mode](#an-edit-tutorial)
+> - [**Taking a Hard Line** - understanding line numbers](#taking-a-hard-line)
+> - [**Jump! Jump! Jump!** - the GOTO statement](#jump-jump-jump)
+> - [**Say Hello** - running your first program](#say-hello)
+> - [**Save Yourself** - saving your program for later](#save-yourself)
+> - [**Starting Anew** - clearing your program](#starting-anew)
+> - [**Bring That Back** - (re)loading your program](#bring-that-back)
+> - [**What Did You Say?** - getting user input](#what-did-you-say)
+> - [**Remember Me** - using variables](#remember-me)
+> - [**A Calculated Move** - your first _useful_ program](#a-calculated-move)
+> - [Where To Next?](#where-to-next)
 
 ## Mode Operandi
 
@@ -468,6 +474,12 @@ READY.
 <cursor>_</cursor>
 </pre>
 
+{: .note-title }
+> You Have the Power
+>
+> In the event you didn't [mess around with calculations](#getting-started#a-calculated-tutorial)
+> the caret (^) symbol represents the mathematical operator for "raise to the power of".
+
 Easy for you. You know BASIC.
 
 But your friend doesn't and doesn't want to. So you need to ask them.
@@ -670,12 +682,6 @@ Enter this line:
 <pre>
 <lno>40</lno> LET <var>result</var> = <var>base</var>^<var>power</var>
 </pre>
-
-{: .note-title }
-> You Have the Power
-> 
-> In the event you didn't [mess around with calculations](#getting-started#a-calculated-tutorial)
-> the caret (^) symbol represents the mathematical operator for "raise to the power of".
 
 The `LET` statement is for **Assignment**. You have assigned the result of the equation of raising
 `base` to the power of `power` to the variable `result`.

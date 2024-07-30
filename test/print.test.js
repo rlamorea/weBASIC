@@ -165,4 +165,24 @@ test('print ary$(5)', async() => {
   assert.is(machine.screenCells[0].innerHTML, 'B')
 })
 
+test('print -4', async() => {
+  machine.screen.clearViewport()
+  const result = await inter.interpretLine('print -4')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.screenCells[0].innerHTML, '-')
+  assert.is(machine.screenCells[1].innerHTML, '4')
+})
+
+test('print BNOT 6', async() => {
+  machine.screen.clearViewport()
+  const result = await inter.interpretLine('print BNOT 6')
+
+  assert.is(result.error, undefined)
+  assert.is(machine.screenCells[0].innerHTML, '-')
+  assert.is(machine.screenCells[1 ].innerHTML, '7')
+})
+
+
+
 test.run()

@@ -69,15 +69,13 @@ export default class Print extends Statement {
           if (varString.error) { return varString }
           stringToDisplay += varString.value
           break
-        case 'number-literal':
-          stringToDisplay += parameter.token.toString()
-          break
         case 'variable-number':
         case 'variable-integer':
           const varVal = machine.variables.getValue(parameter, interpreter)
           if (varVal.error) { return varVal }
           stringToDisplay += varVal.value.toString()
           break
+        case 'number-literal':
         case 'function':
         case 'calculation':
           const value = interpreter.interpretExpression(parameter)

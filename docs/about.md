@@ -6,12 +6,12 @@ permalink: /about/
 
 # About weBASIC
 
-weBASIC is an experiment -- a BASIC interpreter written entirely in JS. It is not an emulator
+weBASIC is an experiment -- a BASIC interpreter written entirely in JavaScript. It is not an emulator
 of a retro computer, the entire "computer" it JS code to render to a browser window.
 
 This is a supplementary project for the "Rick Says Hello World" YouTube channel.
 
-To learn more, please check out the content there, or read more on the [home page](../index)
+To learn more, please check out [the content there](.), or read more on the [home page](../index)
 
 ## Why BASIC?
 
@@ -33,7 +33,7 @@ features.
 Compare this to modern computers. The out-of-the-box experience of any contemporary computer is one of an
 operating system designed primarily (one could even argue _exclusively_) to run software. You boot it up the
 first time, and work through connecting to the internet, getting your browser up and going, and maybe getting
-a few more programs (such as for email or office productivity) and and going.
+a few more programs (such as for email or office productivity) going.
 
 If you want to actually write your own programs, well then you're into the weeds. Often you'll need to get to the
 command line -- something kept pretty well hidden, even locked behind "admin" access. You'll need to download

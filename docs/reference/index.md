@@ -32,24 +32,26 @@ or go to the
 
 [List of Operators, Functions, Statements, and Commands](#index)
 
-## Reading a Reference Page
+## Reading a Language Feature Reference
 
-Every command, statement, function, and operator in weBASIC has its own reference page.
+Every command, statement, function, and operator in weBASIC has its own reference section.
 
-This page will look something like:
+This section will usually be part of a page with related commands, statements, functions,
+and operators. The reference will look something like:
 
 ----
+
 {: .note-title }
 > Name
 > 
 > The name of the language feature being documented is the title of the page
 
-# PRINT
+## `PRINT`
 
 {: .note-title }
 > Usage
 > 
-> Next the usage of the language feature is provided. This uses a notation [discussed below](#usage-notation) 
+> Next the usage of the language feature is provided. This uses a notation [discussed below](#notation) 
 
 Usage:
 

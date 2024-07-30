@@ -15,6 +15,22 @@ READY.
 <cursor>_</cursor>
 </pre>
 
+{: .highlight-title }
+> What's Below?
+>
+> - [**Your First Command** - learning PRING](#your-first-command)
+> - [**A Calculated Tutorial** - learning to do math](#a-calculated-tutorial)
+> - [**Operator? Operator?** - learning math operators](#operator-operator)
+> - [**Start With Parentheses** - parentheses in expressions](#start-with-parentheses)
+> - [**Keeping It In Order** - order of operations](#keeping-it-in-order)
+> - [**Who Has the Power** - exponentiation](#who-has-the-power)
+> - [**Get With The Times** - multiplication and division](#get-with-the-times)
+> - [**What's Left to Add?** - addition and subtraction](#whats-left-to-add)
+> - [**Feeling Negatave** - negation](#feeling-negative)
+> - [**What's Your Function** - math functions](#whats-your-function)
+> - [**It's Science** - scientific notation](#its-science)
+> - [Where To Next?](#where-to-next)
+
 ## Your First Command
 
 weBASIC is waiting for you to type a command.
@@ -346,7 +362,7 @@ So:
 
 (well, on that last one, the weBASIC answer has more significant digits, but is effectively the same)
 
-### Where to Next?
+## Where to Next?
 
 There is much more you can do directly from the `READY.` prompt in weBASIC, but very little of it
 is useful if you can't keep it and reuse it.
